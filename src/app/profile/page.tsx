@@ -2,17 +2,18 @@
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
-import { collection, orderBy, query } from 'firebase/firestore';
-import { Package, History, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { collection, orderBy, query, doc, updateDoc } from 'firebase/firestore';
+import { Package, History, Settings, LogOut, ChevronRight, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -21,12 +22,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Use useEffect for redirection to avoid "Update during render" warnings
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/auth/login');
@@ -57,6 +59,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !db) return;
+
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadToCloudinary(file);
+      await updateDoc(doc(db, 'users', user.uid), {
+        profileImageUrl: imageUrl
+      });
+      toast({ title: "Profile updated! ✨", description: "Your new photo is live." });
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "Upload failed", 
+        description: error.message 
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (isUserLoading) return <div className="p-20 text-center">Charging your profile...</div>;
 
   if (!user) {
@@ -66,16 +90,33 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto px-6 py-12 space-y-12">
       <header className="flex flex-col md:flex-row items-center gap-8 glass p-10 rounded-[3rem]">
-        <Avatar className="w-32 h-32 border-4 border-primary shadow-2xl">
-          <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/200`} />
-          <AvatarFallback className="text-4xl font-black bg-primary/10">{user.email?.[0].toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <div className="relative group">
+          <Avatar className="w-32 h-32 border-4 border-primary shadow-2xl transition-transform group-hover:scale-105">
+            <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/200`} />
+            <AvatarFallback className="text-4xl font-black bg-primary/10">{user.email?.[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {isUploading ? <Loader2 className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-8 h-8 text-white" />}
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleImageUpload} 
+          />
+        </div>
+
         <div className="flex-1 text-center md:text-left space-y-2">
-          <h1 className="text-4xl font-black">{user.displayName || 'Aura Member'}</h1>
+          <h1 className="text-4xl font-black">{user.displayName || 'WishZep Member'}</h1>
           <p className="text-muted-foreground font-medium">{user.email}</p>
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary">Member since 2024</Badge>
-            <Badge variant="outline" className="glass">Aura Status: Platinum</Badge>
+            <Badge variant="outline" className="glass">Status: Platinum</Badge>
           </div>
         </div>
         <div className="flex gap-4">

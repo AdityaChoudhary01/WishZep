@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database, ShieldCheck, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database, ShieldCheck, X, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,10 +23,14 @@ import { collection, addDoc, doc, setDoc, serverTimestamp, query, orderBy } from
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const db = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -56,8 +60,28 @@ export default function AdminDashboard() {
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setNewProduct(prev => ({ ...prev, imageUrl: url }));
+      toast({ title: "Image Uploaded! 📸", description: "Product preview updated." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleAddProduct = () => {
     if (!db || !isUserAdmin) return;
+    if (!newProduct.imageUrl) {
+      toast({ variant: "destructive", title: "Missing Image", description: "Please upload a product image." });
+      return;
+    }
     
     addDocumentNonBlocking(collection(db, 'products'), {
       ...newProduct,
@@ -100,7 +124,7 @@ export default function AdminDashboard() {
       <aside className="w-64 glass border-r border-white/20 p-6 hidden md:block">
         <div className="flex items-center gap-2 mb-10 px-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-white font-bold text-xl">W</span></div>
-          <span className="text-xl font-bold font-headline aura-text">Admin</span>
+          <span className="text-xl font-bold font-headline wishzep-text">Admin</span>
         </div>
         <nav className="space-y-2">
           <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl"><LayoutDashboard className="w-5 h-5" /> Dashboard</Button>
@@ -113,7 +137,7 @@ export default function AdminDashboard() {
       <main className="flex-1 p-8 space-y-8">
         <header className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-black">Manage <span className="aura-text">Inventory</span></h1>
+            <h1 className="text-3xl font-black">Manage <span className="wishzep-text">Inventory</span></h1>
             <p className="text-muted-foreground text-sm">Real-time control over your product catalogue.</p>
           </div>
           <div className="flex gap-4">
@@ -123,18 +147,51 @@ export default function AdminDashboard() {
                   <Plus className="w-5 h-5" /> Add New Product
                 </Button>
               </DialogTrigger>
-              <DialogContent className="glass max-w-md">
+              <DialogContent className="glass max-w-md overflow-y-auto max-h-[90vh]">
                 <DialogHeader><DialogTitle>Add New Product</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative w-full aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center">
+                      {newProduct.imageUrl ? (
+                        <Image src={newProduct.imageUrl} alt="Preview" fill className="object-cover" />
+                      ) : (
+                        <div className="text-center p-6">
+                          <Camera className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground font-bold uppercase">Product Preview</p>
+                        </div>
+                      )}
+                      {isUploading && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Loader2 className="w-10 h-10 text-white animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full rounded-xl glass border-white/40"
+                    >
+                      {newProduct.imageUrl ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                    />
+                  </div>
+
                   <div className="grid gap-2"><Label>Name</Label><Input value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2"><Label>Price ($)</Label><Input type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
                     <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={newProduct.inventory} onChange={e => setNewProduct({...newProduct, inventory: Number(e.target.value)})} /></div>
                   </div>
                   <div className="grid gap-2"><Label>Category</Label><Input value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} /></div>
-                  <div className="grid gap-2"><Label>Image URL</Label><Input value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} placeholder="https://..." /></div>
+                  <div className="grid gap-2"><Label>Attributes</Label><Input value={newProduct.attributes} onChange={e => setNewProduct({...newProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
                   <div className="grid gap-2"><Label>Description</Label><Textarea value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} /></div>
-                  <Button onClick={handleAddProduct} className="w-full h-12 rounded-xl bg-primary">Create Product</Button>
+                  <Button onClick={handleAddProduct} disabled={isUploading} className="w-full h-12 rounded-xl bg-primary">Create Product</Button>
                 </div>
               </DialogContent>
             </Dialog>
