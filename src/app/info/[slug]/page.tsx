@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -21,9 +20,16 @@ import {
   RotateCcw, 
   FileText, 
   Zap, 
-  Sparkles 
+  Sparkles,
+  Globe,
+  Clock,
+  CheckCircle2,
+  Lock,
+  Eye,
+  Scale
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function DynamicInfoPage() {
   const { slug } = useParams();
@@ -79,47 +85,85 @@ export default function DynamicInfoPage() {
     switch (slug) {
       case 'about':
         return (
-          <div className="space-y-24 animate-fade-in">
-            <header className="text-center space-y-6 max-w-3xl mx-auto">
-              <Badge className="bg-primary/20 text-primary px-4 py-1 rounded-full border-primary/20">The WishZep Vision</Badge>
-              <h1 className="text-7xl font-black tracking-tighter leading-none">
-                DEFINING THE <span className="wishzep-text">FUTURE</span> OF SHOPPING.
+          <div className="space-y-32 animate-fade-in">
+            {/* Hero */}
+            <header className="text-center space-y-8 max-w-4xl mx-auto">
+              <Badge className="bg-primary/20 text-primary px-6 py-2 rounded-full border-primary/20 text-sm font-bold tracking-widest uppercase">The WishZep Standard</Badge>
+              <h1 className="text-7xl md:text-9xl font-black tracking-tighter leading-none">
+                CRAFTING <span className="wishzep-text">LEGENDS.</span>
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                WishZep isn't just a store. It's a curated ecosystem for the modern visionary who demands performance, style, and attitude in every drop.
+              <p className="text-2xl text-muted-foreground leading-relaxed font-light">
+                WishZep is the ultimate destination for the modern visionary. We don't just sell products; we curate high-energy artifacts that define an era of performance and style.
               </p>
             </header>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            {/* Core Values */}
+            <div className="grid md:grid-cols-3 gap-10">
               {[
-                { icon: Zap, title: "High Velocity", desc: "We move at the speed of culture, bringing you the latest drops before they hit the mainstream." },
-                { icon: Sparkles, title: "Curated Energy", desc: "Every item in our catalogue is hand-vetted for quality, design, and that unique WishZep vibe." },
-                { icon: ShieldCheck, title: "Elite Service", desc: "Your experience is our priority. From browsing to unboxing, we ensure perfection." }
+                { icon: Zap, title: "Velocity First", desc: "We anticipate the shift in culture, delivering the next generation of gear before it hits the mainstream." },
+                { icon: Sparkles, title: "Curated Energy", desc: "Every drop is hand-selected for its unique frequency, quality, and undeniable WishZep edge." },
+                { icon: ShieldCheck, title: "Absolute Trust", desc: "From hyper-secure checkouts to elite customer care, your satisfaction is our baseline." }
               ].map((feature, i) => (
-                <div key={i} className="glass p-10 rounded-[2.5rem] space-y-6 hover:-translate-y-2 transition-transform duration-500">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <feature.icon className="w-8 h-8" />
+                <div key={i} className="glass p-12 rounded-[3rem] space-y-8 hover:-translate-y-4 transition-all duration-700 group">
+                  <div className="w-20 h-20 bg-primary/10 rounded-[1.5rem] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                    <feature.icon className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-bold">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.desc}</p>
+                  <h3 className="text-3xl font-black">{feature.title}</h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed">{feature.desc}</p>
                 </div>
               ))}
             </div>
 
-            <section className="glass rounded-[3rem] p-12 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32" />
-              <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-                <div className="space-y-6">
-                  <h2 className="text-4xl font-black">Our Global Footprint</h2>
-                  <p className="text-lg text-muted-foreground">
-                    Based in the digital heart of innovation, WishZep serves a global community of dreamers and doers. We are committed to sustainable sourcing and revolutionary logistics that minimize our footprint while maximizing your satisfaction.
-                  </p>
-                  <Button className="rounded-full px-8 h-12 bg-primary">Join the Community</Button>
+            {/* Narrative Section */}
+            <section className="relative overflow-hidden glass rounded-[4rem] p-12 md:p-24">
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[120px] -mr-64 -mt-64" />
+              <div className="grid lg:grid-cols-2 gap-20 items-center relative z-10">
+                <div className="space-y-10">
+                  <h2 className="text-5xl font-black leading-tight">THE <span className="wishzep-text">REVOLUTION</span> OF RETAIL.</h2>
+                  <div className="space-y-6 text-xl text-muted-foreground leading-relaxed">
+                    <p>
+                      WishZep was born from a simple observation: the digital shopping experience had become stale. It lacked the adrenaline, the soul, and the curation that high-performance individuals demand.
+                    </p>
+                    <p>
+                      We built WishZep to be more than a store. It's a sanctuary for the dreamers, the hackers, the athletes, and the artists who refuse to settle for the average.
+                    </p>
+                  </div>
+                  <div className="flex gap-8">
+                    <div>
+                      <p className="text-5xl font-black wishzep-text">50K+</p>
+                      <p className="text-sm font-bold uppercase tracking-widest mt-2">Visionaries Served</p>
+                    </div>
+                    <div className="border-l border-white/20 pl-8">
+                      <p className="text-5xl font-black wishzep-text">120+</p>
+                      <p className="text-sm font-bold uppercase tracking-widest mt-2">Exclusive Drops</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="h-48 glass rounded-2xl bg-[url('https://picsum.photos/seed/about1/400/400')] bg-cover" />
-                  <div className="h-48 glass rounded-2xl bg-[url('https://picsum.photos/seed/about2/400/400')] bg-cover mt-8" />
+                <div className="relative group">
+                  <div className="absolute -inset-4 bg-primary/10 blur-2xl rounded-[3rem] group-hover:bg-primary/20 transition-all" />
+                  <div className="relative aspect-square glass rounded-[3rem] overflow-hidden">
+                    <img src="https://picsum.photos/seed/about-vision/800/800" alt="Vision" className="object-cover group-hover:scale-110 transition-transform duration-1000" />
+                  </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Team/Community */}
+            <section className="text-center space-y-16">
+              <div className="space-y-4">
+                <h2 className="text-5xl font-black">DRIVEN BY <span className="wishzep-text">COMMUNITY.</span></h2>
+                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">We are a global team of experts in design, technology, and logistics, united by the WishZep vision.</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="aspect-[3/4] glass rounded-[2.5rem] overflow-hidden relative group">
+                    <img src={`https://picsum.photos/seed/team-${i}/400/600`} alt="Team Member" className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute bottom-6 left-6 right-6 text-left">
+                      <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Expertise {i}</p>
+                      <p className="text-xl font-black text-white">Member Name</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </div>
@@ -127,74 +171,72 @@ export default function DynamicInfoPage() {
 
       case 'contact':
         return (
-          <div className="grid lg:grid-cols-2 gap-16 animate-fade-in">
-            <div className="space-y-12">
-              <div className="space-y-6">
-                <Badge className="bg-secondary/20 text-secondary px-4 py-1 rounded-full border-secondary/20">24/7 Support</Badge>
-                <h1 className="text-7xl font-black tracking-tighter leading-none">
-                  GET IN <span className="wishzep-text">TOUCH.</span>
+          <div className="grid lg:grid-cols-2 gap-24 animate-fade-in items-start">
+            <div className="space-y-16">
+              <div className="space-y-8">
+                <Badge className="bg-secondary/20 text-secondary px-6 py-2 rounded-full border-secondary/20 text-sm font-bold tracking-widest">Available 24/7/365</Badge>
+                <h1 className="text-8xl font-black tracking-tighter leading-none">
+                  JOIN THE <span className="wishzep-text">DIALOGUE.</span>
                 </h1>
-                <p className="text-xl text-muted-foreground">
-                  Have a question about a drop or an existing order? Our team is standing by to assist you.
+                <p className="text-2xl text-muted-foreground leading-relaxed">
+                  Whether you have a question about a drop, a suggestion for the platform, or need high-priority order support, our team is always on standby.
                 </p>
               </div>
 
-              <div className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-10">
                 {[
-                  { icon: Mail, label: "Email", value: "support@wishzep.com" },
-                  { icon: Phone, label: "Phone", value: "+1 (888) WISH-ZEP" },
-                  { icon: MapPin, label: "HQ", value: "Innovation District, SF, CA" }
+                  { icon: Mail, label: "Official Support", value: "support@wishzep.com", desc: "Best for order inquiries." },
+                  { icon: Phone, label: "Direct Line", value: "+1 (888) WISH-ZEP", desc: "Mon-Fri, 9AM-6PM PT." },
+                  { icon: Globe, label: "Global HQ", value: "Innovation Dist, SF", desc: "Where the magic happens." },
+                  { icon: Clock, label: "Response Time", value: "< 2 Hours", desc: "Our average reply time." }
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-6 group cursor-pointer">
-                    <div className="w-14 h-14 glass rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                      <item.icon className="w-6 h-6" />
+                  <div key={i} className="space-y-4 group cursor-pointer">
+                    <div className="w-16 h-16 glass rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-xl group-hover:shadow-primary/30">
+                      <item.icon className="w-8 h-8" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
-                      <p className="text-xl font-bold">{item.value}</p>
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">{item.label}</p>
+                      <p className="text-xl font-black">{item.value}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
+
+              <div className="p-8 glass rounded-[2.5rem] border-primary/20 bg-primary/5">
+                <div className="flex items-center gap-4 mb-4">
+                  <CheckCircle2 className="text-primary w-6 h-6" />
+                  <p className="text-lg font-bold">Priority Support for Members</p>
+                </div>
+                <p className="text-muted-foreground">Logged-in members receive accelerated response times and direct access to our specialist team.</p>
+              </div>
             </div>
 
-            <div className="glass p-10 rounded-[3rem] shadow-2xl">
-              <form onSubmit={handleContactSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-widest ml-1">Full Name</label>
-                  <Input 
-                    name="name"
-                    required
-                    placeholder="John Doe" 
-                    className="h-14 rounded-2xl glass border-white/20" 
-                  />
+            <div className="glass p-12 rounded-[4rem] shadow-2xl relative">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/20 blur-[80px]" />
+              <form onSubmit={handleContactSubmit} className="space-y-8 relative z-10">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold uppercase tracking-widest ml-1 text-muted-foreground">Full Name</label>
+                    <Input name="name" required placeholder="John Doe" className="h-16 rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-lg" />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold uppercase tracking-widest ml-1 text-muted-foreground">Email Address</label>
+                    <Input name="email" required type="email" placeholder="john@example.com" className="h-16 rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-lg" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-widest ml-1">Email Address</label>
-                  <Input 
-                    name="email"
-                    required
-                    type="email"
-                    placeholder="john@example.com" 
-                    className="h-14 rounded-2xl glass border-white/20" 
-                  />
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest ml-1 text-muted-foreground">Subject</label>
+                  <Input name="subject" placeholder="What's this about?" className="h-16 rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-lg" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-widest ml-1">Message</label>
-                  <Textarea 
-                    name="message"
-                    required
-                    placeholder="How can we help?" 
-                    className="min-h-[150px] rounded-2xl glass border-white/20" 
-                  />
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest ml-1 text-muted-foreground">Message</label>
+                  <Textarea name="message" required placeholder="How can we help you achieve your vision?" className="min-h-[200px] rounded-3xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-lg p-6" />
                 </div>
-                <Button 
-                  type="submit"
-                  disabled={isSending}
-                  className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3"
-                >
-                  {isSending ? 'Sending...' : 'Send Message'} <Send className="w-5 h-5" />
+                <Button type="submit" disabled={isSending} className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]">
+                  {isSending ? 'Transmitting...' : 'Send Message'} <Send className="w-6 h-6" />
                 </Button>
+                <p className="text-center text-xs text-muted-foreground">By submitting, you agree to our response protocol and privacy guidelines.</p>
               </form>
             </div>
           </div>
@@ -204,42 +246,86 @@ export default function DynamicInfoPage() {
       case 'refund':
       case 'privacy':
       case 'terms':
-        return (
-          <div className="max-w-4xl mx-auto space-y-12 animate-fade-in">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 glass rounded-3xl flex items-center justify-center text-primary shadow-xl">
-                {slug === 'shipping' && <Truck className="w-10 h-10" />}
-                {slug === 'refund' && <RotateCcw className="w-10 h-10" />}
-                {slug === 'privacy' && <ShieldCheck className="w-10 h-10" />}
-                {slug === 'terms' && <FileText className="w-10 h-10" />}
-              </div>
-              <div>
-                <h1 className="text-6xl font-black tracking-tighter">
-                  {slug === 'shipping' ? "Shipping Policy" : slug === 'refund' ? "Refund Policy" : slug === 'privacy' ? "Privacy Policy" : "Terms & Conditions"}
-                </h1>
-                <p className="text-muted-foreground font-medium uppercase tracking-widest">Effective: January 2024</p>
-              </div>
-            </div>
+        const titles = {
+          shipping: { title: "Global Logistics & Shipping", icon: Truck, badge: "Ultra-Fast Delivery" },
+          refund: { title: "Return & Refund Protocol", icon: RotateCcw, badge: "Hassle-Free Returns" },
+          privacy: { title: "Data Security & Privacy", icon: Lock, badge: "Encrypted Protection" },
+          terms: { title: "Usage Terms & Conditions", icon: Scale, badge: "Legal Framework" }
+        };
+        const active = titles[slug as keyof typeof titles];
 
-            <div className="glass rounded-[3rem] p-12 prose prose-lg dark:prose-invert max-w-none space-y-8">
+        return (
+          <div className="max-w-5xl mx-auto space-y-20 animate-fade-in">
+            <header className="flex flex-col md:flex-row items-center gap-10">
+              <div className="w-32 h-32 glass rounded-[2.5rem] flex items-center justify-center text-primary shadow-2xl shrink-0">
+                <active.icon className="w-16 h-16" />
+              </div>
+              <div className="text-center md:text-left space-y-4">
+                <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-1 rounded-full">{active.badge}</Badge>
+                <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none">{active.title}</h1>
+                <p className="text-xl text-muted-foreground uppercase tracking-[0.2em] font-bold">WishZep Official Policy • v.2.4.0</p>
+              </div>
+            </header>
+
+            <div className="glass rounded-[4rem] p-12 md:p-20 space-y-16">
               {page ? (
-                <div dangerouslySetInnerHTML={{ __html: page.content }} />
+                <div className="prose prose-2xl prose-invert max-w-none prose-headings:font-black prose-headings:tracking-tighter prose-p:text-muted-foreground prose-p:leading-relaxed" dangerouslySetInnerHTML={{ __html: page.content }} />
               ) : (
-                <div className="space-y-8">
-                  <section>
-                    <h3 className="text-2xl font-bold mb-4">1. Overview</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      At WishZep, we prioritize clarity and speed. Our policies are designed to ensure you spend less time reading fine print and more time enjoying your gear.
+                <div className="space-y-20">
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black text-xl">01</div>
+                      <h2 className="text-4xl font-black tracking-tight">Mission & Transparency</h2>
+                    </div>
+                    <p className="text-xl text-muted-foreground leading-relaxed">
+                      At WishZep, transparency isn't a goal—it's an absolute. We have architected our policies to be as high-performance as our products. No hidden clauses, no legal jargon that confuses. Just clear, concise guidelines that protect both you and the WishZep community.
                     </p>
                   </section>
-                  <section>
-                    <h3 className="text-2xl font-bold mb-4">2. Core Principles</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      We believe in transparency and fairness. Every policy we draft is focused on providing a seamless experience for the WishZep community.
-                    </p>
+
+                  <Separator className="bg-white/10" />
+
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary font-black text-xl">02</div>
+                      <h2 className="text-4xl font-black tracking-tight">Executive Summary</h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="p-8 glass rounded-[2rem] border-white/5 space-y-4">
+                        <h4 className="text-2xl font-bold">Speed of Execution</h4>
+                        <p className="text-muted-foreground">Whether it's shipping out your order or processing a return, we operate at a high-velocity frequency. Efficiency is our obsession.</p>
+                      </div>
+                      <div className="p-8 glass rounded-[2rem] border-white/5 space-y-4">
+                        <h4 className="text-2xl font-bold">Global Compatibility</h4>
+                        <p className="text-muted-foreground">Our policies are designed to work seamlessly across borders, respecting both local regulations and our global community standards.</p>
+                      </div>
+                    </div>
                   </section>
-                  <div className="p-8 bg-primary/5 border border-primary/10 rounded-2xl">
-                    <p className="text-primary font-bold italic">"Innovation requires trust. We're here to build that trust every single day."</p>
+
+                  <Separator className="bg-white/10" />
+
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent font-black text-xl">03</div>
+                      <h2 className="text-4xl font-black tracking-tight">Detailed Directives</h2>
+                    </div>
+                    <div className="space-y-10">
+                      {[
+                        { q: "What defines our approach?", a: "We prioritize user empowerment. Every decision in our logistics and legal chain is made to ensure you have maximum control over your WishZep experience." },
+                        { q: "How do we handle changes?", a: "The world moves fast, and so do we. Any updates to these policies are communicated instantly via the platform, ensuring you are always operating with the latest information." },
+                        { q: "Our commitment to security?", a: "We utilize industry-leading encryption and verification protocols for every interaction. Your data and your trust are our most valuable assets." }
+                      ].map((item, i) => (
+                        <div key={i} className="space-y-4">
+                          <h4 className="text-2xl font-black text-primary">{item.q}</h4>
+                          <p className="text-lg text-muted-foreground leading-relaxed">{item.a}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="p-12 bg-primary/10 border border-primary/20 rounded-[3rem] text-center space-y-6">
+                    <Sparkles className="w-12 h-12 text-primary mx-auto" />
+                    <h3 className="text-3xl font-black italic">"Innovation requires absolute trust. We are here to earn it every single day."</h3>
+                    <p className="text-muted-foreground font-bold tracking-widest uppercase text-sm">— The WishZep Legal Team</p>
                   </div>
                 </div>
               )}
@@ -249,16 +335,19 @@ export default function DynamicInfoPage() {
 
       default:
         return (
-          <div className="max-w-4xl mx-auto py-24 text-center space-y-8">
-            <h1 className="text-6xl font-black">{page?.title || "Page Not Found"}</h1>
-            <p className="text-xl text-muted-foreground">The content you are looking for is currently being curated.</p>
+          <div className="max-w-4xl mx-auto py-32 text-center space-y-12">
+            <h1 className="text-8xl font-black tracking-tighter">{page?.title || "UNRESOLVED ROUTE"}</h1>
+            <p className="text-2xl text-muted-foreground font-light">The content you are seeking is currently being recalibrated by our team. Check back shortly.</p>
+            <Button asChild size="lg" className="rounded-full px-12 h-16 text-xl bg-primary">
+              <a href="/">Back to Command Center</a>
+            </Button>
           </div>
         );
     }
   };
 
   return (
-    <div className="container mx-auto px-6 py-20 min-h-screen">
+    <div className="container mx-auto px-6 py-24 min-h-screen">
       {renderTemplate()}
     </div>
   );
