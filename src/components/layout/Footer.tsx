@@ -22,7 +22,6 @@ export default function Footer() {
             <li><Link href="/products" className="hover:text-primary transition-colors">All Products</Link></li>
             <li><Link href="/products?category=new" className="hover:text-primary transition-colors">New Arrivals</Link></li>
             <li><Link href="/products?category=sale" className="hover:text-primary transition-colors">Sale</Link></li>
-            <li><Link href="/collections" className="hover:text-primary transition-colors">Collections</Link></li>
           </ul>
         </div>
 

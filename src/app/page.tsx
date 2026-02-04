@@ -96,9 +96,9 @@ export default function Home() {
                   Shop Now <ArrowRight className="ml-2 group-hover:translate-x-2 transition-transform w-8 h-8" />
                 </Button>
               </Link>
-              <Link href="/collections">
+              <Link href="/info/contact">
                 <Button size="lg" variant="outline" className="h-20 px-12 rounded-full glass text-2xl font-black">
-                  Collections
+                  Enquiry
                 </Button>
               </Link>
             </div>
