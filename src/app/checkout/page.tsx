@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useCartStore } from '@/lib/store';
 import { useUser, useFirestore } from '@/firebase';
-import { useState } from 'react';
-import { CreditCard, Truck, ShieldCheck, ArrowRight, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, Truck, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CheckoutPage() {
+  const [mounted, setMounted] = useState(false);
   const { items, getTotal, clearCart } = useCartStore();
   const { user } = useUser();
   const db = useFirestore();
@@ -31,16 +31,20 @@ export default function CheckoutPage() {
     zip: ''
   });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handlePlaceOrder = async () => {
     if (!user || !db) {
       toast({ title: "Please sign in to place order", variant: "destructive" });
+      router.push('/auth/login');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // 1. Create main order document
       const orderRef = await addDoc(collection(db, 'users', user.uid, 'orders'), {
         userId: user.uid,
         orderDate: new Date().toISOString(),
@@ -51,7 +55,6 @@ export default function CheckoutPage() {
         createdAt: serverTimestamp()
       });
 
-      // 2. Add individual order items to the subcollection as per backend.json
       items.forEach(item => {
         addDocumentNonBlocking(collection(db, 'users', user.uid, 'orders', orderRef.id, 'order_items'), {
           orderId: orderRef.id,
@@ -71,11 +74,24 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0) return <div className="p-20 text-center">Your bag is empty.</div>;
+  if (!mounted) {
+    return <div className="p-20 text-center animate-pulse">Preparing checkout...</div>;
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="p-20 text-center space-y-6">
+        <h2 className="text-3xl font-black">Your bag is empty.</h2>
+        <Button asChild className="rounded-full">
+          <a href="/products">Go Shopping</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-12">
-      <h1 className="text-5xl font-black mb-12">FINAL <span className="aura-text">CHECKOUT</span></h1>
+      <h1 className="text-5xl font-black mb-12">FINAL <span className="wishzep-text">CHECKOUT</span></h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div className="space-y-12">
@@ -136,7 +152,7 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <Separator className="bg-white/20" />
-              <div className="flex justify-between text-3xl font-black pt-4"><span>Total</span><span className="aura-text">${total.toFixed(2)}</span></div>
+              <div className="flex justify-between text-3xl font-black pt-4"><span>Total</span><span className="wishzep-text">${total.toFixed(2)}</span></div>
             </div>
 
             <Button 

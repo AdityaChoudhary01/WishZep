@@ -1,26 +1,26 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
 
 /**
  * Server Action to send contact emails via SMTP.
+ * Note: Use environment variables in production for credentials.
  */
 export async function sendContactEmail(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const message = formData.get('message') as string;
 
-  // Validation
   if (!name || !email || !message) {
     return { success: false, error: 'All fields are required.' };
   }
 
+  // Create transporter using provided credentials
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: 'aadiwrld01@gmail.com',
-      pass: 'nlmd ijup xarw nkuv',
+      pass: 'nlmd ijup xarw nkuv', // App-specific password
     },
   });
 
@@ -32,7 +32,7 @@ export async function sendContactEmail(formData: FormData) {
     text: `You have a new message from the WishZep Contact Form.\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     html: `
       <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #primary;">New WishZep Contact Submission</h2>
+        <h2 style="color: #BE29EC;">New WishZep Contact Submission</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Message:</strong></p>
@@ -46,6 +46,6 @@ export async function sendContactEmail(formData: FormData) {
     return { success: true };
   } catch (error: any) {
     console.error('Nodemailer Error:', error);
-    return { success: false, error: 'Failed to send email. Please try again later.' };
+    return { success: false, error: 'Failed to send email. Check SMTP settings or App Password.' };
   }
 }
