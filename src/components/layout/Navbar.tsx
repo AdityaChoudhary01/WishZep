@@ -2,13 +2,21 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingBag, User, Search, Menu, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ShoppingBag, User, Search, Menu, X, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -21,6 +29,19 @@ export default function Navbar() {
   const searchParams = useSearchParams();
   const cartItems = useCartStore((state) => state.items);
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const db = useFirestore();
+  const productsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, 'products');
+  }, [db]);
+  const { data: products } = useCollection(productsQuery);
+
+  const dynamicCategories = useMemo(() => {
+    if (!products) return [];
+    const cats = new Set(products.map(p => p.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [products]);
 
   useEffect(() => {
     setMounted(true);
@@ -40,13 +61,6 @@ export default function Navbar() {
     }
   };
 
-  const navLinks = [
-    { name: 'Shop All', href: '/products' },
-    { name: 'Footwear', href: '/products?category=Footwear' },
-    { name: 'Audio', href: '/products?category=Audio' },
-    { name: 'Collections', href: '/collections' },
-  ];
-
   return (
     <nav
       className={cn(
@@ -64,16 +78,38 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="text-sm font-medium hover:text-primary transition-colors relative group"
-            >
-              {link.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
-            </Link>
-          ))}
+          <Link
+            href="/products"
+            className="text-sm font-medium hover:text-primary transition-colors relative group"
+          >
+            Shop All
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group relative">
+                Categories <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="glass min-w-[200px] rounded-2xl p-2 border-white/20">
+              {dynamicCategories.length > 0 ? (
+                dynamicCategories.map((cat) => (
+                  <DropdownMenuItem key={cat} asChild>
+                    <Link 
+                      href={`/products?category=${cat}`}
+                      className="cursor-pointer rounded-xl hover:bg-primary/10 hover:text-primary font-medium"
+                    >
+                      {cat}
+                    </Link>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <div className="p-4 text-xs text-muted-foreground text-center">No categories yet</div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex items-center gap-4">
@@ -129,16 +165,28 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden glass absolute top-full left-0 right-0 p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="text-lg font-semibold hover:text-primary p-2 rounded-lg hover:bg-primary/5 transition-all"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {link.name}
-            </Link>
-          ))}
+          <Link
+            href="/products"
+            className="text-lg font-semibold hover:text-primary p-2 rounded-lg hover:bg-primary/5 transition-all"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Shop All
+          </Link>
+          <div className="p-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Categories</p>
+            <div className="grid grid-cols-2 gap-2">
+              {dynamicCategories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/products?category=${cat}`}
+                  className="text-sm font-medium hover:text-primary transition-all"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {cat}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </nav>
