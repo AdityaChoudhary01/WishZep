@@ -3,7 +3,22 @@
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
 import { collection, orderBy, query, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
-import { Package, History, LogOut, ChevronRight, Camera, Loader2, Edit3, Save, X as CloseIcon, Truck, MapPin, Calendar, Clock } from 'lucide-react';
+import { 
+  Package, 
+  History, 
+  LogOut, 
+  ChevronRight, 
+  Camera, 
+  Loader2, 
+  Edit3, 
+  Save, 
+  X as CloseIcon, 
+  Truck, 
+  MapPin, 
+  Calendar, 
+  Clock,
+  AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
