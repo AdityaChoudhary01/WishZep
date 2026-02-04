@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
 import { collection, orderBy, query, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Package, History, Settings, LogOut, ChevronRight, Camera, Loader2, Edit3, Save, X as CloseIcon } from 'lucide-react';
+import { Package, History, LogOut, ChevronRight, Camera, Loader2, Edit3, Save, X as CloseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -207,9 +207,6 @@ export default function ProfilePage() {
           <TabsTrigger value="orders" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
             <History className="w-4 h-4 mr-2" /> Order History
           </TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Settings className="w-4 h-4 mr-2" /> Preferences
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="space-y-6">
@@ -258,28 +255,6 @@ export default function ProfilePage() {
               ))}
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <div className="glass rounded-[2.5rem] p-10 max-w-2xl">
-            <h2 className="text-2xl font-black mb-8">Account Preferences</h2>
-            <div className="space-y-6">
-              <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                <div>
-                  <p className="font-bold">Email Notifications</p>
-                  <p className="text-sm text-muted-foreground">Receive updates on new drops and sales.</p>
-                </div>
-                <Button variant="outline" size="sm" className="rounded-lg">Enabled</Button>
-              </div>
-              <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                <div>
-                  <p className="font-bold">Two-Factor Authentication</p>
-                  <p className="text-sm text-muted-foreground">Secure your account with 2FA.</p>
-                </div>
-                <Button variant="outline" size="sm" className="rounded-lg">Configure</Button>
-              </div>
-            </div>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
