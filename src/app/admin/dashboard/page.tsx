@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Package, 
   Plus, 
@@ -29,7 +29,8 @@ import {
   History,
   Truck,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,6 +102,7 @@ export default function AdminDashboard() {
   const [newSpecValue, setNewSpecValue] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  // Fetch admin role status
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'roles_admin', user.uid);
@@ -108,9 +110,10 @@ export default function AdminDashboard() {
 
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   
-  // Important: Only consider the user an admin once the document has been successfully fetched.
+  // Confirmed admin status
   const isUserAdmin = !!adminRole && !adminLoading;
 
+  // Products Query
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
@@ -118,6 +121,7 @@ export default function AdminDashboard() {
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
+  // Categories Query
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
@@ -125,12 +129,12 @@ export default function AdminDashboard() {
 
   const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
 
-  // Fetch all orders across all users for the admin
-  // We only enable this query once admin status is confirmed to avoid permission errors.
+  // Orders Query - Only runs when the user is confirmed admin AND is on the orders tab
+  // to avoid transient permission errors during role propagation.
   const ordersQuery = useMemoFirebase(() => {
-    if (!db || !isUserAdmin) return null;
+    if (!db || !isUserAdmin || activeTab !== 'orders') return null;
     return query(collectionGroup(db, 'orders'), orderBy('orderDate', 'desc'));
-  }, [db, isUserAdmin]);
+  }, [db, isUserAdmin, activeTab]);
 
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
 
@@ -649,74 +653,87 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground text-sm">Fulfill the vision. Manage customer drops.</p>
             </header>
 
-            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
-              <Table>
-                <TableHeader className="bg-white/30">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Order ID</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ordersLoading ? (
-                    [...Array(5)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                        <TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell>
+            {ordersError ? (
+              <div className="glass p-12 rounded-[2rem] text-center space-y-6 border-destructive/20 bg-destructive/5">
+                <AlertCircle className="w-16 h-16 mx-auto text-destructive" />
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black">Authentication Sync Issue</h3>
+                  <p className="text-muted-foreground">The security vault is refreshing your admin access. This usually takes a few seconds.</p>
+                </div>
+                <Button onClick={() => window.location.reload()} className="rounded-full gap-2">
+                  <RefreshCcw className="w-4 h-4" /> Retry Connection
+                </Button>
+              </div>
+            ) : (
+              <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+                <Table>
+                  <TableHeader className="bg-white/30">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Order ID</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ordersLoading ? (
+                      [...Array(5)].map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                          <TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : orders?.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
+                        <TableCell className="px-6 font-bold font-mono text-xs">
+                          #{order.id.slice(0, 8)}...
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(order.orderDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="font-black text-primary">
+                          Rs.{order.totalAmount.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn(
+                            "px-3 py-1 rounded-full text-[10px] uppercase font-black",
+                            order.status === 'delivered' ? 'bg-green-500/20 text-green-500 border-green-500/20' : 
+                            order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500 border-blue-500/20' : 
+                            'bg-yellow-500/20 text-yellow-500 border-yellow-500/20'
+                          )}>
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-6">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20"><Settings className="w-4 h-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="glass min-w-[160px] rounded-xl">
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-2 cursor-pointer font-bold text-yellow-500"><Clock className="w-4 h-4" /> Mark Pending</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-2 cursor-pointer font-bold text-blue-500"><Truck className="w-4 h-4" /> Mark Shipped</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-2 cursor-pointer font-bold text-green-500"><CheckCircle2 className="w-4 h-4" /> Mark Delivered</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    ))
-                  ) : orders?.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
-                      <TableCell className="px-6 font-bold font-mono text-xs">
-                        #{order.id.slice(0, 8)}...
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(order.orderDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="font-black text-primary">
-                        Rs.{order.totalAmount.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn(
-                          "px-3 py-1 rounded-full text-[10px] uppercase font-black",
-                          order.status === 'delivered' ? 'bg-green-500/20 text-green-500 border-green-500/20' : 
-                          order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500 border-blue-500/20' : 
-                          'bg-yellow-500/20 text-yellow-500 border-yellow-500/20'
-                        )}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right px-6">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20"><Settings className="w-4 h-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="glass min-w-[160px] rounded-xl">
-                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-2 cursor-pointer font-bold text-yellow-500"><Clock className="w-4 h-4" /> Mark Pending</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-2 cursor-pointer font-bold text-blue-500"><Truck className="w-4 h-4" /> Mark Shipped</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-2 cursor-pointer font-bold text-green-500"><CheckCircle2 className="w-4 h-4" /> Mark Delivered</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {!ordersLoading && orders?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="py-20 text-center glass rounded-2xl">
-                        <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" />
-                        <p className="font-bold text-muted-foreground">No orders recorded in the vault.</p>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ))}
+                    {!ordersLoading && orders?.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-20 text-center glass rounded-2xl">
+                          <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+                          <p className="font-bold text-muted-foreground">No orders recorded in the vault.</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -64,16 +64,6 @@ service cloud.firestore {
     }
 
     /**
-     * Global access for admins to read across any order collections
-     */
-    match /{path=**}/orders/{orderId} {
-      allow read: if isAdmin();
-    }
-    match /{path=**}/order_items/{itemId} {
-      allow read: if isAdmin();
-    }
-
-    /**
      * @path /users/{userId}
      */
     match /users/{userId} {
@@ -111,6 +101,16 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isOwner(userId); 
       allow delete: if false;
+    }
+
+    /**
+     * Global access for admins to read across any order collections (Collection Group Support)
+     */
+    match /{path=**}/orders/{orderId} {
+      allow read: if isAdmin();
+    }
+    match /{path=**}/order_items/{itemId} {
+      allow read: if isAdmin();
     }
   }
 }
