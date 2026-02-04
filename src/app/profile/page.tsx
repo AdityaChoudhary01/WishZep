@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
 import { collection, orderBy, query } from 'firebase/firestore';
 import { Package, History, Settings, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -27,6 +32,23 @@ export default function ProfilePage() {
   }, [db, user]);
 
   const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Signed out",
+        description: "Successfully signed out of your account.",
+      });
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: error.message,
+      });
+    }
+  };
 
   if (isUserLoading) return <div className="p-20 text-center">Charging your profile...</div>;
 
@@ -54,7 +76,11 @@ export default function ProfilePage() {
           <Button variant="outline" className="rounded-xl glass gap-2">
             <Settings className="w-4 h-4" /> Edit Profile
           </Button>
-          <Button variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/10 gap-2">
+          <Button 
+            variant="ghost" 
+            onClick={handleSignOut}
+            className="rounded-xl text-destructive hover:bg-destructive/10 gap-2"
+          >
             <LogOut className="w-4 h-4" /> Sign Out
           </Button>
         </div>

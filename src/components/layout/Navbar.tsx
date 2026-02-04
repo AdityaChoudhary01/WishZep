@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,13 +6,18 @@ import { ShoppingBag, User, Search, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
   
+  const router = useRouter();
   const cartItems = useCartStore((state) => state.items);
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -21,6 +27,15 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   const navLinks = [
     { name: 'Shop All', href: '/products' },
@@ -59,14 +74,32 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Search className="w-5 h-5" />
-          </Button>
-          <Link href="/auth/login">
+          {isSearchOpen ? (
+            <form onSubmit={handleSearch} className="relative animate-in slide-in-from-right-4">
+              <Input
+                autoFocus
+                placeholder="Search aura..."
+                className="w-48 h-10 rounded-full glass pl-4 pr-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => !searchQuery && setIsSearchOpen(false)}
+              />
+              <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8">
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+          ) : (
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsSearchOpen(true)}>
+              <Search className="w-5 h-5" />
+            </Button>
+          )}
+          
+          <Link href="/profile">
             <Button variant="ghost" size="icon" className="rounded-full">
               <User className="w-5 h-5" />
             </Button>
           </Link>
+          
           <Link href="/cart" className="relative">
             <Button variant="default" size="icon" className="rounded-full shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5" />

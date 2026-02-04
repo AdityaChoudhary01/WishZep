@@ -17,62 +17,69 @@ import {
 import { useCartStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { toast } = useToast();
+  const db = useFirestore();
   const addItem = useCartStore((state) => state.addItem);
+  
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedColor, setSelectedColor] = useState('Purple');
+  const [selectedColor, setSelectedColor] = useState('Default');
 
-  // Simulated product fetching
-  const product = {
-    id: id as string,
-    name: 'Neo-Stomp Tech Sneakers',
-    price: 189,
-    description: 'Engineered for the urban explorer, the Neo-Stomp combines cutting-edge techwear aesthetics with unmatched comfort. Featuring a responsive foam core and a high-traction glass-reinforced outsole.',
-    images: [
-      'https://picsum.photos/seed/wishzep-p1/800/1000',
-      'https://picsum.photos/seed/wishzep-p1b/800/1000',
-      'https://picsum.photos/seed/wishzep-p1c/800/1000',
-    ],
-    rating: 4.9,
-    reviews: 142,
-    variants: {
-      sizes: ['S', 'M', 'L', 'XL'],
-      colors: [
-        { name: 'Purple', hex: '#BE29EC' },
-        { name: 'Blue', hex: '#29A6EC' },
-        { name: 'Black', hex: '#111111' },
-      ]
-    },
-    features: [
-      'Water-resistant mesh upper',
-      'Aura-Glow reflective accents',
-      'Advanced shock absorption',
-      'Recycled composite materials'
-    ]
-  };
+  const productRef = useMemoFirebase(() => {
+    if (!db || !id) return null;
+    return doc(db, 'products', id as string);
+  }, [db, id]);
 
-  const [mainImage, setMainImage] = useState(product.images[0]);
+  const { data: product, isLoading } = useDoc(productRef);
 
   const handleAddToCart = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.images[0],
-      category: 'Footwear',
-      description: product.description,
-      rating: product.rating
-    }, selectedSize, selectedColor);
+    if (!product) return;
+    
+    // Logic to handle quantity
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.imageUrl,
+        category: product.category,
+        description: product.description,
+        rating: 4.9 // Placeholder rating
+      }, selectedSize, selectedColor);
+    }
     
     toast({
       title: "Added to Bag!",
-      description: `${product.name} (${selectedSize}, ${selectedColor}) has been added.`,
+      description: `${quantity}x ${product.name} (${selectedSize}) has been added.`,
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <Skeleton className="aspect-[4/5] rounded-[2.5rem]" />
+        <div className="space-y-8">
+          <Skeleton className="h-12 w-3/4" />
+          <Skeleton className="h-6 w-1/4" />
+          <Skeleton className="h-32 w-full" />
+          <div className="flex gap-4">
+            <Skeleton className="h-16 w-1/3" />
+            <Skeleton className="h-16 w-2/3" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return <div className="p-20 text-center">Product not found.</div>;
+  }
 
   return (
     <div className="container mx-auto px-6 py-12">
@@ -81,27 +88,16 @@ export default function ProductDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        {/* Left: Images */}
+        {/* Left: Image */}
         <div className="space-y-6">
           <div className="relative aspect-[4/5] glass rounded-[2.5rem] overflow-hidden">
             <Image
-              src={mainImage}
+              src={product.imageUrl}
               alt={product.name}
               fill
               className="object-cover"
               priority
             />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {product.images.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setMainImage(img)}
-                className={`relative aspect-square rounded-2xl overflow-hidden glass transition-all ${mainImage === img ? 'ring-2 ring-primary ring-offset-4' : 'opacity-60 hover:opacity-100'}`}
-              >
-                <Image src={img} alt={`Thumb ${i}`} fill className="object-cover" />
-              </button>
-            ))}
           </div>
         </div>
 
@@ -109,11 +105,11 @@ export default function ProductDetailPage() {
         <div className="space-y-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold">New Arrival</Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold">In Stock</Badge>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-bold">{product.rating}</span>
-                <span className="text-xs text-muted-foreground">({product.reviews} reviews)</span>
+                <span className="text-sm font-bold">4.9</span>
+                <span className="text-xs text-muted-foreground">(142 reviews)</span>
               </div>
             </div>
             <h1 className="text-5xl font-black tracking-tight">{product.name}</h1>
@@ -124,32 +120,24 @@ export default function ProductDetailPage() {
             {product.description}
           </p>
 
+          {product.attributes && (
+             <div className="p-4 glass rounded-2xl">
+               <p className="text-sm font-bold uppercase tracking-widest mb-1 text-primary">Aura Attributes</p>
+               <p className="text-sm italic">"{product.attributes}"</p>
+             </div>
+          )}
+
           <Separator className="border-white/20" />
 
           {/* Variants */}
           <div className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-sm font-bold uppercase tracking-widest">Select Color</label>
-              <div className="flex gap-4">
-                {product.variants.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={() => setSelectedColor(color.name)}
-                    className={`w-10 h-10 rounded-full border-4 transition-all ${selectedColor === color.name ? 'border-primary scale-110 shadow-lg' : 'border-transparent'}`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
             <div className="space-y-3">
               <div className="flex justify-between">
                 <label className="text-sm font-bold uppercase tracking-widest">Select Size</label>
                 <button className="text-xs text-primary font-bold underline">Size Guide</button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {product.variants.sizes.map((size) => (
+                {['S', 'M', 'L', 'XL'].map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -170,9 +158,10 @@ export default function ProductDetailPage() {
             </div>
             <Button
               onClick={handleAddToCart}
+              disabled={product.inventory === 0}
               className="flex-1 h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3 shadow-2xl shadow-primary/20"
             >
-              <ShoppingBag className="w-6 h-6" /> Add to Bag
+              <ShoppingBag className="w-6 h-6" /> {product.inventory === 0 ? 'Out of Stock' : 'Add to Bag'}
             </Button>
             <Button variant="outline" className="h-16 w-16 rounded-2xl glass hover:text-red-500">
               <Heart className="w-6 h-6" />
@@ -200,21 +189,13 @@ export default function ProductDetailPage() {
             <AccordionItem value="features" className="border-white/20">
               <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">Features</AccordionTrigger>
               <AccordionContent>
-                <ul className="space-y-2 list-disc pl-4 text-muted-foreground">
-                  {product.features.map((f, i) => <li key={i}>{f}</li>)}
-                </ul>
+                <p className="text-muted-foreground">{product.description}</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="shipping" className="border-white/20">
               <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">Shipping & Returns</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 We offer worldwide express shipping. All products can be returned within 30 days of purchase in original condition.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="care" className="border-white/20">
-              <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">Care Instructions</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Wipe clean with a damp cloth. Avoid direct exposure to prolonged sunlight to preserve Aura-Glow finishes.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
