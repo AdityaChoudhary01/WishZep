@@ -347,9 +347,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background flex-col md:flex-row">
+    <div className="flex min-h-screen bg-white flex-col md:flex-row">
       {/* Desktop Sidebar */}
-      <aside className="w-64 glass border-r border-white/20 p-6 hidden md:block h-screen sticky top-0">
+      <aside className="w-64 bg-white border-r border-gray-100 p-6 hidden md:block h-screen sticky top-0 z-30">
         <div className="flex items-center gap-2 mb-10 px-2">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center rotate-12"><span className="text-white font-black text-2xl">W</span></div>
           <span className="text-xl font-bold wishzep-text tracking-tighter">ADMIN</span>
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Mobile Header */}
-      <header className="md:hidden glass border-b border-white/20 p-4 sticky top-0 z-40 flex items-center justify-between">
+      <header className="md:hidden bg-white border-b border-gray-100 p-4 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center rotate-6"><span className="text-white font-black text-lg">W</span></div>
           <span className="text-lg font-bold wishzep-text tracking-tighter">ADMIN</span>
@@ -367,7 +367,7 @@ export default function AdminDashboard() {
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-xl"><Menu className="w-6 h-6" /></Button>
           </SheetTrigger>
-          <SheetContent side="left" className="glass w-72 p-6 border-white/20">
+          <SheetContent side="left" className="bg-white w-72 p-6 border-none">
             <SheetHeader className="mb-8">
               <SheetTitle className="text-2xl font-black wishzep-text text-left">Admin Panel</SheetTitle>
             </SheetHeader>
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
         </Sheet>
       </header>
 
-      <main className="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden">
+      <main className="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden bg-background">
         {!isUserAdmin && !adminLoading && (
           <Alert variant="destructive" className="rounded-[2rem] border-destructive/20 bg-destructive/5">
             <AlertCircle className="h-5 w-5" />
@@ -397,11 +397,11 @@ export default function AdminDashboard() {
               </Button>
             </header>
 
-            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
               <div className="overflow-x-auto">
                 <Table className="min-w-[700px]">
-                  <TableHeader className="bg-white/30">
-                    <TableRow className="hover:bg-transparent">
+                  <TableHeader className="bg-gray-50/50">
+                    <TableRow className="hover:bg-transparent border-gray-100">
                       <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Product</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Category</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Stock</TableHead>
@@ -413,10 +413,10 @@ export default function AdminDashboard() {
                     {productsLoading ? [...Array(4)].map((_, i) => (
                       <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-10 w-40" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-10 w-10 rounded-full ml-auto" /></TableCell></TableRow>
                     )) : products?.map((p) => (
-                      <TableRow key={p.id} className="hover:bg-white/20 transition-colors border-white/10 h-20">
+                      <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors border-gray-50 h-20">
                         <TableCell className="font-bold px-6">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden relative border border-white/20">
+                            <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden relative border border-gray-100">
                               <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
                             </div>
                             <div className="flex flex-col">
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell><Badge variant="outline" className="glass px-3 py-1 text-[9px] font-black uppercase tracking-wider">{p.category}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className="bg-white px-3 py-1 text-[9px] font-black uppercase tracking-wider">{p.category}</Badge></TableCell>
                         <TableCell className="font-bold text-muted-foreground text-xs">{p.inventory} UNITS</TableCell>
                         <TableCell className="font-black text-primary text-sm">Rs.{p.discountPrice || p.price}</TableCell>
                         <TableCell className="text-right px-6">
@@ -447,7 +447,7 @@ export default function AdminDashboard() {
 
             <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
               <DialogContent className="max-w-4xl rounded-[2rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-2xl">
-                <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
+                <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8 flex justify-between items-center">
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-black text-gray-900">
                       {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
@@ -656,7 +656,7 @@ export default function AdminDashboard() {
 
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-1">
-                <div className="bg-white p-8 rounded-[2rem] space-y-6 border border-gray-100 shadow-xl">
+                <div className="bg-white p-8 rounded-[2rem] space-y-6 border border-gray-100 shadow-sm">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
                     <ListPlus className="w-6 h-6" />
                   </div>
@@ -675,10 +675,10 @@ export default function AdminDashboard() {
               </div>
 
               <div className="md:col-span-2">
-                <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-xl">
+                <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
                   <Table>
                     <TableHeader className="bg-gray-50">
-                      <TableRow>
+                      <TableRow className="border-gray-100">
                         <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Name</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest">ID</TableHead>
                         <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Action</TableHead>
@@ -712,11 +712,11 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground text-sm font-medium">View and process customer orders.</p>
             </header>
 
-            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-2xl">
+            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
               <div className="overflow-x-auto">
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-gray-50">
-                    <TableRow className="hover:bg-transparent">
+                    <TableRow className="hover:bg-transparent border-gray-100">
                       <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order ID</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
