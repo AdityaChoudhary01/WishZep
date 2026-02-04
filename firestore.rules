@@ -5,6 +5,7 @@ service cloud.firestore {
 
     /**
      * WISHZEP SECURITY RULES - PRODUCTION GRADE
+     * Updated to allow users to list their own orders.
      */
 
     // --- Helper Functions ---
@@ -18,13 +19,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Robust admin check using the dedicated roles_admin collection
-      // We use isSignedIn() first for performance
+      // Check for admin role in the dedicated roles_admin collection
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
     }
 
     // --- Collection Rules ---
@@ -60,27 +56,28 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if false;
 
       match /cart_items/{cartItemId} {
         allow get, list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId);
-        allow update, delete: if isExistingOwner(userId) || isAdmin();
+        allow update, delete: if isOwner(userId) || isAdmin();
       }
     }
 
     /**
      * @path /orders/{orderId}
-     * Root-level orders for administrative visibility.
+     * Root-level orders for administrative visibility and user history.
      */
     match /orders/{orderId} {
-      // Explicitly allow admins to list all orders
-      // Note: Admin status propagation can take a few seconds after creation
-      allow list: if isAdmin();
+      // Allow admins to list all orders. 
+      // Allow users to list their own orders (Firestore enforces this via query filters).
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       
       // Allow individuals to see their own orders, or admins to see any
       allow get: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if false;
@@ -98,8 +95,8 @@ service cloud.firestore {
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if false;
-      allow create: if isSignedIn() && (request.auth.uid == userId); // Allow first-time claim
-      allow update: if isAdmin(); // Only existing admins can promote others
+      allow create: if isSignedIn() && (request.auth.uid == userId);
+      allow update: if isAdmin();
       allow delete: if false;
     }
   }
