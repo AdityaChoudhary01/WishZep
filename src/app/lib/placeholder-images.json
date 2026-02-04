@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Abstract mesh gradient background",
+      "imageUrl": "https://picsum.photos/seed/wishzep-hero/1920/1080",
+      "imageHint": "abstract gradient"
+    },
+    {
+      "id": "product-1",
+      "description": "Cyberpunk themed sneakers",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p1/800/800",
+      "imageHint": "sneakers tech"
+    },
+    {
+      "id": "product-2",
+      "description": "Premium wireless headphones",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p2/800/800",
+      "imageHint": "headphones gadget"
+    },
+    {
+      "id": "product-3",
+      "description": "Minimalist smart watch",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p3/800/800",
+      "imageHint": "smartwatch apple"
+    },
+    {
+      "id": "product-4",
+      "description": "Designer backpack",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p4/800/800",
+      "imageHint": "backpack bag"
+    },
+    {
+      "id": "product-5",
+      "description": "Urban tech jacket",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p5/800/800",
+      "imageHint": "jacket techwear"
+    },
+    {
+      "id": "product-6",
+      "description": "Gamer keyboard",
+      "imageUrl": "https://picsum.photos/seed/wishzep-p6/800/800",
+      "imageHint": "keyboard rgb"
+    }
+  ]
+}
