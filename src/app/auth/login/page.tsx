@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Chrome, Send } from 'lucide-react';
+import { Mail, Chrome, Send, Loader2 } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithPopup, GoogleAuthProvider, sendSignInLinkToEmail } from 'firebase/auth';
+import { 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  sendSignInLinkToEmail, 
+  isSignInWithEmailLink, 
+  signInWithEmailLink 
+} from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -13,6 +19,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCompletingSignIn, setIsCompletingSignIn] = useState(false);
   const [isLinkSent, setIsLinkSent] = useState(false);
   const auth = useAuth();
   const db = useFirestore();
@@ -32,6 +39,43 @@ export default function LoginPage() {
       createdAt: serverTimestamp(), 
     }, { merge: true });
   };
+
+  // Handle Magic Link completion
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let emailForSignIn = window.localStorage.getItem('emailForSignIn');
+      
+      if (!emailForSignIn) {
+        // If email is missing from storage (e.g. different device), prompt the user
+        emailForSignIn = window.prompt('Please provide your email for confirmation');
+      }
+
+      if (emailForSignIn) {
+        setIsCompletingSignIn(true);
+        signInWithEmailLink(auth, emailForSignIn, window.location.href)
+          .then(async (result) => {
+            window.localStorage.removeItem('emailForSignIn');
+            await syncUserProfile(result.user);
+            toast({
+              title: "Welcome Back! ✨",
+              description: "Successfully signed in with your magic link.",
+            });
+            router.push('/profile');
+          })
+          .catch((error) => {
+            console.error(error);
+            toast({
+              variant: "destructive",
+              title: "Sign in failed",
+              description: "The link may have expired or was already used.",
+            });
+          })
+          .finally(() => {
+            setIsCompletingSignIn(false);
+          });
+      }
+    }
+  }, [auth, router, toast]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -59,6 +103,7 @@ export default function LoginPage() {
     
     setIsLoading(true);
     const actionCodeSettings = {
+      // Must match the URL in Firebase Console's authorized domains
       url: window.location.origin + '/auth/login',
       handleCodeInApp: true,
     };
@@ -81,6 +126,18 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isCompletingSignIn) {
+    return (
+      <div className="container mx-auto flex items-center justify-center min-h-[80vh] px-6">
+        <div className="text-center space-y-6">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <h2 className="text-2xl font-black">Validating your <span className="wishzep-text">Aura...</span></h2>
+          <p className="text-muted-foreground">Completing your secure sign-in, please wait.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[80vh] px-6">
@@ -109,13 +166,14 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              <Button 
+              <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-14 rounded-2xl gap-3 bg-primary hover:bg-primary/90 text-lg font-bold shadow-lg shadow-primary/20"
+                className="w-full h-14 rounded-2xl flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white text-lg font-bold shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
               >
-                <Send className="w-5 h-5" /> {isLoading ? "Sending..." : "Send Magic Link"}
-              </Button>
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />} 
+                {isLoading ? "Sending..." : "Send Magic Link"}
+              </button>
             </form>
           ) : (
             <div className="p-6 bg-primary/10 rounded-2xl text-center space-y-4 animate-in fade-in zoom-in">
