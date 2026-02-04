@@ -134,6 +134,7 @@ export default function AdminDashboard() {
 
   // Orders Query
   const ordersQuery = useMemoFirebase(() => {
+    // Only query if user is a confirmed admin AND on the orders tab
     if (!db || !isUserAdmin || activeTab !== 'orders') return null;
     return query(collectionGroup(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isUserAdmin, activeTab]);
