@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Filter, ChevronDown, Star, ShoppingBag, LayoutGrid, List } from 'lucide-react';
+import { ChevronDown, Star, ShoppingBag, LayoutGrid, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,19 +16,20 @@ import {
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const db = useFirestore();
   const { toast } = useToast();
   const addItem = useCartStore((state) => state.addItem);
 
   const searchParam = searchParams.get('search')?.toLowerCase() || '';
-  const collectionParam = searchParams.get('collection') || '';
+  const collectionParam = searchParams.get('collection')?.toLowerCase() || '';
   
   const [activeCategory, setActiveCategory] = useState('All');
   const categories = ['All', 'Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
@@ -44,19 +45,26 @@ export default function ProductsPage() {
     if (!products) return [];
     
     return products.filter((p) => {
-      const matchesSearch = 
-        p.name.toLowerCase().includes(searchParam) || 
-        p.category.toLowerCase().includes(searchParam) ||
-        p.description?.toLowerCase().includes(searchParam);
+      // 1. Partial Search Match (Name, Category, Description, Attributes)
+      const matchesSearch = !searchParam || [
+        p.name,
+        p.category,
+        p.description,
+        p.attributes
+      ].some(field => field?.toLowerCase().includes(searchParam));
       
+      // 2. Category Filter (Buttons)
       const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+
+      // 3. Collection Filter (from URL query)
+      // We map collectionParam to category or name for broad matching
+      const matchesCollection = !collectionParam || 
+        p.category?.toLowerCase() === collectionParam ||
+        p.name?.toLowerCase().includes(collectionParam);
       
-      // Collection filter logic could be added here if backend.json supported it better, 
-      // but for now we filter by text search or category.
-      
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && matchesCollection;
     });
-  }, [products, searchParam, activeCategory]);
+  }, [products, searchParam, activeCategory, collectionParam]);
 
   const handleQuickAdd = (e: React.MouseEvent, product: any) => {
     e.preventDefault();
@@ -73,6 +81,11 @@ export default function ProductsPage() {
       title: "Added to Bag!",
       description: `${product.name} has been added.`,
     });
+  };
+
+  const clearFilters = () => {
+    router.push('/products');
+    setActiveCategory('All');
   };
 
   return (
@@ -120,6 +133,21 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Active Filter Indicators */}
+      {(searchParam || collectionParam || activeCategory !== 'All') && (
+        <div className="flex items-center gap-4 animate-fade-in">
+          <span className="text-sm font-bold text-muted-foreground">RESULTS FOR:</span>
+          <div className="flex flex-wrap gap-2">
+            {searchParam && <Badge className="bg-primary/10 text-primary px-3 py-1">" {searchParam} "</Badge>}
+            {collectionParam && <Badge className="bg-secondary/10 text-secondary px-3 py-1">Collection: {collectionParam}</Badge>}
+            {activeCategory !== 'All' && <Badge className="bg-accent/10 text-accent px-3 py-1">{activeCategory}</Badge>}
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs gap-1 hover:text-destructive">
+              <X className="w-3 h-3" /> Clear All
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -181,9 +209,10 @@ export default function ProductsPage() {
       )}
 
       {!isLoading && filteredProducts.length === 0 && (
-        <div className="py-20 text-center space-y-4">
-          <p className="text-2xl font-bold">No products found for "{searchParam || activeCategory}".</p>
-          <Button variant="default" onClick={() => setActiveCategory('All')}>Browse All Products</Button>
+        <div className="py-20 text-center space-y-4 animate-fade-in">
+          <p className="text-2xl font-bold">No results found for your search.</p>
+          <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+          <Button variant="default" onClick={clearFilters}>Browse All Products</Button>
         </div>
       )}
     </div>
