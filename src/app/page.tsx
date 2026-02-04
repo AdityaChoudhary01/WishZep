@@ -12,13 +12,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Home() {
   const db = useFirestore();
 
-  // Optimized query to fetch the 3 most recent products
+  // Optimized query to fetch the 12 most recent products
   const featuredQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(
       collection(db, 'products'), 
       orderBy('createdAt', 'desc'),
-      limit(3)
+      limit(12)
     );
   }, [db]);
 
@@ -40,7 +40,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 pb-32">
+        <div className="container mx-auto px-6 relative z-10 pb-40">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
             <div className="flex justify-center">
               <Badge variant="outline" className="px-6 py-2 border-primary text-primary glass rounded-full text-sm font-bold tracking-widest uppercase">
@@ -105,8 +105,8 @@ export default function Home() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[...Array(3)].map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="aspect-square rounded-[3rem]" />
                 <Skeleton className="h-8 w-3/4 rounded-full" />
@@ -115,7 +115,7 @@ export default function Home() {
             ))}
           </div>
         ) : featuredProducts && featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {featuredProducts.map((p) => (
               <Link href={`/products/${p.id}`} key={p.id} className="group">
                 <div className="glass rounded-[3rem] p-6 space-y-6 transition-all hover:-translate-y-4 hover:shadow-2xl hover:shadow-primary/20">
@@ -136,7 +136,7 @@ export default function Home() {
                   </div>
                   <div className="flex justify-between items-start pt-2">
                     <div className="space-y-2">
-                      <h3 className="font-black text-2xl group-hover:text-primary transition-colors">
+                      <h3 className="font-black text-2xl group-hover:text-primary transition-colors truncate">
                         {p.name}
                       </h3>
                       <div className="flex items-center gap-1">
@@ -146,7 +146,7 @@ export default function Home() {
                         <span className="text-xs font-bold text-muted-foreground ml-2">Verified Drop</span>
                       </div>
                     </div>
-                    <span className="text-3xl font-black text-primary">${p.price}</span>
+                    <span className="text-3xl font-black text-primary ml-4">${p.price}</span>
                   </div>
                 </div>
               </Link>
@@ -164,32 +164,6 @@ export default function Home() {
             </Link>
           </div>
         )}
-      </section>
-
-      {/* Mesh Promo Section */}
-      <section className="container mx-auto px-6">
-        <div className="relative rounded-[4rem] overflow-hidden bg-primary h-[500px] flex items-center px-12 md:px-24 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary mix-blend-multiply opacity-60" />
-          <Image
-            src="https://picsum.photos/seed/wishzep-promo/1600/800"
-            alt="Promo"
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-1000"
-            data-ai-hint="lifestyle accessories"
-          />
-          <div className="relative z-10 space-y-8 max-w-2xl">
-            <Badge className="bg-white/20 text-white border-white/40 px-6 py-1 rounded-full text-xs font-bold uppercase tracking-[0.3em]">Season Finale</Badge>
-            <h2 className="text-6xl md:text-8xl font-black text-white leading-none tracking-tighter">
-              UP TO 50% OFF <br />
-              <span className="text-secondary drop-shadow-lg">WISHLIST GEMS</span>
-            </h2>
-            <Link href="/products">
-              <Button size="lg" className="h-16 px-10 rounded-2xl bg-white text-primary hover:bg-white/90 text-xl font-black shadow-2xl">
-                Claim Your WishZep Credit
-              </Button>
-            </Link>
-          </div>
-        </div>
       </section>
     </div>
   );
