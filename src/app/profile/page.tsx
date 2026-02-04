@@ -70,7 +70,7 @@ export default function ProfilePage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // We must strictly match the rules: filter by userId to allow list permission
+    // Querying for orders belonging to this specific user
     return query(
       collection(db, 'orders'), 
       where('userId', '==', user.uid),
@@ -78,7 +78,7 @@ export default function ProfilePage() {
     );
   }, [db, user]);
 
-  // Use silentPermissionError: true to prevent crashing if the backend is syncing
+  // Use silentPermissionError: true to avoid a full-screen crash during backend sync
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
 
   const handleSignOut = async () => {
@@ -165,7 +165,7 @@ export default function ProfilePage() {
             </div>
           )}
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary">Member Status: Elite</Badge>
+            <Badge variant="secondary" className="bg-primary/10 text-primary">Status: Verified Member</Badge>
           </div>
         </div>
         
@@ -178,7 +178,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="orders" className="w-full">
         <TabsList className="glass bg-white/20 p-1 rounded-2xl h-14 mb-8">
           <TabsTrigger value="orders" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
-            <History className="w-4 h-4 mr-2" /> My Order Vault
+            <History className="w-4 h-4 mr-2" /> My Orders
           </TabsTrigger>
         </TabsList>
 
@@ -188,16 +188,16 @@ export default function ProfilePage() {
           ) : ordersError ? (
             <div className="glass rounded-[2rem] p-12 text-center space-y-4">
               <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-              <h3 className="text-xl font-bold">Connection Syncing</h3>
-              <p className="text-muted-foreground text-sm">We're finalizing your access. Please try refreshing in a moment.</p>
+              <h3 className="text-xl font-bold">Orders Connection</h3>
+              <p className="text-muted-foreground text-sm">We're retrieving your history. Please try refreshing in a moment.</p>
               <Button variant="outline" onClick={() => window.location.reload()}>Retry Connection</Button>
             </div>
           ) : !orders || orders.length === 0 ? (
             <div className="glass rounded-[2rem] p-20 text-center space-y-6">
               <Package className="w-16 h-16 text-muted-foreground mx-auto" />
-              <h3 className="text-2xl font-black">Your vault is empty.</h3>
-              <p className="text-muted-foreground">Initialize your collection by exploring latest drops.</p>
-              <Link href="/products"><Button className="rounded-full bg-primary h-12 px-8">Shop Catalogue</Button></Link>
+              <h3 className="text-2xl font-black">No orders yet.</h3>
+              <p className="text-muted-foreground">Start your collection by exploring our latest drops.</p>
+              <Link href="/products"><Button className="rounded-full bg-primary h-12 px-8">Shop Now</Button></Link>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -246,17 +246,17 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Shipping Objective</h4>
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Shipping Address</h4>
                         <div className="glass p-6 rounded-2xl border-white/20">
                           <p className="text-sm font-bold leading-relaxed">{order.shippingAddress}</p>
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2"><Truck className="w-3.5 h-3.5" /> Delivery Method</h4>
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2"><Truck className="w-3.5 h-3.5" /> Logistics</h4>
                         <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 flex items-center justify-between">
-                          <span className="font-bold">Global Priority Express</span>
-                          <Badge className="bg-green-500/20 text-green-600 border-none">Active Transit</Badge>
+                          <span className="font-bold">Priority Express Shipping</span>
+                          <Badge className="bg-green-500/20 text-green-600 border-none">Active</Badge>
                         </div>
                       </div>
 
