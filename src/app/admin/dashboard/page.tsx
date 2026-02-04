@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from 'react';
-import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database } from 'lucide-react';
+import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,14 +15,23 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
   const db = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
+
+  const adminRoleRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'roles_admin', user.uid);
+  }, [db, user]);
+
+  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
+  const isUserAdmin = !!adminRole;
 
   const products = [
     { id: '1', name: 'Neo-Stomp Tech Sneakers', stock: 45, price: 189, category: 'Footwear', status: 'Active' },
@@ -31,8 +39,37 @@ export default function AdminDashboard() {
     { id: '3', name: 'Zenith Glass Smartwatch', stock: 0, price: 329, category: 'Tech', status: 'Out of Stock' },
   ];
 
+  const claimAdminRole = async () => {
+    if (!db || !user) return;
+    try {
+      await setDoc(doc(db, 'roles_admin', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        assignedAt: serverTimestamp()
+      });
+      toast({
+        title: "Admin Access Granted! 🛡️",
+        description: "You now have permissions to manage products.",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: "Could not claim admin role. Check firestore rules.",
+      });
+    }
+  };
+
   const seedSampleData = async () => {
     if (!db) return;
+    if (!isUserAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized",
+        description: "You must enable Admin Mode first.",
+      });
+      return;
+    }
     
     const sampleProducts = [
       {
@@ -117,6 +154,14 @@ export default function AdminDashboard() {
             <Users className="w-5 h-5" /> Customers
           </Button>
           <div className="pt-10">
+            {!isUserAdmin && (
+              <Button 
+                onClick={claimAdminRole}
+                className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white mb-4"
+              >
+                <ShieldCheck className="w-5 h-5" /> Claim Admin Status
+              </Button>
+            )}
             <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl text-muted-foreground">
               <Settings className="w-5 h-5" /> Settings
             </Button>
@@ -132,6 +177,11 @@ export default function AdminDashboard() {
             <p className="text-muted-foreground text-sm">Organize and update your inventory drops.</p>
           </div>
           <div className="flex gap-4">
+            {!isUserAdmin && (
+               <Button onClick={claimAdminRole} className="rounded-2xl h-12 px-6 gap-2 bg-orange-500">
+                 <ShieldCheck className="w-5 h-5" /> Enable Admin Mode
+               </Button>
+            )}
             <Button variant="outline" className="rounded-2xl h-12 px-6 gap-2 glass" onClick={seedSampleData}>
                <Database className="w-5 h-5" /> Seed Samples
             </Button>
@@ -146,7 +196,7 @@ export default function AdminDashboard() {
           {[
             { label: 'Total Sales', value: '$45,290', trend: '+12% from last month', icon: BarChart3, color: 'text-primary' },
             { label: 'Active Products', value: '142', trend: '3 new items this week', icon: Package, color: 'text-secondary' },
-            { label: 'Satisfaction', value: '4.9/5', trend: 'Based on 500+ reviews', icon: Star, color: 'text-yellow-500' },
+            { label: 'Admin Access', value: isUserAdmin ? 'Active' : 'Locked', trend: isUserAdmin ? 'Full permissions' : 'ReadOnly', icon: ShieldCheck, color: isUserAdmin ? 'text-green-500' : 'text-red-500' },
           ].map((stat, i) => (
             <div key={i} className="glass p-6 rounded-3xl space-y-4 shadow-sm border border-white/40">
               <div className="flex justify-between">
@@ -214,19 +264,5 @@ export default function AdminDashboard() {
         </div>
       </main>
     </div>
-  );
-}
-
-function Star({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="currentColor" 
-      stroke="none"
-    >
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-    </svg>
   );
 }
