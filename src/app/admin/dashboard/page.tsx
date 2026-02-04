@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -15,9 +16,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, addDoc, doc, setDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -30,14 +32,16 @@ export default function AdminDashboard() {
     return doc(db, 'roles_admin', user.uid);
   }, [db, user]);
 
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
+  const { data: adminRole } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole;
 
-  const products = [
-    { id: '1', name: 'Neo-Stomp Tech Sneakers', stock: 45, price: 189, category: 'Footwear', status: 'Active' },
-    { id: '2', name: 'SonicWave Elite Pro', stock: 12, price: 249, category: 'Audio', status: 'Low Stock' },
-    { id: '3', name: 'Zenith Glass Smartwatch', stock: 0, price: 329, category: 'Tech', status: 'Out of Stock' },
-  ];
+  // Real data from Firestore
+  const productsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'products'), orderBy('name', 'asc'));
+  }, [db]);
+
+  const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
   const claimAdminRole = async () => {
     if (!db || !user) return;
@@ -173,8 +177,8 @@ export default function AdminDashboard() {
       <main className="flex-1 p-8 space-y-8">
         <header className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-black">Manage <span className="aura-text">Products</span></h1>
-            <p className="text-muted-foreground text-sm">Organize and update your inventory drops.</p>
+            <h1 className="text-3xl font-black">Manage <span className="aura-text">Inventory</span></h1>
+            <p className="text-muted-foreground text-sm">Real-time control over your product catalogue.</p>
           </div>
           <div className="flex gap-4">
             {!isUserAdmin && (
@@ -194,9 +198,9 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { label: 'Total Sales', value: '$45,290', trend: '+12% from last month', icon: BarChart3, color: 'text-primary' },
-            { label: 'Active Products', value: '142', trend: '3 new items this week', icon: Package, color: 'text-secondary' },
-            { label: 'Admin Access', value: isUserAdmin ? 'Active' : 'Locked', trend: isUserAdmin ? 'Full permissions' : 'ReadOnly', icon: ShieldCheck, color: isUserAdmin ? 'text-green-500' : 'text-red-500' },
+            { label: 'Total Revenue', value: '$45,290', trend: '+12% from last month', icon: BarChart3, color: 'text-primary' },
+            { label: 'Active SKU', value: products?.length || 0, trend: 'All items live', icon: Package, color: 'text-secondary' },
+            { label: 'Admin Status', value: isUserAdmin ? 'Authorized' : 'Locked', trend: isUserAdmin ? 'Full Access' : 'ReadOnly', icon: ShieldCheck, color: isUserAdmin ? 'text-green-500' : 'text-red-500' },
           ].map((stat, i) => (
             <div key={i} className="glass p-6 rounded-3xl space-y-4 shadow-sm border border-white/40">
               <div className="flex justify-between">
@@ -214,7 +218,7 @@ export default function AdminDashboard() {
           <div className="p-6 border-b border-white/20 flex justify-between items-center">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search inventory..." className="glass pl-12 rounded-xl bg-white/20 border-white/40 h-11" />
+              <Input placeholder="Search database..." className="glass pl-12 rounded-xl bg-white/20 border-white/40 h-11" />
             </div>
           </div>
           <Table>
@@ -224,33 +228,33 @@ export default function AdminDashboard() {
                 <TableHead className="font-bold">Category</TableHead>
                 <TableHead className="font-bold">Stock</TableHead>
                 <TableHead className="font-bold">Price</TableHead>
-                <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="text-right font-bold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((p) => (
+              {productsLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-10 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-10 w-10 rounded-full ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : products?.map((p) => (
                 <TableRow key={p.id} className="hover:bg-white/20 border-white/10 transition-colors">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden relative">
-                        <Image src={`https://picsum.photos/seed/${p.id}/100/100`} alt={p.name} fill className="object-cover" />
+                        <Image src={p.imageUrl || `https://picsum.photos/seed/${p.id}/100/100`} alt={p.name} fill className="object-cover" />
                       </div>
                       {p.name}
                     </div>
                   </TableCell>
-                  <TableCell>{p.category}</TableCell>
-                  <TableCell>{p.stock} units</TableCell>
+                  <TableCell><Badge variant="outline">{p.category}</Badge></TableCell>
+                  <TableCell>{p.inventory} units</TableCell>
                   <TableCell className="font-bold">${p.price}</TableCell>
-                  <TableCell>
-                    <Badge className={cn(
-                      "font-bold",
-                      p.status === 'Active' ? "bg-green-100 text-green-700" :
-                      p.status === 'Low Stock' ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
-                    )}>
-                      {p.status}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/40"><MoreHorizontal /></Button>
                   </TableCell>
@@ -258,9 +262,13 @@ export default function AdminDashboard() {
               ))}
             </TableBody>
           </Table>
-          <div className="p-4 text-center border-t border-white/10">
-            <Button variant="link" className="text-xs text-muted-foreground hover:text-primary">View Full Inventory</Button>
-          </div>
+          {!productsLoading && products?.length === 0 && (
+            <div className="p-20 text-center space-y-4">
+              <Database className="w-12 h-12 text-muted-foreground mx-auto" />
+              <p className="font-bold">No products in database.</p>
+              <Button onClick={seedSampleData}>Seed Initial Catalog</Button>
+            </div>
+          )}
         </div>
       </main>
     </div>
