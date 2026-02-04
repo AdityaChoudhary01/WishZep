@@ -446,10 +446,10 @@ export default function AdminDashboard() {
             </div>
 
             <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-              <DialogContent className="glass max-w-4xl rounded-[2rem] border-white/30 max-h-[90vh] overflow-y-auto p-0 bg-white">
-                <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/20 p-8">
+              <DialogContent className="max-w-4xl rounded-[2rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-2xl">
+                <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
                   <DialogHeader>
-                    <DialogTitle className="text-3xl font-black wishzep-text">
+                    <DialogTitle className="text-3xl font-black text-gray-900">
                       {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
                     </DialogTitle>
                   </DialogHeader>
@@ -464,16 +464,16 @@ export default function AdminDashboard() {
                           placeholder="Product Name"
                           value={productFormData.name}
                           onChange={(e) => setProductFormData({...productFormData, name: e.target.value})}
-                          className="h-14 rounded-2xl bg-muted/50 text-lg font-bold border-muted focus:bg-white transition-all" 
+                          className="h-14 rounded-2xl bg-gray-50 text-lg font-bold border-gray-200 focus:bg-white focus:border-primary transition-all text-gray-900" 
                         />
                         <Select 
                           value={productFormData.category} 
                           onValueChange={(val) => setProductFormData({...productFormData, category: val})}
                         >
-                          <SelectTrigger className="h-14 rounded-2xl bg-muted/50 font-bold border-muted">
+                          <SelectTrigger className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200 text-gray-900">
                             <SelectValue placeholder="Category" />
                           </SelectTrigger>
-                          <SelectContent className="glass border-white/20">
+                          <SelectContent className="bg-white border-gray-200">
                             {categories?.map(cat => (
                               <SelectItem key={cat.id} value={cat.name} className="font-bold">{cat.name}</SelectItem>
                             ))}
@@ -483,12 +483,12 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Original Price</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Original Price</Label>
                           <Input 
                             type="number"
                             value={productFormData.price}
                             onChange={(e) => setProductFormData({...productFormData, price: e.target.value})}
-                            className="h-12 rounded-xl bg-muted/50 border-muted" 
+                            className="h-12 rounded-xl bg-gray-50 border-gray-200 text-gray-900 font-bold" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -497,18 +497,18 @@ export default function AdminDashboard() {
                             type="number"
                             value={productFormData.discountPrice}
                             onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})}
-                            className="h-12 rounded-xl bg-muted/50 border-muted" 
+                            className="h-12 rounded-xl bg-gray-50 border-gray-200 text-gray-900 font-bold" 
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Inventory Stock</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Inventory Stock</Label>
                         <Input 
                           type="number"
                           value={productFormData.inventory}
                           onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})}
-                          className="h-12 rounded-xl bg-muted/50 border-muted" 
+                          className="h-12 rounded-xl bg-gray-50 border-gray-200 text-gray-900 font-bold" 
                         />
                       </div>
 
@@ -519,7 +519,7 @@ export default function AdminDashboard() {
                             placeholder="S, M, L, XL"
                             value={productFormData.sizes}
                             onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})}
-                            className="h-12 rounded-xl bg-muted/50 border-muted" 
+                            className="h-12 rounded-xl bg-gray-50 border-gray-200 text-gray-900 font-bold" 
                           />
                         </div>
                       )}
@@ -529,13 +529,13 @@ export default function AdminDashboard() {
                       <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Main Image</Label>
                         <div 
-                          className="relative aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-muted hover:border-primary/50 transition-all hover:bg-muted/30" 
+                          className="relative aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary/50 transition-all bg-gray-50 hover:bg-gray-100" 
                           onClick={() => fileInputRef.current?.click()}
                         >
                           {productFormData.imageUrl ? (
                             <Image src={productFormData.imageUrl} alt="Preview" fill className="object-cover" />
                           ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+                            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                               {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10 transition-transform group-hover:scale-110" />}
                               <span className="text-[10px] font-black uppercase tracking-widest">Upload Main Image</span>
                             </div>
@@ -545,10 +545,10 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">More Images</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">More Images</Label>
                         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                           {productFormData.images.map((img, idx) => (
-                            <div key={idx} className="relative w-16 h-16 rounded-xl glass shrink-0 overflow-hidden border border-white/30">
+                            <div key={idx} className="relative w-16 h-16 rounded-xl bg-gray-50 shrink-0 overflow-hidden border border-gray-200">
                               <Image src={img} alt={`Gallery ${idx}`} fill className="object-cover" />
                               <button 
                                 onClick={() => setProductFormData(p => ({...p, images: p.images.filter((_, i) => i !== idx)}))}
@@ -558,9 +558,9 @@ export default function AdminDashboard() {
                           ))}
                           <button 
                             onClick={() => secondaryFileInputRef.current?.click()}
-                            className="w-16 h-16 rounded-xl bg-muted/50 border-2 border-dashed border-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                            className="w-16 h-16 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors"
                           >
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-5 h-5 text-gray-400" />
                           </button>
                           <input type="file" ref={secondaryFileInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'secondary')} />
                         </div>
@@ -568,7 +568,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator className="bg-gray-100" />
 
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
@@ -578,15 +578,15 @@ export default function AdminDashboard() {
                           value={productFormData.description}
                           placeholder="Describe the product features and details..."
                           onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
-                          className="rounded-2xl bg-muted/50 min-h-[160px] p-6 leading-relaxed border-muted focus:bg-white transition-all" 
+                          className="rounded-2xl bg-gray-50 min-h-[160px] p-6 leading-relaxed border-gray-200 focus:bg-white focus:border-primary transition-all text-gray-900" 
                         />
                       </div>
                       
                       {isApparelCategory && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Size Chart</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Size Chart</Label>
                           <div 
-                            className="h-24 rounded-2xl border-2 border-dashed border-muted flex items-center justify-center cursor-pointer hover:bg-muted/30 transition-all gap-3"
+                            className="h-24 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-all gap-3 bg-gray-50"
                             onClick={() => chartFileInputRef.current?.click()}
                           >
                             {productFormData.sizeChartUrl ? (
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
                                 <CheckCircle2 className="w-5 h-5" /> Chart Uploaded
                               </div>
                             ) : (
-                              <div className="flex items-center gap-3 text-muted-foreground">
+                              <div className="flex items-center gap-3 text-gray-400">
                                 <Layers className="w-5 h-5" /> Upload Size Chart
                               </div>
                             )}
@@ -618,13 +618,13 @@ export default function AdminDashboard() {
                               placeholder="Key" 
                               value={spec.key} 
                               onChange={(e) => handleSpecChange(idx, 'key', e.target.value)}
-                              className="h-10 rounded-xl bg-muted/50 text-xs font-bold border-muted"
+                              className="h-10 rounded-xl bg-gray-50 text-xs font-bold border-gray-200 text-gray-900"
                             />
                             <Input 
                               placeholder="Value" 
                               value={spec.value} 
                               onChange={(e) => handleSpecChange(idx, 'value', e.target.value)}
-                              className="h-10 rounded-xl bg-muted/50 text-xs border-muted"
+                              className="h-10 rounded-xl bg-gray-50 text-xs border-gray-200 text-gray-900"
                             />
                             <Button variant="ghost" size="icon" onClick={() => handleRemoveSpec(idx)} className="text-destructive h-10 w-10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 className="w-4 h-4" />
@@ -635,8 +635,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
-                    <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1">CANCEL</Button>
+                  <div className="pt-8 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
+                    <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200 hover:bg-gray-50">CANCEL</Button>
                     <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-xl">
                       <Save className="w-6 h-6" /> {editingProduct ? 'SAVE CHANGES' : 'ADD PRODUCT'}
                     </Button>
@@ -656,18 +656,18 @@ export default function AdminDashboard() {
 
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-1">
-                <div className="glass p-8 rounded-[2rem] space-y-6 border border-white/20 shadow-xl">
+                <div className="bg-white p-8 rounded-[2rem] space-y-6 border border-gray-100 shadow-xl">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
                     <ListPlus className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl font-black">Add Category</h3>
+                  <h3 className="text-2xl font-black text-gray-900">Add Category</h3>
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Category Name</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Category Name</Label>
                     <Input 
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
                       placeholder="e.g. Footwear" 
-                      className="h-14 rounded-2xl bg-muted/50 font-bold border-muted focus:bg-white transition-all"
+                      className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200 focus:bg-white transition-all text-gray-900"
                     />
                   </div>
                   <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl">ADD CATEGORY</Button>
@@ -675,9 +675,9 @@ export default function AdminDashboard() {
               </div>
 
               <div className="md:col-span-2">
-                <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-xl">
+                <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-xl">
                   <Table>
-                    <TableHeader className="bg-white/30">
+                    <TableHeader className="bg-gray-50">
                       <TableRow>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Name</TableHead>
                         <TableHead className="font-black uppercase text-[10px] tracking-widest">ID</TableHead>
@@ -687,9 +687,9 @@ export default function AdminDashboard() {
                     <TableBody>
                       {categoriesLoading ? [...Array(3)].map((_, i) => <TableRow key={i}><TableCell className="px-8"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-32" /></TableCell><TableCell className="text-right px-8"><Skeleton className="h-8 w-8 ml-auto" /></TableCell></TableRow>) :
                       categories?.map((cat) => (
-                        <TableRow key={cat.id} className="hover:bg-white/10 transition-colors h-20">
-                          <TableCell className="px-8 font-black text-lg">{cat.name}</TableCell>
-                          <TableCell className="text-[10px] font-mono font-bold text-muted-foreground">{cat.id}</TableCell>
+                        <TableRow key={cat.id} className="hover:bg-gray-50 transition-colors h-20 border-gray-100">
+                          <TableCell className="px-8 font-black text-lg text-gray-900">{cat.name}</TableCell>
+                          <TableCell className="text-[10px] font-mono font-bold text-gray-400">{cat.id}</TableCell>
                           <TableCell className="text-right px-8">
                             <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 rounded-xl" onClick={() => deleteDoc(doc(db!, 'categories', cat.id))}>
                               <Trash2 className="w-5 h-5" />
@@ -712,10 +712,10 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground text-sm font-medium">View and process customer orders.</p>
             </header>
 
-            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-2xl">
               <div className="overflow-x-auto">
                 <Table className="min-w-[800px]">
-                  <TableHeader className="bg-white/30">
+                  <TableHeader className="bg-gray-50">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order ID</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
@@ -728,9 +728,9 @@ export default function AdminDashboard() {
                     {ordersLoading || !isConfirmedAdmin ? (
                       [...Array(5)].map((_, i) => <TableRow key={i}><TableCell className="px-8"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell className="text-right px-8"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell></TableRow>)
                     ) : orders?.map((order) => (
-                      <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-24">
-                        <TableCell className="px-8 font-black font-mono text-[11px]">#{order.id.slice(0, 10)}</TableCell>
-                        <TableCell className="text-xs font-bold text-muted-foreground">{new Date(order.orderDate).toLocaleString()}</TableCell>
+                      <TableRow key={order.id} className="hover:bg-gray-50 transition-colors border-gray-100 h-24">
+                        <TableCell className="px-8 font-black font-mono text-[11px] text-gray-900">#{order.id.slice(0, 10)}</TableCell>
+                        <TableCell className="text-xs font-bold text-gray-400">{new Date(order.orderDate).toLocaleString()}</TableCell>
                         <TableCell className="font-black text-primary text-sm">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={cn(
@@ -746,17 +746,17 @@ export default function AdminDashboard() {
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary"><Settings className="w-5 h-5" /></Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="glass min-w-[200px] rounded-[1.5rem] border-white/20 p-2">
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-bold text-yellow-500 rounded-xl h-12"><Clock className="w-5 h-5" /> SET PENDING</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-bold text-blue-500 rounded-xl h-12"><Truck className="w-5 h-5" /> SET SHIPPED</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-bold text-green-500 rounded-xl h-12"><CheckCircle2 className="w-5 h-5" /> SET DELIVERED</DropdownMenuItem>
+                            <DropdownMenuContent align="end" className="bg-white min-w-[200px] rounded-[1.5rem] border-gray-100 p-2 shadow-xl">
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-bold text-yellow-500 rounded-xl h-12 hover:bg-yellow-50"><Clock className="w-5 h-5" /> SET PENDING</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-bold text-blue-500 rounded-xl h-12 hover:bg-blue-50"><Truck className="w-5 h-5" /> SET SHIPPED</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-bold text-green-500 rounded-xl h-12 hover:bg-green-50"><CheckCircle2 className="w-5 h-5" /> SET DELIVERED</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
                     {!ordersLoading && isConfirmedAdmin && orders?.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="py-32 text-center glass rounded-[3rem] border-none"><ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-6" /><p className="font-black text-xl text-muted-foreground">No orders yet.</p></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="py-32 text-center bg-white border-none"><ShoppingBag className="w-16 h-16 mx-auto text-gray-200 mb-6" /><p className="font-black text-xl text-gray-400">No orders yet.</p></TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
