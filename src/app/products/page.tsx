@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronDown, Star, ShoppingBag, LayoutGrid, List, X } from 'lucide-react';
@@ -58,9 +58,13 @@ export default function ProductsPage() {
 
       // 3. Collection Filter (from URL query)
       // We map collectionParam to category or name for broad matching
+      // Normalize 'aura-prime' etc to match 'Aura' or similar
+      const normalizedCollection = collectionParam.replace('-', ' ');
       const matchesCollection = !collectionParam || 
         p.category?.toLowerCase() === collectionParam ||
-        p.name?.toLowerCase().includes(collectionParam);
+        p.category?.toLowerCase() === normalizedCollection ||
+        p.name?.toLowerCase().includes(collectionParam) ||
+        p.name?.toLowerCase().includes(normalizedCollection);
       
       return matchesSearch && matchesCategory && matchesCollection;
     });
@@ -84,8 +88,9 @@ export default function ProductsPage() {
   };
 
   const clearFilters = () => {
-    router.push('/products');
     setActiveCategory('All');
+    // Using window.history or router.push to effectively clear the URL params
+    router.replace('/products');
   };
 
   return (

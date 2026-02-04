@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard } from 'lucide-react';
+import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,15 +16,78 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
+  const db = useFirestore();
+  const { toast } = useToast();
 
   const products = [
     { id: '1', name: 'Neo-Stomp Tech Sneakers', stock: 45, price: 189, category: 'Footwear', status: 'Active' },
     { id: '2', name: 'SonicWave Elite Pro', stock: 12, price: 249, category: 'Audio', status: 'Low Stock' },
     { id: '3', name: 'Zenith Glass Smartwatch', stock: 0, price: 329, category: 'Tech', status: 'Out of Stock' },
   ];
+
+  const seedSampleData = async () => {
+    if (!db) return;
+    
+    const sampleProducts = [
+      {
+        name: 'Neo-Stomp Tech Sneakers',
+        price: 189,
+        imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800',
+        category: 'Footwear',
+        description: 'High-performance techwear sneakers with aura-charged soles.',
+        inventory: 45,
+        attributes: 'Lightweight, Breathable, Neon Accents'
+      },
+      {
+        name: 'SonicWave Elite Pro',
+        price: 249,
+        imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800',
+        category: 'Audio',
+        description: 'Noise-canceling headphones with spatial audio mapping.',
+        inventory: 12,
+        attributes: '40h Battery, Bluetooth 5.3, Aura Sync'
+      },
+      {
+        name: 'Zenith Glass Smartwatch',
+        price: 329,
+        imageUrl: 'https://picsum.photos/seed/wishzep-p3/800/800',
+        category: 'Tech',
+        description: 'A minimalist smartwatch that monitors your aura levels.',
+        inventory: 0,
+        attributes: 'OLED Display, Water Resistant, Health Suite'
+      },
+      {
+        name: 'Aura-X Techwear Jacket',
+        price: 450,
+        imageUrl: 'https://picsum.photos/seed/wishzep-p5/800/800',
+        category: 'Apparel',
+        description: 'Weather-resistant shell with integrated heat panels.',
+        inventory: 5,
+        attributes: 'Gore-Tex, Heated, Modular Pockets'
+      }
+    ];
+
+    try {
+      const proms = sampleProducts.map(p => addDoc(collection(db, 'products'), p));
+      await Promise.all(proms);
+      toast({
+        title: "Success! ✨",
+        description: "Sample products have been seeded into Firestore.",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Seeding failed",
+        description: e.message,
+      });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background pt-0">
@@ -43,6 +106,9 @@ export default function AdminDashboard() {
           </Button>
           <Button variant="ghost" className={`w-full justify-start gap-3 rounded-xl ${activeTab === 'products' ? 'bg-primary/10 text-primary' : ''}`} onClick={() => setActiveTab('products')}>
             <Package className="w-5 h-5" /> Products
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl" onClick={seedSampleData}>
+            <Database className="w-5 h-5" /> Seed Demo Data
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl">
             <BarChart3 className="w-5 h-5" /> Analytics
@@ -65,9 +131,14 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-black">Manage <span className="aura-text">Products</span></h1>
             <p className="text-muted-foreground text-sm">Organize and update your inventory drops.</p>
           </div>
-          <Button className="rounded-2xl h-12 px-6 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
-            <Plus className="w-5 h-5" /> Add New Product
-          </Button>
+          <div className="flex gap-4">
+            <Button variant="outline" className="rounded-2xl h-12 px-6 gap-2 glass" onClick={seedSampleData}>
+               <Database className="w-5 h-5" /> Seed Samples
+            </Button>
+            <Button className="rounded-2xl h-12 px-6 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+              <Plus className="w-5 h-5" /> Add New Product
+            </Button>
+          </div>
         </header>
 
         {/* Stats */}
@@ -75,7 +146,7 @@ export default function AdminDashboard() {
           {[
             { label: 'Total Sales', value: '$45,290', trend: '+12% from last month', icon: BarChart3, color: 'text-primary' },
             { label: 'Active Products', value: '142', trend: '3 new items this week', icon: Package, color: 'text-secondary' },
-            { label: 'Customer Satisfaction', value: '4.9/5', trend: 'Based on 500+ reviews', icon: Star, color: 'text-yellow-500' },
+            { label: 'Satisfaction', value: '4.9/5', trend: 'Based on 500+ reviews', icon: Star, color: 'text-yellow-500' },
           ].map((stat, i) => (
             <div key={i} className="glass p-6 rounded-3xl space-y-4 shadow-sm border border-white/40">
               <div className="flex justify-between">
@@ -95,9 +166,6 @@ export default function AdminDashboard() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search inventory..." className="glass pl-12 rounded-xl bg-white/20 border-white/40 h-11" />
             </div>
-            <Button variant="outline" className="glass gap-2 rounded-xl">
-              <Filter className="w-4 h-4" /> Filter
-            </Button>
           </div>
           <Table>
             <TableHeader className="bg-white/30">
@@ -159,23 +227,6 @@ function Star({ className }: { className?: string }) {
       stroke="none"
     >
       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-    </svg>
-  );
-}
-
-function Filter({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
     </svg>
   );
 }
