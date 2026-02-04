@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';
 import { 
@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
   const addItem = useCartStore((state) => state.addItem);
@@ -65,11 +66,11 @@ export default function ProductDetailPage() {
   const isApparel = product?.category === 'Apparel';
   const availableSizes = product?.sizes || [];
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const handleAddToCart = (silent = false) => {
+    if (!product) return false;
     if (isApparel && availableSizes.length > 0 && !selectedSize) {
       toast({ variant: "destructive", title: "Size Required", description: "Please select a size to continue." });
-      return;
+      return false;
     }
     
     for (let i = 0; i < quantity; i++) {
@@ -85,10 +86,20 @@ export default function ProductDetailPage() {
       }, selectedSize);
     }
     
-    toast({
-      title: "Added to Bag!",
-      description: `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} has been added.`,
-    });
+    if (!silent) {
+      toast({
+        title: "Added to Bag!",
+        description: `${quantity}x ${product.name} ${selectedSize ? `(${selectedSize})` : ''} has been added.`,
+      });
+    }
+    return true;
+  };
+
+  const handleBuyNow = () => {
+    const success = handleAddToCart(true);
+    if (success) {
+      router.push('/cart');
+    }
   };
 
   const handleShare = async () => {
@@ -259,19 +270,29 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <div className="flex items-center glass rounded-2xl h-16 px-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center glass rounded-2xl h-16 px-4 w-fit mx-auto sm:mx-0">
               <button onClick={() => setQuantity(q => Math.max(1, q-1))} className="p-2 hover:text-primary"><Minus className="w-4 h-4" /></button>
               <span className="w-12 text-center font-black text-xl">{quantity}</span>
               <button onClick={() => setQuantity(q => q+1)} className="p-2 hover:text-primary"><Plus className="w-4 h-4" /></button>
             </div>
-            <Button
-              onClick={handleAddToCart}
-              disabled={product.inventory === 0}
-              className="flex-1 h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black gap-3 shadow-2xl shadow-primary/20"
-            >
-              <ShoppingBag className="w-6 h-6" /> {product.inventory === 0 ? 'Out of Stock' : 'Add to Bag'}
-            </Button>
+            <div className="flex-1 flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => handleAddToCart(false)}
+                disabled={product.inventory === 0}
+                className="flex-1 h-16 rounded-2xl glass border-primary/20 text-lg font-black gap-2"
+              >
+                <ShoppingBag className="w-5 h-5" /> Add to Bag
+              </Button>
+              <Button
+                onClick={handleBuyNow}
+                disabled={product.inventory === 0}
+                className="flex-1 h-16 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-black gap-2 shadow-2xl shadow-primary/20"
+              >
+                <Zap className="w-5 h-5 fill-white" /> Buy Now
+              </Button>
+            </div>
           </div>
 
           {/* Specifications Accordion (Flipkart Style) */}
