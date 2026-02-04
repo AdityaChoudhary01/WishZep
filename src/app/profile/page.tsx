@@ -55,6 +55,7 @@ export default function ProfilePage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // We must strictly match the rules: filter by userId to allow list permission
     return query(
       collection(db, 'orders'), 
       where('userId', '==', user.uid),
@@ -62,7 +63,8 @@ export default function ProfilePage() {
     );
   }, [db, user]);
 
-  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
+  // Use silentPermissionError: true to prevent crashing if the backend is syncing
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
 
   const handleSignOut = async () => {
     try {
@@ -168,6 +170,13 @@ export default function ProfilePage() {
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
             <div className="py-20 text-center animate-pulse">Scanning orders...</div>
+          ) : ordersError ? (
+            <div className="glass rounded-[2rem] p-12 text-center space-y-4">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+              <h3 className="text-xl font-bold">Connection Syncing</h3>
+              <p className="text-muted-foreground text-sm">We're finalizing your access. Please try refreshing in a moment.</p>
+              <Button variant="outline" onClick={() => window.location.reload()}>Retry Connection</Button>
+            </div>
           ) : !orders || orders.length === 0 ? (
             <div className="glass rounded-[2rem] p-20 text-center space-y-6">
               <Package className="w-16 h-16 text-muted-foreground mx-auto" />

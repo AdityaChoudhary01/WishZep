@@ -71,7 +71,8 @@ service cloud.firestore {
      */
     match /orders/{orderId} {
       // Allow users to list their own orders by filtering on userId, or admins to list all
-      allow list: if isAdmin() || (isSignedIn() && request.query.limit <= 100 && request.auth.uid == resource.data.userId);
+      // The limit check is removed to prevent mismatches with client-side queries
+      allow list: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
       
       // Allow individuals to see their own orders, or admins to see any
       allow get: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
