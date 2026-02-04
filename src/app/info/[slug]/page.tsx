@@ -8,6 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { sendContactEmail } from '@/app/actions/contact';
 import { 
   Mail, 
   MapPin, 
@@ -17,7 +20,6 @@ import {
   Truck, 
   RotateCcw, 
   FileText, 
-  Globe, 
   Zap, 
   Sparkles 
 } from 'lucide-react';
@@ -26,6 +28,8 @@ import { Badge } from '@/components/ui/badge';
 export default function DynamicInfoPage() {
   const { slug } = useParams();
   const db = useFirestore();
+  const { toast } = useToast();
+  const [isSending, setIsSending] = useState(false);
 
   const pagesQuery = useMemoFirebase(() => {
     if (!db || !slug) return null;
@@ -34,6 +38,29 @@ export default function DynamicInfoPage() {
 
   const { data: pages, isLoading } = useCollection(pagesQuery);
   const page = pages?.[0];
+
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSending(true);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await sendContactEmail(formData);
+
+    if (result.success) {
+      toast({
+        title: "Message Sent! 🚀",
+        description: "Your message has been received. We'll get back to you shortly.",
+      });
+      (e.target as HTMLFormElement).reset();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Send Failed",
+        description: result.error || "Something went wrong while sending your message.",
+      });
+    }
+    setIsSending(false);
+  };
 
   if (isLoading) {
     return (
@@ -48,7 +75,6 @@ export default function DynamicInfoPage() {
     );
   }
 
-  // Define Ultra-Modern Templates for different slugs
   const renderTemplate = () => {
     switch (slug) {
       case 'about':
@@ -133,21 +159,41 @@ export default function DynamicInfoPage() {
             </div>
 
             <div className="glass p-10 rounded-[3rem] shadow-2xl">
-              <form className="space-y-6">
+              <form onSubmit={handleContactSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold uppercase tracking-widest ml-1">Full Name</label>
-                  <Input placeholder="John Doe" className="h-14 rounded-2xl glass border-white/20" />
+                  <Input 
+                    name="name"
+                    required
+                    placeholder="John Doe" 
+                    className="h-14 rounded-2xl glass border-white/20" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold uppercase tracking-widest ml-1">Email Address</label>
-                  <Input placeholder="john@example.com" type="email" className="h-14 rounded-2xl glass border-white/20" />
+                  <Input 
+                    name="email"
+                    required
+                    type="email"
+                    placeholder="john@example.com" 
+                    className="h-14 rounded-2xl glass border-white/20" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold uppercase tracking-widest ml-1">Message</label>
-                  <Textarea placeholder="How can we help?" className="min-h-[150px] rounded-2xl glass border-white/20" />
+                  <Textarea 
+                    name="message"
+                    required
+                    placeholder="How can we help?" 
+                    className="min-h-[150px] rounded-2xl glass border-white/20" 
+                  />
                 </div>
-                <Button className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3">
-                  Send Message <Send className="w-5 h-5" />
+                <Button 
+                  type="submit"
+                  disabled={isSending}
+                  className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3"
+                >
+                  {isSending ? 'Sending...' : 'Send Message'} <Send className="w-5 h-5" />
                 </Button>
               </form>
             </div>
@@ -158,31 +204,24 @@ export default function DynamicInfoPage() {
       case 'refund':
       case 'privacy':
       case 'terms':
-        const icon = slug === 'shipping' ? Truck : slug === 'refund' ? RotateCcw : slug === 'privacy' ? ShieldCheck : FileText;
-        const titles = {
-          shipping: "Shipping Policy",
-          refund: "Refund Policy",
-          privacy: "Privacy Policy",
-          terms: "Terms & Conditions"
-        };
         return (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 glass rounded-3xl flex items-center justify-center text-primary shadow-xl">
-                {/* Dynamically select icon component */}
                 {slug === 'shipping' && <Truck className="w-10 h-10" />}
                 {slug === 'refund' && <RotateCcw className="w-10 h-10" />}
                 {slug === 'privacy' && <ShieldCheck className="w-10 h-10" />}
                 {slug === 'terms' && <FileText className="w-10 h-10" />}
               </div>
               <div>
-                <h1 className="text-6xl font-black tracking-tighter">{titles[slug as keyof typeof titles]}</h1>
+                <h1 className="text-6xl font-black tracking-tighter">
+                  {slug === 'shipping' ? "Shipping Policy" : slug === 'refund' ? "Refund Policy" : slug === 'privacy' ? "Privacy Policy" : "Terms & Conditions"}
+                </h1>
                 <p className="text-muted-foreground font-medium uppercase tracking-widest">Effective: January 2024</p>
               </div>
             </div>
 
             <div className="glass rounded-[3rem] p-12 prose prose-lg dark:prose-invert max-w-none space-y-8">
-              {/* If page content exists in DB, render it. Otherwise, render themed fallback. */}
               {page ? (
                 <div dangerouslySetInnerHTML={{ __html: page.content }} />
               ) : (
@@ -190,24 +229,18 @@ export default function DynamicInfoPage() {
                   <section>
                     <h3 className="text-2xl font-bold mb-4">1. Overview</h3>
                     <p className="text-muted-foreground leading-relaxed">
-                      At WishZep, we prioritize clarity and speed. Our {titles[slug as keyof typeof titles]} is designed to ensure you spend less time reading fine print and more time enjoying your gear. We stand by our products and our community.
+                      At WishZep, we prioritize clarity and speed. Our policies are designed to ensure you spend less time reading fine print and more time enjoying your gear.
                     </p>
                   </section>
                   <section>
                     <h3 className="text-2xl font-bold mb-4">2. Core Principles</h3>
                     <p className="text-muted-foreground leading-relaxed">
-                      We believe in transparency and fairness. Every policy we draft is focused on providing a seamless experience for the WishZep community. If you ever find a policy confusing, our support team is available 24/7 to clarify.
+                      We believe in transparency and fairness. Every policy we draft is focused on providing a seamless experience for the WishZep community.
                     </p>
                   </section>
                   <div className="p-8 bg-primary/5 border border-primary/10 rounded-2xl">
                     <p className="text-primary font-bold italic">"Innovation requires trust. We're here to build that trust every single day."</p>
                   </div>
-                  <section>
-                    <h3 className="text-2xl font-bold mb-4">3. Updates</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      We reserve the right to update our {titles[slug as keyof typeof titles]} as we grow. Continued use of the platform constitutes acceptance of the most current version.
-                    </p>
-                  </section>
                 </div>
               )}
             </div>
@@ -218,11 +251,7 @@ export default function DynamicInfoPage() {
         return (
           <div className="max-w-4xl mx-auto py-24 text-center space-y-8">
             <h1 className="text-6xl font-black">{page?.title || "Page Not Found"}</h1>
-            {page ? (
-              <div className="glass p-12 rounded-[3rem] prose prose-lg dark:prose-invert max-w-none text-left" dangerouslySetInnerHTML={{ __html: page.content }} />
-            ) : (
-              <p className="text-xl text-muted-foreground">The content you are looking for is currently being curated.</p>
-            )}
+            <p className="text-xl text-muted-foreground">The content you are looking for is currently being curated.</p>
           </div>
         );
     }
