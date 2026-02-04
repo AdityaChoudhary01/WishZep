@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -193,9 +192,9 @@ export default function ProductDetailPage() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="shipping" className="border-white/20">
-              <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">Shipping & Returns</AccordionTrigger>
+              <AccordionTrigger className="text-sm font-bold uppercase tracking-widest hover:no-underline py-4">Shipping & Delivery</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                We offer worldwide express shipping. All products can be returned within 30 days of purchase in original condition.
+                We offer worldwide express shipping for all high-performance gear. Please note that all WishZep sales are final to maintain the exclusivity of our drops. We do not offer returns or exchanges.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

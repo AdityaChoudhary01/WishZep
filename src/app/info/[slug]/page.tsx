@@ -27,7 +27,8 @@ import {
   Lock,
   Eye,
   Scale,
-  Code2
+  Code2,
+  AlertCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -258,13 +259,62 @@ export default function DynamicInfoPage() {
           </div>
         );
 
-      case 'shipping':
       case 'refund':
+        return (
+          <div className="max-w-5xl mx-auto space-y-20 animate-fade-in">
+             <header className="flex flex-col md:flex-row items-center gap-10">
+              <div className="w-32 h-32 glass rounded-[2.5rem] flex items-center justify-center text-destructive shadow-2xl shrink-0">
+                <AlertCircle className="w-16 h-16" />
+              </div>
+              <div className="text-center md:text-left space-y-4">
+                <Badge variant="destructive" className="px-6 py-1 rounded-full uppercase font-black tracking-widest">Final Sale Policy</Badge>
+                <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none">NO RETURNS. <br/><span className="wishzep-text">EXCLUSIVITY FIRST.</span></h1>
+                <p className="text-xl text-muted-foreground uppercase tracking-[0.2em] font-bold">WishZep Official Policy • v.2.4.0</p>
+              </div>
+            </header>
+
+            <div className="glass rounded-[4rem] p-12 md:p-20 space-y-16">
+              <section className="space-y-8">
+                <h2 className="text-4xl font-black tracking-tight">The "Final Sale" Directive</h2>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  At WishZep, we operate on a high-velocity drop model. To maintain the integrity and hygiene of our limited-edition performance gear, all sales are final. We do not offer returns, refunds, or exchanges under any circumstances once an order has been successfully processed.
+                </p>
+                <div className="p-8 bg-destructive/5 border border-destructive/20 rounded-[2rem] flex items-start gap-6">
+                  <AlertCircle className="w-8 h-8 text-destructive shrink-0 mt-1" />
+                  <div>
+                    <h4 className="text-xl font-bold text-destructive mb-2">Zero Exception Protocol</h4>
+                    <p className="text-muted-foreground">This policy applies to all products, including footwear, audio equipment, and apparel. We encourage you to review size guides and product descriptions carefully before initiating a drop.</p>
+                  </div>
+                </div>
+              </section>
+
+              <Separator className="bg-white/10" />
+
+              <section className="space-y-8">
+                <h2 className="text-4xl font-black tracking-tight">Quality Assurance</h2>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  Every WishZep artifact undergoes a rigorous 12-point inspection before it leaves our vault. In the highly unlikely event that you receive a defective item, please contact our Priority Support team within 24 hours of delivery with photographic evidence.
+                </p>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="p-8 glass rounded-[2rem] space-y-4">
+                    <h4 className="text-2xl font-bold">Defect Reports</h4>
+                    <p className="text-muted-foreground">Must be filed via the Contact Dialogue within 24 hours. Reports filed after this window will not be considered.</p>
+                  </div>
+                  <div className="p-8 glass rounded-[2rem] space-y-4">
+                    <h4 className="text-2xl font-bold">Resolution Path</h4>
+                    <p className="text-muted-foreground">Verified defects will be handled with a direct replacement or platform credit at the sole discretion of the WishZep Logistics team.</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        );
+
+      case 'shipping':
       case 'privacy':
       case 'terms':
         const titles = {
           shipping: { title: "Global Logistics & Shipping", icon: Truck, badge: "Ultra-Fast Delivery" },
-          refund: { title: "Return & Refund Protocol", icon: RotateCcw, badge: "Hassle-Free Returns" },
           privacy: { title: "Data Security & Privacy", icon: Lock, badge: "Encrypted Protection" },
           terms: { title: "Usage Terms & Conditions", icon: Scale, badge: "Legal Framework" }
         };
@@ -308,7 +358,7 @@ export default function DynamicInfoPage() {
                     <div className="grid md:grid-cols-2 gap-8">
                       <div className="p-8 glass rounded-[2rem] border-white/5 space-y-4">
                         <h4 className="text-2xl font-bold">Speed of Execution</h4>
-                        <p className="text-muted-foreground">Whether it's shipping out your order or processing a return, we operate at a high-velocity frequency. Efficiency is our obsession.</p>
+                        <p className="text-muted-foreground">Whether it's shipping out your order or processing a request, we operate at a high-velocity frequency. Efficiency is our obsession.</p>
                       </div>
                       <div className="p-8 glass rounded-[2rem] border-white/5 space-y-4">
                         <h4 className="text-2xl font-bold">Global Compatibility</h4>

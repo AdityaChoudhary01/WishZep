@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -72,7 +72,7 @@ export default function Home() {
             { icon: Zap, title: 'Express Shipping', desc: 'Arrives in 2-3 days' },
             { icon: ShieldCheck, title: 'Secure Payment', desc: '100% safe checkouts' },
             { icon: Star, title: 'Premium Quality', desc: 'Handpicked selection' },
-            { icon: ArrowRight, title: 'Easy Returns', desc: '30-day window' },
+            { icon: CheckCircle2, title: 'Verified Drops', desc: 'Authenticity guaranteed' },
           ].map((item, idx) => (
             <div key={idx} className="flex flex-col items-center text-center gap-2">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
