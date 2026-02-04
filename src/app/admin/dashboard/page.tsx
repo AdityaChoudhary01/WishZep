@@ -22,7 +22,8 @@ import {
   Table as TableIcon,
   Check,
   Tags,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ export default function AdminDashboard() {
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const editMultiFileInputRef = useRef<HTMLInputElement>(null);
   const sizeChartRef = useRef<HTMLInputElement>(null);
+  const editSizeChartRef = useRef<HTMLInputElement>(null);
   
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -262,7 +264,7 @@ export default function AdminDashboard() {
   }
 
   const renderProductForm = (product: any, setProduct: any, isEdit = false) => {
-    const isApparel = product.category === 'Apparel';
+    const isApparel = product.category?.toLowerCase() === 'apparel' || product.category?.toLowerCase() === 'clothes' || product.category?.toLowerCase() === 'clothing';
     
     return (
       <div className="space-y-6 pt-4">
@@ -270,7 +272,10 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <Label className="font-bold text-xs uppercase tracking-widest">Visual Assets</Label>
           <div className="grid grid-cols-4 gap-4">
-            <div className="relative aspect-square glass rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center group cursor-pointer" onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}>
+            <div 
+              className="relative aspect-square glass rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center group cursor-pointer" 
+              onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}
+            >
               {product.imageUrl ? <Image src={product.imageUrl} alt="Main" fill className="object-cover" /> : <Camera className="w-8 h-8 text-muted-foreground" />}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                 <span className="text-white text-[10px] font-bold uppercase">Main Image</span>
@@ -307,7 +312,7 @@ export default function AdminDashboard() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full justify-between glass">
-                    {product.category || 'Select Category'} <ChevronRight className="w-4 h-4 rotate-90" />
+                    {product.category || 'Select Category'} <ChevronDown className="w-4 h-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="glass min-w-[200px]">
@@ -335,17 +340,17 @@ export default function AdminDashboard() {
         {isApparel && (
           <div className="space-y-4 p-6 glass rounded-[2rem] border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center gap-2 mb-2">
-              <Badge className="bg-primary text-white">Apparel Unlocked</Badge>
-              <h4 className="font-bold text-sm uppercase tracking-wider">Garment Details</h4>
+              <Badge className="bg-primary text-white">Apparel Features Unlocked</Badge>
+              <h4 className="font-bold text-sm uppercase tracking-wider">Garment Config</h4>
             </div>
             
             <div className="space-y-3">
-              <Label className="text-xs">Available Sizes</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Available Sizes</Label>
               <div className="flex flex-wrap gap-2">
                 {SIZES.map(size => (
-                  <div key={size} className="flex items-center gap-2 bg-white/30 px-3 py-1.5 rounded-lg border border-white/20">
+                  <div key={size} className="flex items-center gap-2 bg-white/30 px-3 py-1.5 rounded-lg border border-white/20 hover:bg-white/50 transition-colors">
                     <Checkbox 
-                      id={`size-${size}`}
+                      id={`size-${size}-${isEdit ? 'edit' : 'new'}`}
                       checked={product.sizes?.includes(size)}
                       onCheckedChange={(checked) => {
                         const newSizes = checked 
@@ -354,30 +359,33 @@ export default function AdminDashboard() {
                         setProduct({...product, sizes: newSizes});
                       }}
                     />
-                    <Label htmlFor={`size-${size}`} className="cursor-pointer font-bold">{size}</Label>
+                    <Label htmlFor={`size-${size}-${isEdit ? 'edit' : 'new'}`} className="cursor-pointer font-bold">{size}</Label>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="space-y-3 pt-2">
-              <Label className="text-xs">Size Chart Image</Label>
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Size Chart Image</Label>
               <div 
-                className="relative h-20 w-full glass rounded-xl border-2 border-dashed border-primary/20 flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
-                onClick={() => sizeChartRef.current?.click()}
+                className="relative h-24 w-full glass rounded-xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors overflow-hidden"
+                onClick={() => (isEdit ? editSizeChartRef : sizeChartRef).current?.click()}
               >
                 {product.sizeChartUrl ? (
-                  <div className="flex items-center gap-3">
-                    <Check className="text-green-500" />
-                    <span className="text-xs font-medium">Chart Uploaded (Click to change)</span>
-                  </div>
+                  <>
+                    <Image src={product.sizeChartUrl} alt="Size Chart" fill className="object-cover opacity-50" />
+                    <div className="relative z-10 flex flex-col items-center">
+                       <Check className="text-green-500 mb-1" />
+                       <span className="text-[10px] font-black uppercase tracking-tighter">Update Size Chart</span>
+                    </div>
+                  </>
                 ) : (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <TableIcon className="w-4 h-4" />
-                    <span className="text-xs">Upload Size Chart</span>
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                    <TableIcon className="w-5 h-5" />
+                    <span className="text-[10px] font-black uppercase tracking-tighter">Upload Size Chart</span>
                   </div>
                 )}
-                <input type="file" ref={sizeChartRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'sizeChartUrl', isEdit)} />
+                <input type="file" ref={isEdit ? editSizeChartRef : sizeChartRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'sizeChartUrl', isEdit)} />
               </div>
             </div>
           </div>
