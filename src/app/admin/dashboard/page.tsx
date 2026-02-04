@@ -94,6 +94,7 @@ export default function AdminDashboard() {
 
   // Helper to determine if current category is apparel
   const isApparelCategory = useMemo(() => {
+    if (!productFormData.category) return false;
     const cat = productFormData.category.toLowerCase();
     const apparelKeywords = ['apparel', 'clothing', 'clothes', 'shirt', 'pant', 't-shirt', 'hoodie', 'bottoms', 'top', 'trousers', 'wear'];
     return apparelKeywords.some(keyword => cat.includes(keyword));
@@ -147,7 +148,7 @@ export default function AdminDashboard() {
         email: user.email,
         assignedAt: serverTimestamp()
       });
-      toast({ title: "Admin Access Granted! 🛡️" });
+      toast({ title: "Admin Access Granted!" });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Permission Denied" });
     }
@@ -162,7 +163,7 @@ export default function AdminDashboard() {
       createdAt: new Date().toISOString()
     });
     setNewCategory('');
-    toast({ title: "Category Registered! ✨" });
+    toast({ title: "Category Added!" });
   };
 
   const handleUpdateOrderStatus = async (order: any, newStatus: string) => {
@@ -226,7 +227,7 @@ export default function AdminDashboard() {
       } else if (target === 'chart') {
         setProductFormData(prev => ({ ...prev, sizeChartUrl: url }));
       }
-      toast({ title: "Media Uploaded! 📸" });
+      toast({ title: "Image Uploaded!" });
     } catch (error) {
       toast({ variant: "destructive", title: "Upload Failed" });
     } finally {
@@ -281,25 +282,25 @@ export default function AdminDashboard() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), productData);
-        toast({ title: "Artifact Re-Calibrated! ✨" });
+        toast({ title: "Product Updated!" });
       } else {
         const newDocRef = doc(collection(db, 'products'));
         await setDoc(newDocRef, { ...productData, id: newDocRef.id });
-        toast({ title: "New Drop Initialized! 🚀" });
+        toast({ title: "Product Added!" });
       }
       setIsProductDialogOpen(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Transmission Failed" });
+      toast({ variant: "destructive", title: "Save Failed" });
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!db || !isUserAdmin || !window.confirm("Purge this artifact from the vault?")) return;
+    if (!db || !isUserAdmin || !window.confirm("Delete this product?")) return;
     try {
       await deleteDoc(doc(db, 'products', id));
-      toast({ title: "Artifact Purged" });
+      toast({ title: "Product Deleted" });
     } catch (error) {
-      toast({ variant: "destructive", title: "Purge Failed" });
+      toast({ variant: "destructive", title: "Delete Failed" });
     }
   };
 
@@ -314,11 +315,11 @@ export default function AdminDashboard() {
   const SidebarContent = () => (
     <nav className="space-y-4">
       <div className="space-y-1">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Command Center</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Navigation</p>
         {[
-          { id: 'products', label: 'Inventory', icon: Package },
-          { id: 'categories', label: 'Registry', icon: Tags },
-          { id: 'orders', label: 'Order Vault', icon: ShoppingBag },
+          { id: 'products', label: 'Products', icon: Package },
+          { id: 'categories', label: 'Categories', icon: Tags },
+          { id: 'orders', label: 'Orders', icon: ShoppingBag },
         ].map((link) => (
           <button 
             key={link.id}
@@ -328,7 +329,7 @@ export default function AdminDashboard() {
             }}
             className={cn(
               "w-full flex items-center gap-3 rounded-xl h-12 px-4 transition-all text-sm font-bold",
-              activeTab === link.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "hover:bg-primary/5"
+              activeTab === link.id ? "bg-primary text-white shadow-lg" : "hover:bg-primary/5"
             )}
           >
             <link.icon className="w-5 h-5" /> {link.label}
@@ -338,7 +339,7 @@ export default function AdminDashboard() {
       {!isUserAdmin && (
         <div className="pt-4 px-2">
           <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white h-12">
-            <ShieldCheck className="w-5 h-5" /> Claim Credentials
+            <ShieldCheck className="w-5 h-5" /> Claim Admin Access
           </Button>
         </div>
       )}
@@ -380,7 +381,7 @@ export default function AdminDashboard() {
           <Alert variant="destructive" className="rounded-[2rem] border-destructive/20 bg-destructive/5">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>Elite credentials required. Please claim admin access to manage the WishZep vault.</AlertDescription>
+            <AlertDescription>Please claim admin access to manage products and orders.</AlertDescription>
           </Alert>
         )}
 
@@ -388,11 +389,11 @@ export default function AdminDashboard() {
           <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">VAULT</span></h1>
-                <p className="text-muted-foreground text-sm font-medium">Control the artifacts of the WishZep legacy.</p>
+                <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">PRODUCTS</span></h1>
+                <p className="text-muted-foreground text-sm font-medium">Control and edit your product catalog.</p>
               </div>
               <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-14 px-8 font-black gap-2 shadow-xl shadow-primary/20">
-                <Plus className="w-6 h-6" /> NEW DROP
+                <Plus className="w-6 h-6" /> ADD PRODUCT
               </Button>
             </header>
 
@@ -401,10 +402,10 @@ export default function AdminDashboard() {
                 <Table className="min-w-[700px]">
                   <TableHeader className="bg-white/30">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Artifact</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Registry</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Inventory</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Credits</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Product</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Category</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Stock</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Price</TableHead>
                       <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -420,7 +421,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex flex-col">
                               <span className="truncate max-w-[200px] text-sm font-black">{p.name}</span>
-                              <span className="text-[10px] text-muted-foreground uppercase font-bold">{p.sizes?.length > 0 ? `${p.sizes.length} Variants` : 'Standard Fit'}</span>
+                              <span className="text-[10px] text-muted-foreground uppercase font-bold">{p.sizes?.length > 0 ? `${p.sizes.length} Sizes` : 'Standard'}</span>
                             </div>
                           </div>
                         </TableCell>
@@ -445,33 +446,32 @@ export default function AdminDashboard() {
             </div>
 
             <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-              <DialogContent className="glass max-w-4xl rounded-[3rem] border-white/30 max-h-[90vh] overflow-y-auto p-0">
-                <div className="sticky top-0 z-50 glass border-b border-white/20 p-8 flex justify-between items-center">
+              <DialogContent className="glass max-w-4xl rounded-[2rem] border-white/30 max-h-[90vh] overflow-y-auto p-0 bg-white">
+                <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/20 p-8">
                   <DialogHeader>
                     <DialogTitle className="text-3xl font-black wishzep-text">
-                      {editingProduct ? 'RE-CALIBRATE ARTIFACT' : 'INITIALIZE NEW DROP'}
+                      {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
                     </DialogTitle>
                   </DialogHeader>
-                  <Button variant="ghost" size="icon" onClick={() => setIsProductDialogOpen(false)} className="rounded-full"><X /></Button>
                 </div>
 
                 <div className="p-8 space-y-10">
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Info className="w-3 h-3" /> Core Identity</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">Product Information</Label>
                         <Input 
-                          placeholder="Artifact Name"
+                          placeholder="Product Name"
                           value={productFormData.name}
                           onChange={(e) => setProductFormData({...productFormData, name: e.target.value})}
-                          className="glass h-14 rounded-2xl bg-white/20 text-lg font-bold border-white/30 focus:bg-white/40 transition-all" 
+                          className="h-14 rounded-2xl bg-muted/50 text-lg font-bold border-muted focus:bg-white transition-all" 
                         />
                         <Select 
                           value={productFormData.category} 
                           onValueChange={(val) => setProductFormData({...productFormData, category: val})}
                         >
-                          <SelectTrigger className="glass h-14 rounded-2xl bg-white/20 font-bold border-white/30">
-                            <SelectValue placeholder="Registry Channel" />
+                          <SelectTrigger className="h-14 rounded-2xl bg-muted/50 font-bold border-muted">
+                            <SelectValue placeholder="Category" />
                           </SelectTrigger>
                           <SelectContent className="glass border-white/20">
                             {categories?.map(cat => (
@@ -488,7 +488,7 @@ export default function AdminDashboard() {
                             type="number"
                             value={productFormData.price}
                             onChange={(e) => setProductFormData({...productFormData, price: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
+                            className="h-12 rounded-xl bg-muted/50 border-muted" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -497,29 +497,29 @@ export default function AdminDashboard() {
                             type="number"
                             value={productFormData.discountPrice}
                             onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
+                            className="h-12 rounded-xl bg-muted/50 border-muted" 
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Inventory Vault</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Inventory Stock</Label>
                         <Input 
                           type="number"
                           value={productFormData.inventory}
                           onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})}
-                          className="glass h-12 rounded-xl bg-white/20 border-white/30" 
+                          className="h-12 rounded-xl bg-muted/50 border-muted" 
                         />
                       </div>
 
                       {isApparelCategory && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Fit Variants (Comma Separated)</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Available Sizes (Comma Separated)</Label>
                           <Input 
                             placeholder="S, M, L, XL"
                             value={productFormData.sizes}
                             onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
+                            className="h-12 rounded-xl bg-muted/50 border-muted" 
                           />
                         </div>
                       )}
@@ -527,9 +527,9 @@ export default function AdminDashboard() {
 
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Primary Visual</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Main Image</Label>
                         <div 
-                          className="relative aspect-[4/3] glass rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-primary/20 hover:border-primary/50 transition-all hover:bg-white/10" 
+                          className="relative aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-muted hover:border-primary/50 transition-all hover:bg-muted/30" 
                           onClick={() => fileInputRef.current?.click()}
                         >
                           {productFormData.imageUrl ? (
@@ -537,7 +537,7 @@ export default function AdminDashboard() {
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
                               {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10 transition-transform group-hover:scale-110" />}
-                              <span className="text-[10px] font-black uppercase tracking-widest">Main Media</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">Upload Main Image</span>
                             </div>
                           )}
                         </div>
@@ -545,7 +545,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Additional Gallery</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">More Images</Label>
                         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                           {productFormData.images.map((img, idx) => (
                             <div key={idx} className="relative w-16 h-16 rounded-xl glass shrink-0 overflow-hidden border border-white/30">
@@ -558,7 +558,7 @@ export default function AdminDashboard() {
                           ))}
                           <button 
                             onClick={() => secondaryFileInputRef.current?.click()}
-                            className="w-16 h-16 rounded-xl glass border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:bg-white/10 transition-colors"
+                            className="w-16 h-16 rounded-xl bg-muted/50 border-2 border-dashed border-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
                           >
                             <Plus className="w-5 h-5" />
                           </button>
@@ -568,30 +568,30 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <Separator className="bg-white/10" />
+                  <Separator />
 
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><FileText className="w-3 h-3" /> Technical Directives</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">Product Description</Label>
                         <Textarea 
                           value={productFormData.description}
-                          placeholder="Describe the artifact's energy and functionality..."
+                          placeholder="Describe the product features and details..."
                           onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
-                          className="glass rounded-2xl bg-white/20 min-h-[160px] p-6 leading-relaxed border-white/30 focus:bg-white/40 transition-all" 
+                          className="rounded-2xl bg-muted/50 min-h-[160px] p-6 leading-relaxed border-muted focus:bg-white transition-all" 
                         />
                       </div>
                       
                       {isApparelCategory && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Fit Blueprint (Size Chart)</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Size Chart</Label>
                           <div 
-                            className="h-24 glass rounded-2xl border-2 border-dashed border-white/30 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all gap-3"
+                            className="h-24 rounded-2xl border-2 border-dashed border-muted flex items-center justify-center cursor-pointer hover:bg-muted/30 transition-all gap-3"
                             onClick={() => chartFileInputRef.current?.click()}
                           >
                             {productFormData.sizeChartUrl ? (
                               <div className="flex items-center gap-3 text-green-500 font-bold">
-                                <CheckCircle2 className="w-5 h-5" /> Blueprint Attached
+                                <CheckCircle2 className="w-5 h-5" /> Chart Uploaded
                               </div>
                             ) : (
                               <div className="flex items-center gap-3 text-muted-foreground">
@@ -606,7 +606,7 @@ export default function AdminDashboard() {
 
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Artifact Specs</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Product Specifications</Label>
                         <Button variant="ghost" size="sm" onClick={handleAddSpec} className="h-8 rounded-lg gap-2 font-bold text-[10px] hover:bg-primary/10">
                           <Plus className="w-3 h-3" /> ADD SPEC
                         </Button>
@@ -618,13 +618,13 @@ export default function AdminDashboard() {
                               placeholder="Key" 
                               value={spec.key} 
                               onChange={(e) => handleSpecChange(idx, 'key', e.target.value)}
-                              className="glass h-10 rounded-xl bg-white/20 text-xs font-bold border-white/30"
+                              className="h-10 rounded-xl bg-muted/50 text-xs font-bold border-muted"
                             />
                             <Input 
                               placeholder="Value" 
                               value={spec.value} 
                               onChange={(e) => handleSpecChange(idx, 'value', e.target.value)}
-                              className="glass h-10 rounded-xl bg-white/20 text-xs border-white/30"
+                              className="h-10 rounded-xl bg-muted/50 text-xs border-muted"
                             />
                             <Button variant="ghost" size="icon" onClick={() => handleRemoveSpec(idx)} className="text-destructive h-10 w-10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 className="w-4 h-4" />
@@ -635,10 +635,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
+                  <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
                     <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1">CANCEL</Button>
-                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10">
-                      <Save className="w-6 h-6" /> {editingProduct ? 'SAVE RE-CALIBRATION' : 'LAUNCH DROP'}
+                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-xl">
+                      <Save className="w-6 h-6" /> {editingProduct ? 'SAVE CHANGES' : 'ADD PRODUCT'}
                     </Button>
                   </div>
                 </div>
@@ -650,8 +650,8 @@ export default function AdminDashboard() {
         {activeTab === 'categories' && (
           <div className="space-y-6 animate-fade-in">
             <header>
-              <h1 className="text-4xl font-black tracking-tight">TAG <span className="wishzep-text">REGISTRY</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Organize your frequency channels.</p>
+              <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">CATEGORIES</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Organize and group your products.</p>
             </header>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -660,17 +660,17 @@ export default function AdminDashboard() {
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
                     <ListPlus className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl font-black">Register Channel</h3>
+                  <h3 className="text-2xl font-black">Add Category</h3>
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Channel Name</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Category Name</Label>
                     <Input 
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="e.g. HYPERWEAR" 
-                      className="glass h-14 rounded-2xl bg-white/20 font-bold border-white/30 focus:bg-white/40 transition-all"
+                      placeholder="e.g. Footwear" 
+                      className="h-14 rounded-2xl bg-muted/50 font-bold border-muted focus:bg-white transition-all"
                     />
                   </div>
-                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">ADD REGISTRY</Button>
+                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl">ADD CATEGORY</Button>
                 </div>
               </div>
 
@@ -679,9 +679,9 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader className="bg-white/30">
                       <TableRow>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Category</TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Registry ID</TableHead>
-                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Delete</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Name</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest">ID</TableHead>
+                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -689,7 +689,7 @@ export default function AdminDashboard() {
                       categories?.map((cat) => (
                         <TableRow key={cat.id} className="hover:bg-white/10 transition-colors h-20">
                           <TableCell className="px-8 font-black text-lg">{cat.name}</TableCell>
-                          <TableCell className="text-[10px] font-mono font-bold text-muted-foreground bg-white/5 px-2 py-1 rounded w-fit">{cat.id}</TableCell>
+                          <TableCell className="text-[10px] font-mono font-bold text-muted-foreground">{cat.id}</TableCell>
                           <TableCell className="text-right px-8">
                             <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 rounded-xl" onClick={() => deleteDoc(doc(db!, 'categories', cat.id))}>
                               <Trash2 className="w-5 h-5" />
@@ -708,8 +708,8 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="space-y-6 animate-fade-in">
             <header>
-              <h1 className="text-4xl font-black tracking-tight">ORDER <span className="wishzep-text">VAULT</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Command the WishZep fulfillment engine.</p>
+              <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">ORDERS</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">View and process customer orders.</p>
             </header>
 
             <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
@@ -717,11 +717,11 @@ export default function AdminDashboard() {
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-white/30">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">ID</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Timestamp</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Credits</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Directive</TableHead>
-                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Management</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order ID</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -747,16 +747,16 @@ export default function AdminDashboard() {
                               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary"><Settings className="w-5 h-5" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="glass min-w-[200px] rounded-[1.5rem] border-white/20 p-2">
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-black text-yellow-500 rounded-xl h-12"><Clock className="w-5 h-5" /> MARK PENDING</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-black text-blue-500 rounded-xl h-12"><Truck className="w-5 h-5" /> MARK SHIPPED</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-black text-green-500 rounded-xl h-12"><CheckCircle2 className="w-5 h-5" /> MARK DELIVERED</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-bold text-yellow-500 rounded-xl h-12"><Clock className="w-5 h-5" /> SET PENDING</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-bold text-blue-500 rounded-xl h-12"><Truck className="w-5 h-5" /> SET SHIPPED</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-bold text-green-500 rounded-xl h-12"><CheckCircle2 className="w-5 h-5" /> SET DELIVERED</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
                     {!ordersLoading && isConfirmedAdmin && orders?.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="py-32 text-center glass rounded-[3rem] border-none"><ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-6" /><p className="font-black text-xl text-muted-foreground">Order vault is empty.</p></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="py-32 text-center glass rounded-[3rem] border-none"><ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-6" /><p className="font-black text-xl text-muted-foreground">No orders yet.</p></TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
