@@ -23,7 +23,7 @@ export async function sendContactEmail(formData: FormData) {
     secure: true, 
     auth: {
       user: 'aadiwrld01@gmail.com',
-      pass: 'nlmd ijup xarw nkuv', 
+      pass: 'sbso efea rnrd uifn', 
     },
   });
 
