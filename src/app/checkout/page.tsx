@@ -15,6 +15,7 @@ import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);

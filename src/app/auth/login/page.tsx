@@ -100,11 +100,11 @@ export default function LoginPage() {
       console.error('Google Sign-In Error:', error);
       
       if (error.code === 'auth/popup-closed-by-user') {
-        setAuthError("The sign-in popup was closed before completion. Please try again and keep the window open.");
+        setAuthError("Sign-in was blocked or interrupted. Please disable AdBlockers/Privacy Extensions and ensure this domain is added to 'Authorized Domains' in your Firebase Console.");
       } else if (error.message?.includes('blocked-by-client')) {
         setAuthError("Sign-in was blocked by your browser. Please disable AdBlockers or Privacy Extensions for this site.");
       } else if (error.code === 'auth/unauthorized-domain') {
-        setAuthError(`This domain (${window.location.hostname}) is not authorized in the Firebase Console. Please add it to 'Authorized Domains' in Auth Settings.`);
+        setAuthError(`This domain (${window.location.hostname}) is not authorized in the Firebase Console. Add it to 'Authorized Domains' in Auth Settings.`);
       } else {
         setAuthError(error.message || "An unexpected error occurred during sign-in.");
       }

@@ -110,8 +110,6 @@ export default function ProfilePage() {
     }
   }, [profileData]);
 
-  // Secure order query: Fetch only orders where userId matches current authenticated user.
-  // This avoids listing permissions errors and keeps user data private.
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -268,7 +266,6 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                      {/* Flipkart-style Order Details Dialog */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold gap-2">
@@ -320,7 +317,6 @@ export default function ProfilePage() {
                         </DialogContent>
                       </Dialog>
 
-                      {/* Visual Track Stepper Dialog */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="rounded-2xl h-12 px-6 font-black bg-primary gap-2 shadow-lg shadow-primary/20">
@@ -332,7 +328,6 @@ export default function ProfilePage() {
                             <DialogTitle className="text-3xl font-black text-center mb-6">TRACKING SIGNAL</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-10 relative">
-                            {/* Track Stepper Line */}
                             <div className="absolute left-[27px] top-4 bottom-4 w-1 bg-gray-100" />
                             
                             <div className="flex gap-6 relative z-10">
