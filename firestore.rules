@@ -64,31 +64,41 @@ service cloud.firestore {
     }
 
     /**
+     * Admin access to all orders via collection group
+     */
+    match /{path=**}/orders/{orderId} {
+      allow read: if isAdmin();
+    }
+    match /{path=**}/order_items/{itemId} {
+      allow read: if isAdmin();
+    }
+
+    /**
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
       allow delete: if false;
 
       match /cart_items/{cartItemId} {
-        allow get, list: if isOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId);
-        allow update, delete: if isExistingOwner(userId);
+        allow update, delete: if isExistingOwner(userId) || isAdmin();
       }
 
       match /orders/{orderId} {
-        allow get, list: if isOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
-        allow update: if isExistingOwner(userId) && isImmutable('userId');
+        allow update: if isAdmin() || (isExistingOwner(userId) && isImmutable('userId'));
         allow delete: if false;
 
         match /order_items/{orderItemId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId);
-          allow update, delete: if false;
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) || isAdmin();
+          allow update, delete: if isAdmin();
         }
       }
     }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useMemo } from 'react';
@@ -23,7 +24,12 @@ import {
   Check,
   Tags,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  ShoppingBag,
+  History,
+  Truck,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +47,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, addDoc, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, collectionGroup } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -116,6 +122,14 @@ export default function AdminDashboard() {
   }, [db]);
 
   const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
+
+  // Fetch all orders across all users for the admin
+  const ordersQuery = useMemoFirebase(() => {
+    if (!db || !isUserAdmin) return null;
+    return query(collectionGroup(db, 'orders'), orderBy('orderDate', 'desc'));
+  }, [db, isUserAdmin]);
+
+  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'images' | 'sizeChartUrl', isEdit = false) => {
     const files = e.target.files;
@@ -239,6 +253,21 @@ export default function AdminDashboard() {
       deleteDocumentNonBlocking(doc(db, 'categories', categoryId));
       toast({ title: "Category Removed" });
     }
+  };
+
+  const handleUpdateOrderStatus = (order: any, newStatus: string) => {
+    if (!db || !isUserAdmin) return;
+    
+    // Paths for collection group updates need the specific document reference
+    // We can infer the path from order.userId and order.id
+    const orderRef = doc(db, 'users', order.userId, 'orders', order.id);
+    
+    updateDocumentNonBlocking(orderRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+
+    toast({ title: "Status Updated", description: `Order #${order.id.slice(0, 8)} is now ${newStatus}.` });
   };
 
   const claimAdminRole = async () => {
@@ -446,6 +475,13 @@ export default function AdminDashboard() {
             >
               <Tags className="w-5 h-5" /> Categories
             </Button>
+            <Button 
+              variant={activeTab === 'orders' ? 'default' : 'ghost'} 
+              onClick={() => setActiveTab('orders')}
+              className={cn("w-full justify-start gap-3 rounded-xl h-12", activeTab === 'orders' ? "shadow-lg shadow-primary/20" : "")}
+            >
+              <ShoppingBag className="w-5 h-5" /> Orders
+            </Button>
           </div>
 
           <div className="pt-4 space-y-2">
@@ -601,6 +637,84 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
+            <header className="space-y-2">
+              <h1 className="text-4xl font-black">Order <span className="wishzep-text">Command</span></h1>
+              <p className="text-muted-foreground text-sm">Fulfill the vision. Manage customer drops.</p>
+            </header>
+
+            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+              <Table>
+                <TableHeader className="bg-white/30">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Order ID</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ordersLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                        <TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : orders?.map((order) => (
+                    <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
+                      <TableCell className="px-6 font-bold font-mono text-xs">
+                        #{order.id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(order.orderDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="font-black text-primary">
+                        Rs.{order.totalAmount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn(
+                          "px-3 py-1 rounded-full text-[10px] uppercase font-black",
+                          order.status === 'delivered' ? 'bg-green-500/20 text-green-500 border-green-500/20' : 
+                          order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500 border-blue-500/20' : 
+                          'bg-yellow-500/20 text-yellow-500 border-yellow-500/20'
+                        )}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20"><Settings className="w-4 h-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="glass min-w-[160px] rounded-xl">
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-2 cursor-pointer font-bold text-yellow-500"><Clock className="w-4 h-4" /> Mark Pending</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-2 cursor-pointer font-bold text-blue-500"><Truck className="w-4 h-4" /> Mark Shipped</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-2 cursor-pointer font-bold text-green-500"><CheckCircle2 className="w-4 h-4" /> Mark Delivered</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!ordersLoading && orders?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-20 text-center glass rounded-2xl">
+                        <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+                        <p className="font-bold text-muted-foreground">No orders recorded in the vault.</p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
