@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: 0,
+    discountPrice: 0,
     category: 'Footwear',
     description: '',
     inventory: 10,
@@ -86,13 +88,14 @@ export default function AdminDashboard() {
     addDocumentNonBlocking(collection(db, 'products'), {
       ...newProduct,
       price: Number(newProduct.price),
+      discountPrice: Number(newProduct.discountPrice) || 0,
       inventory: Number(newProduct.inventory),
       createdAt: serverTimestamp()
     });
 
     toast({ title: "Product Added! ✨", description: `${newProduct.name} is now live.` });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: '', price: 0, category: 'Footwear', description: '', inventory: 10, imageUrl: '', attributes: '' });
+    setNewProduct({ name: '', price: 0, discountPrice: 0, category: 'Footwear', description: '', inventory: 10, imageUrl: '', attributes: '' });
   };
 
   const claimAdminRole = async () => {
@@ -112,8 +115,8 @@ export default function AdminDashboard() {
   const seedSampleData = async () => {
     if (!db || !isUserAdmin) return;
     const samples = [
-      { name: 'Neo-Stomp Tech Sneakers', price: 189, imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', description: 'High-performance techwear sneakers.', inventory: 45, attributes: 'Lightweight, Breathable', createdAt: serverTimestamp() },
-      { name: 'SonicWave Elite Pro', price: 249, imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800', category: 'Audio', description: 'Noise-canceling headphones.', inventory: 12, attributes: '40h Battery, Bluetooth 5.3', createdAt: serverTimestamp() }
+      { name: 'Neo-Stomp Tech Sneakers', price: 2199, discountPrice: 1099, imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', description: 'High-performance techwear sneakers.', inventory: 45, attributes: 'Lightweight, Breathable', createdAt: serverTimestamp() },
+      { name: 'SonicWave Elite Pro', price: 2499, discountPrice: 1999, imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800', category: 'Audio', description: 'Noise-canceling headphones.', inventory: 12, attributes: '40h Battery, Bluetooth 5.3', createdAt: serverTimestamp() }
     ];
     samples.forEach(p => addDocumentNonBlocking(collection(db, 'products'), p));
     toast({ title: "Seeding Success! ✨" });
@@ -206,10 +209,13 @@ export default function AdminDashboard() {
 
                   <div className="grid gap-2"><Label>Name</Label><Input value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2"><Label>Price ($)</Label><Input type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
-                    <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={newProduct.inventory} onChange={e => setNewProduct({...newProduct, inventory: Number(e.target.value)})} /></div>
+                    <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
+                    <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={newProduct.discountPrice} onChange={e => setNewProduct({...newProduct, discountPrice: Number(e.target.value)})} /></div>
                   </div>
-                  <div className="grid gap-2"><Label>Category</Label><Input value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} /></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={newProduct.inventory} onChange={e => setNewProduct({...newProduct, inventory: Number(e.target.value)})} /></div>
+                    <div className="grid gap-2"><Label>Category</Label><Input value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} /></div>
+                  </div>
                   <div className="grid gap-2"><Label>Attributes</Label><Input value={newProduct.attributes} onChange={e => setNewProduct({...newProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
                   <div className="grid gap-2"><Label>Description</Label><Textarea value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} /></div>
                   <Button onClick={handleAddProduct} disabled={isUploading} className="w-full h-12 rounded-xl bg-primary">Create Product</Button>
@@ -252,7 +258,16 @@ export default function AdminDashboard() {
                   </TableCell>
                   <TableCell><Badge variant="outline">{p.category}</Badge></TableCell>
                   <TableCell>{p.inventory} units</TableCell>
-                  <TableCell className="font-bold">${p.price}</TableCell>
+                  <TableCell className="font-bold">
+                    {p.discountPrice && p.discountPrice > 0 ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground line-through">Rs.{p.price}</span>
+                        <span>Rs.{p.discountPrice}</span>
+                      </div>
+                    ) : (
+                      <span>Rs.{p.price}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right"><Button variant="ghost" size="icon" className="rounded-full"><MoreHorizontal /></Button></TableCell>
                 </TableRow>
               ))}

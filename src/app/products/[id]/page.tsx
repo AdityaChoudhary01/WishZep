@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -46,10 +47,11 @@ export default function ProductDetailPage() {
         id: product.id,
         name: product.name,
         price: product.price,
+        discountPrice: product.discountPrice,
         image: product.imageUrl,
         category: product.category,
         description: product.description,
-        rating: 4.9 // Placeholder rating
+        rating: 4.9 
       }, selectedSize, selectedColor);
     }
     
@@ -112,7 +114,16 @@ export default function ProductDetailPage() {
               </div>
             </div>
             <h1 className="text-5xl font-black tracking-tight">{product.name}</h1>
-            <p className="text-3xl font-black text-primary">${product.price}.00</p>
+            <div className="flex items-baseline gap-4">
+              {product.discountPrice && product.discountPrice > 0 ? (
+                <>
+                  <span className="text-2xl text-muted-foreground line-through decoration-muted-foreground/60">Rs.{product.price.toLocaleString()}</span>
+                  <span className="text-4xl font-black text-primary">Rs.{product.discountPrice.toLocaleString()}</span>
+                </>
+              ) : (
+                <span className="text-4xl font-black text-primary">Rs.{product.price.toLocaleString()}</span>
+              )}
+            </div>
           </div>
 
           <p className="text-muted-foreground leading-relaxed text-lg">
@@ -172,7 +183,7 @@ export default function ProductDetailPage() {
               <Truck className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs font-bold uppercase">Free Shipping</p>
-                <p className="text-[10px] text-muted-foreground">On orders over $150</p>
+                <p className="text-[10px] text-muted-foreground">On orders over Rs.15,000</p>
               </div>
             </div>
             <div className="glass p-4 rounded-2xl flex items-center gap-3">

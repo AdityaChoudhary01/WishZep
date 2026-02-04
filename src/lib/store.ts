@@ -6,6 +6,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  discountPrice?: number;
   image: string;
   category: string;
   description: string;
@@ -42,16 +43,26 @@ export const useCartStore = create<CartStore>()(
           (item) => item.id === product.id && item.selectedSize === size && item.selectedColor === color
         );
 
+        // Ensure we use the effective price for the cart
+        const effectivePrice = product.discountPrice && product.discountPrice > 0 
+          ? product.discountPrice 
+          : product.price;
+
         if (existingItem) {
           set({
             items: currentItems.map((item) =>
               item.id === product.id && item.selectedSize === size && item.selectedColor === color
-                ? { ...item, quantity: item.quantity + 1 }
+                ? { ...item, quantity: item.quantity + 1, price: effectivePrice }
                 : item
             ),
           });
         } else {
-          set({ items: [...currentItems, { ...product, quantity: 1, selectedSize: size, selectedColor: color }] });
+          set({ 
+            items: [
+              ...currentItems, 
+              { ...product, price: effectivePrice, quantity: 1, selectedSize: size, selectedColor: color }
+            ] 
+          });
         }
       },
       removeItem: (id) => {

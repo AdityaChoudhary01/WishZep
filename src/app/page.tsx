@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -148,7 +149,16 @@ export default function Home() {
                         <span className="text-[11px] font-bold text-muted-foreground ml-2 uppercase tracking-tight">Verified Drop</span>
                       </div>
                     </div>
-                    <span className="text-3xl font-black text-primary whitespace-nowrap">${p.price}</span>
+                    <div className="flex flex-col items-end shrink-0">
+                      {p.discountPrice && p.discountPrice > 0 ? (
+                        <>
+                          <span className="text-sm text-muted-foreground line-through decoration-muted-foreground/50">Rs.{p.price.toLocaleString()}</span>
+                          <span className="text-3xl font-black text-primary whitespace-nowrap">Rs.{p.discountPrice.toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <span className="text-3xl font-black text-primary whitespace-nowrap">Rs.{p.price.toLocaleString()}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>

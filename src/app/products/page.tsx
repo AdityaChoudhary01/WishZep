@@ -37,8 +37,6 @@ export default function ProductsPage() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    // We fetch everything and sort/filter in memory for a better client-side UX
-    // In a massive production app, we'd use Firestore's native where/orderBy
     return query(collection(db, 'products'), orderBy('name', 'asc'));
   }, [db]);
 
@@ -71,13 +69,20 @@ export default function ProductsPage() {
     // 2. Sort
     switch (sortParam) {
       case 'price-low':
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => {
+          const priceA = a.discountPrice && a.discountPrice > 0 ? a.discountPrice : a.price;
+          const priceB = b.discountPrice && b.discountPrice > 0 ? b.discountPrice : b.price;
+          return priceA - priceB;
+        });
         break;
       case 'price-high':
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => {
+          const priceA = a.discountPrice && a.discountPrice > 0 ? a.discountPrice : a.price;
+          const priceB = b.discountPrice && b.discountPrice > 0 ? b.discountPrice : b.price;
+          return priceB - priceA;
+        });
         break;
       case 'newest':
-        // Handle potential missing timestamps
         result.sort((a, b) => {
           const timeA = a.createdAt?.seconds || 0;
           const timeB = b.createdAt?.seconds || 0;
@@ -85,7 +90,6 @@ export default function ProductsPage() {
         });
         break;
       default:
-        // Default 'recommended' sort (already sorted by name from query)
         break;
     }
 
@@ -110,6 +114,7 @@ export default function ProductsPage() {
       id: product.id,
       name: product.name,
       price: product.price,
+      discountPrice: product.discountPrice,
       image: product.imageUrl,
       category: product.category,
       description: product.description,
@@ -181,7 +186,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Active Filter Indicators */}
       {(searchParam || collectionParam || categoryParam !== 'All' || sortParam !== 'recommended') && (
         <div className="flex items-center gap-4 animate-fade-in bg-white/10 p-4 rounded-2xl border border-white/20">
           <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Active Filters:</span>
@@ -244,7 +248,16 @@ export default function ProductsPage() {
                     <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate">{p.name}</h3>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">{p.category}</p>
                   </div>
-                  <p className="text-2xl font-black text-primary">${p.price}</p>
+                  <div className="flex flex-col items-end shrink-0">
+                    {p.discountPrice && p.discountPrice > 0 ? (
+                      <>
+                        <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/50">Rs.{p.price.toLocaleString()}</span>
+                        <p className="text-xl font-black text-primary">Rs.{p.discountPrice.toLocaleString()}</p>
+                      </>
+                    ) : (
+                      <p className="text-xl font-black text-primary">Rs.{p.price.toLocaleString()}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
