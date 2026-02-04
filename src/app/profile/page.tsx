@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
-import { collection, orderBy, query, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, orderBy, query, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
 import { Package, History, LogOut, ChevronRight, Camera, Loader2, Edit3, Save, X as CloseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,9 +51,14 @@ export default function ProfilePage() {
     }
   }, [profileData]);
 
+  // Query root-level orders collection filtered by userId
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'orders'), orderBy('orderDate', 'desc'));
+    return query(
+      collection(db, 'orders'), 
+      where('userId', '==', user.uid),
+      orderBy('orderDate', 'desc')
+    );
   }, [db, user]);
 
   const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
@@ -211,7 +217,7 @@ export default function ProfilePage() {
 
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
-            <div className="py-20 text-center">Loading your history...</div>
+            <div className="py-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest text-xs">Loading history...</div>
           ) : !orders || orders.length === 0 ? (
             <div className="glass rounded-[2rem] p-20 text-center space-y-6">
               <Package className="w-16 h-16 text-muted-foreground mx-auto" />
@@ -239,13 +245,13 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-12">
                     <div className="text-center md:text-right">
                       <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Amount</p>
-                      <p className="text-xl font-black">${order.totalAmount}</p>
+                      <p className="text-xl font-black">Rs.{order.totalAmount?.toLocaleString()}</p>
                     </div>
                     <Badge className={
                       order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
                       order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
                     }>
-                      {order.status.toUpperCase()}
+                      {order.status?.toUpperCase() || 'PENDING'}
                     </Badge>
                     <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/40">
                       <ChevronRight className="w-5 h-5" />

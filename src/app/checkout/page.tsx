@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
@@ -45,8 +46,8 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    // 1. Pre-generate the Order ID to use for order items immediately
-    const orderRef = doc(collection(db, 'users', user.uid, 'orders'));
+    // 1. Pre-generate the Order ID at the ROOT level
+    const orderRef = doc(collection(db, 'orders'));
     
     // 2. Queue the main order document
     setDocumentNonBlocking(orderRef, {
@@ -59,9 +60,9 @@ export default function CheckoutPage() {
       createdAt: serverTimestamp()
     }, { merge: true });
 
-    // 3. Queue each order item using the pre-generated Order ID
+    // 3. Queue each order item using the pre-generated Order ID at the ROOT level
     items.forEach(item => {
-      const itemRef = doc(collection(db, 'users', user.uid, 'orders', orderRef.id, 'order_items'));
+      const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
       setDocumentNonBlocking(itemRef, {
         orderId: orderRef.id,
         productId: item.id,
@@ -75,14 +76,13 @@ export default function CheckoutPage() {
     toast({ title: "Order Placed! ✨", description: "Your artifacts are being prepared." });
     clearCart();
     
-    // Slight delay before redirect to ensure the user sees the toast
     setTimeout(() => {
       router.push('/profile');
     }, 1500);
   };
 
   if (!mounted) {
-    return <div className="p-20 text-center animate-pulse">Preparing checkout...</div>;
+    return <div className="p-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest">Preparing checkout...</div>;
   }
 
   if (items.length === 0) {

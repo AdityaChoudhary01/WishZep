@@ -5,10 +5,6 @@ service cloud.firestore {
 
     /**
      * WISHZEP SECURITY RULES
-     *
-     * CORE PHILOSOPHY:
-     * This ruleset implements a strict path-based ownership model for user-specific data and a
-     * role-based model for global application content.
      */
 
     // --- Helper Functions ---
@@ -27,14 +23,6 @@ service cloud.firestore {
 
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
-    }
-
-    function isValidOwnershipCreate(uidField) {
-      return request.resource.data[uidField] == request.auth.uid;
-    }
-
-    function isImmutable(field) {
-      return request.resource.data[field] == resource.data[field];
     }
 
     // --- Collection Rules ---
@@ -78,18 +66,22 @@ service cloud.firestore {
         allow create: if isOwner(userId);
         allow update, delete: if isExistingOwner(userId) || isAdmin();
       }
+    }
 
-      match /orders/{orderId} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
-        allow update: if isAdmin() || (isExistingOwner(userId) && isImmutable('userId'));
-        allow delete: if false;
+    /**
+     * @path /orders/{orderId}
+     * Moved to root for better administrative visibility and security rule matching.
+     */
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
 
-        match /order_items/{orderItemId} {
-          allow get, list: if isOwner(userId) || isAdmin();
-          allow create: if isOwner(userId) || isAdmin();
-          allow update, delete: if isAdmin();
-        }
+      match /order_items/{orderItemId} {
+        allow read: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin();
       }
     }
 
@@ -101,16 +93,6 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isOwner(userId); 
       allow delete: if false;
-    }
-
-    /**
-     * Global access for admins to read across any order collections (Collection Group Support)
-     */
-    match /{path=**}/orders/{orderId} {
-      allow read: if isAdmin();
-    }
-    match /{path=**}/order_items/{itemId} {
-      allow read: if isAdmin();
     }
   }
 }
