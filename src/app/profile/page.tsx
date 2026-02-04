@@ -26,6 +26,13 @@ export default function ProfilePage() {
     setMounted(true);
   }, []);
 
+  // Use useEffect for redirection to avoid "Update during render" warnings
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, isUserLoading, router]);
+
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'orders'), orderBy('orderDate', 'desc'));
@@ -53,7 +60,6 @@ export default function ProfilePage() {
   if (isUserLoading) return <div className="p-20 text-center">Charging your profile...</div>;
 
   if (!user) {
-    router.push('/auth/login');
     return null;
   }
 
