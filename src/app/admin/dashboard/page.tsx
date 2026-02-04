@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef } from 'react';
@@ -234,7 +233,7 @@ export default function AdminDashboard() {
       <div className="space-y-6 pt-4">
         {/* Images Section */}
         <div className="space-y-4">
-          <Label className="font-bold text-xs uppercase tracking-widest">Visual Assets</ins></Label>
+          <Label className="font-bold text-xs uppercase tracking-widest">Visual Assets</Label>
           <div className="grid grid-cols-4 gap-4">
             <div className="relative aspect-square glass rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center group cursor-pointer" onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}>
               {product.imageUrl ? <Image src={product.imageUrl} alt="Main" fill className="object-cover" /> : <Camera className="w-8 h-8 text-muted-foreground" />}
