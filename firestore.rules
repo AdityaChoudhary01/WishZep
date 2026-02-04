@@ -1,0 +1,174 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * WISHZEP SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict path-based ownership model for user-specific data and a
+     * role-based model for global application content. It prioritizes "Authorization Independence"
+     * by nesting private resources under the authenticated user's ID, minimizing the need for 
+     * cross-document lookups.
+     *
+     * DATA STRUCTURE:
+     * - /products/{productId}: Global product catalog (Public Read, Admin Write).
+     * - /pages/{pageId}: Static informational content (Public Read, Admin Write).
+     * - /users/{userId}: Root user profiles (Owner Read/Write).
+     * - /users/{userId}/cart_items/{cartItemId}: Private shopping carts (Owner Read/Write).
+     * - /users/{userId}/orders/{orderId}: Customer order history (Owner Read/Write).
+     * - /roles_admin/{userId}: Administrative permission registry (Admin Lookup).
+     *
+     * KEY SECURITY DECISIONS:
+     * - Global Listing: Collections like 'products' and 'pages' are publicly listable to 
+     *   facilitate discovery without authentication.
+     * - Structural Segregation: User data is strictly isolated within the /users/{userId} 
+     *   hierarchy, ensuring that queries naturally filter for the current user's data.
+     * - Admin Elevation: Administrative privileges are determined by the presence of a 
+     *   document in the /roles_admin collection.
+     * - Immutability: Relational fields (like userId) are enforced as immutable during updates 
+     *   to prevent "account hopping" of data.
+     *
+     * DENORMALIZATION FOR AUTHORIZATION:
+     * Internal data fields (e.g., userId in CartItem) are validated against the document path
+     * during creation to ensure consistency between the routing and the data payload.
+     */
+
+    // --- Helper Functions ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the user is the owner and the document exists.
+     * Used for destructive or modification operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that relational fields match the path and remain immutable.
+     */
+    function isValidOwnershipCreate(uidField) {
+      return request.resource.data[uidField] == request.auth.uid;
+    }
+
+    function isImmutable(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Publicly accessible product catalog. Writes restricted to administrative users.
+     * @path /products/{productId}
+     * @allow get, list: (true)
+     * @deny create, update, delete: (non-admin users)
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Static informational pages (About Us, etc.). Publicly readable.
+     * @path /pages/{pageId}
+     * @allow get, list: (true)
+     * @deny create, update, delete: (non-admin users)
+     * @principle Public Read with Admin-Only Writes.
+     */
+    match /pages/{pageId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description User profile management. Users can only see and edit their own profiles.
+     * @path /users/{userId}
+     * @allow get: if isOwner(userId);
+     * @allow list: if false; (Prevents user enumeration)
+     * @allow create: if isOwner(userId);
+     * @allow update: if isExistingOwner(userId);
+     * @deny delete: (always)
+     * @principle Self-creation and strict ownership.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if false;
+
+      /**
+       * @description Shopping cart items. Nested under the user for automatic security isolation.
+       * @path /users/{userId}/cart_items/{cartItemId}
+       * @allow get, list: if isOwner(userId);
+       * @allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
+       * @allow update: if isExistingOwner(userId) && isImmutable('userId');
+       * @allow delete: if isExistingOwner(userId);
+       * @principle Path-based ownership with relational field validation.
+       */
+      match /cart_items/{cartItemId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
+        allow update: if isExistingOwner(userId) && isImmutable('userId');
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Order history. Only the specific user can view their past orders.
+       * @path /users/{userId}/orders/{orderId}
+       * @allow get, list: if isOwner(userId);
+       * @allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
+       * @allow update: if isExistingOwner(userId) && isImmutable('userId');
+       * @deny delete: (Orders are permanent records)
+       * @principle Path-based ownership and audit trail integrity.
+       */
+      match /orders/{orderId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidOwnershipCreate('userId');
+        allow update: if isExistingOwner(userId) && isImmutable('userId');
+        allow delete: if false;
+
+        /**
+         * @description Individual items within a specific order.
+         * @path /users/{userId}/orders/{orderId}/order_items/{orderItemId}
+         * @allow get, list: if isOwner(userId);
+         * @allow create: if isOwner(userId);
+         * @deny update, delete: (Order items are permanent once placed)
+         * @principle Hierarchical ownership.
+         */
+        match /order_items/{orderItemId} {
+          allow get, list: if isOwner(userId);
+          allow create: if isOwner(userId);
+          allow update, delete: if false;
+        }
+      }
+    }
+
+    /**
+     * @description Registry for administrative roles. Existence of a document grants admin status.
+     * @path /roles_admin/{userId}
+     * @allow get: if isSignedIn();
+     * @deny list: (always)
+     * @deny create, update, delete: (System-level management required)
+     * @principle Role-Based Access Control (RBAC) lookup collection.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+  }
+}
