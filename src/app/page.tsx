@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -55,7 +56,6 @@ export default function Home() {
         await copyToClipboard();
       }
     } catch (err) {
-      // Fallback to clipboard on permission errors or other failures
       await copyToClipboard();
     }
   };
@@ -92,12 +92,12 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap justify-center gap-6 pt-6">
               <Link href="/products">
-                <Button size="lg" className="h-20 px-12 rounded-full bg-primary hover:bg-primary/90 text-2xl font-black group shadow-2xl shadow-primary/30">
-                  Shop Now <ArrowRight className="ml-2 group-hover:translate-x-2 transition-transform w-8 h-8" />
+                <Button size="lg" className="h-16 md:h-20 px-8 md:px-12 rounded-full bg-primary hover:bg-primary/90 text-xl md:text-2xl font-black group shadow-2xl shadow-primary/30">
+                  Shop Now <ArrowRight className="ml-2 group-hover:translate-x-2 transition-transform w-6 h-6 md:w-8 md:h-8" />
                 </Button>
               </Link>
               <Link href="/info/contact">
-                <Button size="lg" variant="outline" className="h-20 px-12 rounded-full glass text-2xl font-black">
+                <Button size="lg" variant="outline" className="h-16 md:h-20 px-8 md:px-12 rounded-full glass text-xl md:text-2xl font-black">
                   Enquiry
                 </Button>
               </Link>
@@ -108,54 +108,54 @@ export default function Home() {
 
       {/* Trust Badges */}
       <section className="container mx-auto px-6 -mt-16 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-12 glass rounded-[3rem] shadow-2xl bg-white/60">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 py-12 glass rounded-[2.5rem] md:rounded-[3rem] shadow-2xl bg-white/60">
           {[
-            { icon: Zap, title: 'Express Shipping', desc: 'Arrives in 2-3 days' },
-            { icon: ShieldCheck, title: 'Secure Payment', desc: '100% safe checkouts' },
-            { icon: Star, title: 'Premium Quality', desc: 'Handpicked selection' },
-            { icon: CheckCircle2, title: 'Verified Drops', desc: 'Final Sale Exclusivity' },
+            { icon: Zap, title: 'Express Ship', desc: 'Arrives in 2-3 days' },
+            { icon: ShieldCheck, title: 'Secure Pay', desc: '100% safe checkouts' },
+            { icon: Star, title: 'Premium', desc: 'Handpicked selection' },
+            { icon: CheckCircle2, title: 'Verified', desc: 'Final Sale Quality' },
           ].map((item, idx) => (
             <div key={idx} className="flex flex-col items-center text-center gap-2">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-                <item.icon className="w-8 h-8 text-primary" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
+                <item.icon className="w-6 h-6 md:w-8 md:h-8 text-primary" />
               </div>
-              <h4 className="font-bold text-lg">{item.title}</h4>
-              <p className="text-sm text-muted-foreground">{item.desc}</p>
+              <h4 className="font-bold text-sm md:text-lg">{item.title}</h4>
+              <p className="text-[10px] md:text-sm text-muted-foreground">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Featured Products (Latest Drops) */}
-      <section className="container mx-auto px-6 space-y-16">
+      <section className="container mx-auto px-6 space-y-12 md:space-y-16">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-6 text-center md:text-left">
           <div className="space-y-4">
-            <h2 className="text-6xl font-black tracking-tight">LATEST <span className="wishzep-text">DROPS</span></h2>
-            <p className="text-xl text-muted-foreground">The most anticipated releases, calibrated for performance.</p>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tight uppercase">LATEST <span className="wishzep-text">DROPS</span></h2>
+            <p className="text-lg md:text-xl text-muted-foreground">The most anticipated releases, calibrated for performance.</p>
           </div>
           <Link href="/products">
-            <Button variant="link" className="text-primary text-xl font-black gap-2 p-0 h-auto">
-              View All Catalogue <ArrowRight className="w-6 h-6" />
+            <Button variant="link" className="text-primary text-lg md:text-xl font-black gap-2 p-0 h-auto">
+              View All Catalogue <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
             </Button>
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="aspect-square rounded-[3rem]" />
+                <Skeleton className="aspect-square rounded-[2rem] md:rounded-[3rem]" />
                 <Skeleton className="h-8 w-3/4 rounded-full" />
                 <Skeleton className="h-6 w-1/4 rounded-full" />
               </div>
             ))}
           </div>
         ) : featuredProducts && featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-10">
             {featuredProducts.map((p) => (
               <Link href={`/products/${p.id}`} key={p.id} className="group">
-                <div className="glass rounded-[3rem] p-6 space-y-6 transition-all hover:-translate-y-4 hover:shadow-2xl hover:shadow-primary/20">
-                  <div className="relative aspect-square rounded-[2.5rem] overflow-hidden bg-muted">
+                <div className="glass rounded-[2rem] md:rounded-[3rem] p-3 md:p-6 space-y-4 md:space-y-6 transition-all hover:-translate-y-4 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="relative aspect-square rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden bg-muted">
                     <Image
                       src={p.imageUrl || `https://picsum.photos/seed/${p.id}/800/800`}
                       alt={p.name}
@@ -164,43 +164,42 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     
-                    {/* Share Icon */}
                     <button 
                       onClick={(e) => handleShare(e, p)}
-                      className="absolute top-6 right-6 w-12 h-12 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-white transition-all z-10"
+                      className="absolute top-3 right-3 md:top-6 md:right-6 w-8 h-8 md:w-12 md:h-12 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-white transition-all z-10"
                     >
-                      <Share2 className="w-5 h-5" />
+                      <Share2 className="w-3.5 h-3.5 md:w-5 md:h-5" />
                     </button>
 
                     <Button
                       size="lg"
-                      className="absolute bottom-6 right-6 rounded-2xl glass-dark text-white opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0"
+                      className="absolute bottom-3 right-3 md:bottom-6 md:right-6 rounded-xl md:rounded-2xl glass-dark text-white opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0 h-10 w-10 md:h-14 md:w-14"
                     >
-                      <ShoppingBag className="w-6 h-6" />
+                      <ShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
                     </Button>
                   </div>
-                  <div className="flex justify-between items-start pt-2">
-                    <div className="space-y-2 flex-1 pr-4 min-w-0">
-                      <h3 className="font-black text-2xl group-hover:text-primary transition-colors truncate">
+                  <div className="flex justify-between items-start pt-2 px-1 md:px-0">
+                    <div className="space-y-1 md:space-y-2 flex-1 pr-4 min-w-0">
+                      <h3 className="font-black text-sm md:text-2xl group-hover:text-primary transition-colors truncate">
                         {p.name}
                       </h3>
                       <div className="flex items-center gap-1">
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                            <Star key={s} className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 fill-yellow-400 text-yellow-400" />
                           ))}
                         </div>
-                        <span className="text-[11px] font-bold text-muted-foreground ml-2 uppercase tracking-tight">Verified Drop</span>
+                        <span className="text-[8px] md:text-[11px] font-bold text-muted-foreground ml-1 uppercase tracking-tight truncate">Verified Drop</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end shrink-0">
                       {p.discountPrice && p.discountPrice > 0 ? (
                         <>
-                          <span className="text-sm text-muted-foreground line-through decoration-muted-foreground/50">Rs.{p.price.toLocaleString()}</span>
-                          <span className="text-3xl font-black text-primary whitespace-nowrap">Rs.{p.discountPrice.toLocaleString()}</span>
+                          <span className="text-[10px] md:text-sm text-muted-foreground line-through decoration-muted-foreground/50">Rs.{p.price.toLocaleString()}</span>
+                          <span className="text-base md:text-3xl font-black text-primary whitespace-nowrap">Rs.{p.discountPrice.toLocaleString()}</span>
                         </>
                       ) : (
-                        <span className="text-3xl font-black text-primary whitespace-nowrap">Rs.{p.price.toLocaleString()}</span>
+                        <span className="text-base md:text-3xl font-black text-primary whitespace-nowrap">Rs.{p.price.toLocaleString()}</span>
                       )}
                     </div>
                   </div>
@@ -216,7 +215,7 @@ export default function Home() {
               <p className="text-muted-foreground">The vault is currently locked. Head to the admin dashboard to release the gear.</p>
             </div>
             <Link href="/admin/dashboard">
-              <Button variant="outline" className="rounded-full px-8">Access Admin Vault</Button>
+              <Button variant="outline" className="rounded-full px-8 h-12 font-black">Access Admin Vault</Button>
             </Link>
           </div>
         )}
