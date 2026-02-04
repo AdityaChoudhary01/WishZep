@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -64,7 +63,7 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-20 pb-20">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-20">
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden pt-10">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://picsum.photos/seed/wishzep-hero/1920/1080"
@@ -77,7 +76,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 pb-40">
+        <div className="container mx-auto px-6 relative z-10 pb-20">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
             <div className="flex justify-center">
               <Badge variant="outline" className="px-6 py-2 border-primary text-primary glass rounded-full text-sm font-bold tracking-widest uppercase">
@@ -108,7 +107,7 @@ export default function Home() {
       </section>
 
       {/* Trust Badges */}
-      <section className="container mx-auto px-6 -mt-32 relative z-20">
+      <section className="container mx-auto px-6 -mt-16 relative z-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-12 glass rounded-[3rem] shadow-2xl bg-white/60">
           {[
             { icon: Zap, title: 'Express Shipping', desc: 'Arrives in 2-3 days' },
