@@ -31,21 +31,24 @@ export default function ProductsPage() {
   const searchParam = searchParams.get('search')?.toLowerCase() || '';
   const collectionParam = searchParams.get('collection')?.toLowerCase() || '';
   const categoryParam = searchParams.get('category') || 'All';
+  const sortParam = searchParams.get('sort') || 'recommended';
   
   const categories = ['All', 'Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
+    // We fetch everything and sort/filter in memory for a better client-side UX
+    // In a massive production app, we'd use Firestore's native where/orderBy
     return query(collection(db, 'products'), orderBy('name', 'asc'));
   }, [db]);
 
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  const filteredProducts = useMemo(() => {
+  const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
     
-    return products.filter((p) => {
-      // Partial string matching across multiple fields
+    // 1. Filter
+    let result = products.filter((p) => {
       const matchesSearch = !searchParam || [
         p.name,
         p.category,
@@ -55,7 +58,6 @@ export default function ProductsPage() {
       
       const matchesCategory = categoryParam === 'All' || p.category === categoryParam;
 
-      // Handle special collection filters from home/collections pages
       const normalizedCollection = collectionParam.replace(/-/g, ' ');
       const matchesCollection = !collectionParam || 
         p.category?.toLowerCase() === collectionParam ||
@@ -65,15 +67,40 @@ export default function ProductsPage() {
       
       return matchesSearch && matchesCategory && matchesCollection;
     });
-  }, [products, searchParam, categoryParam, collectionParam]);
 
-  const handleCategoryChange = (cat: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (cat === 'All') {
-      params.delete('category');
-    } else {
-      params.set('category', cat);
+    // 2. Sort
+    switch (sortParam) {
+      case 'price-low':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case 'newest':
+        // Handle potential missing timestamps
+        result.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+        break;
+      default:
+        // Default 'recommended' sort (already sorted by name from query)
+        break;
     }
+
+    return result;
+  }, [products, searchParam, categoryParam, collectionParam, sortParam]);
+
+  const updateParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === 'All' || value === 'recommended') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
     router.push(`/products?${params.toString()}`);
   };
 
@@ -94,8 +121,13 @@ export default function ProductsPage() {
     });
   };
 
-  const clearFilters = () => {
-    router.push('/products');
+  const getSortLabel = () => {
+    switch (sortParam) {
+      case 'price-low': return 'Price: Low to High';
+      case 'price-high': return 'Price: High to Low';
+      case 'newest': return 'Newest First';
+      default: return 'Recommended';
+    }
   };
 
   return (
@@ -117,7 +149,7 @@ export default function ProductsPage() {
                 "rounded-full px-6 transition-all",
                 categoryParam === cat ? "shadow-lg shadow-primary/30" : "glass"
               )}
-              onClick={() => handleCategoryChange(cat)}
+              onClick={() => updateParams({ category: cat })}
             >
               {cat}
             </Button>
@@ -127,29 +159,39 @@ export default function ProductsPage() {
         <div className="flex items-center gap-4 w-full md:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="glass gap-2 rounded-full w-full md:w-auto">
-                Sort By: Recommended <ChevronDown className="w-4 h-4" />
+              <Button variant="outline" className="glass gap-2 rounded-full w-full md:w-auto min-w-[200px] justify-between">
+                <span>Sort By: {getSortLabel()}</span> <ChevronDown className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="glass">
-              <DropdownMenuItem>Price: Low to High</DropdownMenuItem>
-              <DropdownMenuItem>Price: High to Low</DropdownMenuItem>
-              <DropdownMenuItem>Newest First</DropdownMenuItem>
+            <DropdownMenuContent className="glass min-w-[200px]">
+              <DropdownMenuItem onClick={() => updateParams({ sort: 'recommended' })}>
+                Recommended
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => updateParams({ sort: 'price-low' })}>
+                Price: Low to High
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => updateParams({ sort: 'price-high' })}>
+                Price: High to Low
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => updateParams({ sort: 'newest' })}>
+                Newest First
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
       {/* Active Filter Indicators */}
-      {(searchParam || collectionParam || categoryParam !== 'All') && (
+      {(searchParam || collectionParam || categoryParam !== 'All' || sortParam !== 'recommended') && (
         <div className="flex items-center gap-4 animate-fade-in bg-white/10 p-4 rounded-2xl border border-white/20">
           <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Active Filters:</span>
           <div className="flex flex-wrap gap-2 flex-1">
             {searchParam && <Badge className="bg-primary text-white px-4 py-1 rounded-full">Search: "{searchParam}"</Badge>}
             {collectionParam && <Badge className="bg-secondary text-white px-4 py-1 rounded-full">Collection: {collectionParam}</Badge>}
             {categoryParam !== 'All' && <Badge className="bg-accent text-white px-4 py-1 rounded-full">{categoryParam}</Badge>}
+            {sortParam !== 'recommended' && <Badge variant="outline" className="glass px-4 py-1 rounded-full">{getSortLabel()}</Badge>}
           </div>
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 rounded-xl gap-2 hover:bg-destructive/10 hover:text-destructive">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/products')} className="h-9 rounded-xl gap-2 hover:bg-destructive/10 hover:text-destructive">
             <X className="w-4 h-4" /> Reset All
           </Button>
         </div>
@@ -165,9 +207,9 @@ export default function ProductsPage() {
             </div>
           ))}
         </div>
-      ) : filteredProducts.length > 0 ? (
+      ) : filteredAndSortedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredProducts.map((p) => (
+          {filteredAndSortedProducts.map((p) => (
             <Link href={`/products/${p.id}`} key={p.id} className="group">
               <div className="glass rounded-[2rem] p-3 space-y-4 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/5">
                 <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden bg-muted">
@@ -217,7 +259,7 @@ export default function ProductsPage() {
             <h2 className="text-3xl font-black">No WishZep Gear Found</h2>
             <p className="text-muted-foreground text-lg">We couldn't find anything matching your current filters.</p>
           </div>
-          <Button variant="default" size="lg" onClick={clearFilters} className="rounded-full px-10">
+          <Button variant="default" size="lg" onClick={() => router.push('/products')} className="rounded-full px-10">
             Browse All Products
           </Button>
         </div>
