@@ -119,7 +119,7 @@ export default function Home() {
             {featuredProducts.map((p) => (
               <Link href={`/products/${p.id}`} key={p.id} className="group">
                 <div className="glass rounded-[3rem] p-6 space-y-6 transition-all hover:-translate-y-4 hover:shadow-2xl hover:shadow-primary/20">
-                  <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-muted">
+                  <div className="relative aspect-square rounded-[2.5rem] overflow-hidden bg-muted">
                     <Image
                       src={p.imageUrl || `https://picsum.photos/seed/${p.id}/800/800`}
                       alt={p.name}
@@ -135,18 +135,20 @@ export default function Home() {
                     </Button>
                   </div>
                   <div className="flex justify-between items-start pt-2">
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1 pr-4">
                       <h3 className="font-black text-2xl group-hover:text-primary transition-colors truncate">
                         {p.name}
                       </h3>
                       <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        ))}
-                        <span className="text-xs font-bold text-muted-foreground ml-2">Verified Drop</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground ml-2 uppercase tracking-tight">Verified Drop</span>
                       </div>
                     </div>
-                    <span className="text-3xl font-black text-primary ml-4">${p.price}</span>
+                    <span className="text-3xl font-black text-primary whitespace-nowrap">${p.price}</span>
                   </div>
                 </div>
               </Link>
