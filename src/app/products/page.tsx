@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 const PRODUCTS = [
   { id: '1', name: 'Neo-Stomp Tech Sneakers', price: 189, image: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', badge: 'Popular' },
@@ -45,7 +46,7 @@ export default function ProductsPage() {
           {categories.map((cat) => (
             <Button
               key={cat}
-              variant={activeCategory === cat ? 'primary' : 'outline'}
+              variant={activeCategory === cat ? 'default' : 'outline'}
               className={cn(
                 "rounded-full px-6 transition-all",
                 activeCategory === cat ? "shadow-lg shadow-primary/30" : "glass"
@@ -118,13 +119,9 @@ export default function ProductsPage() {
       {filteredProducts.length === 0 && (
         <div className="py-20 text-center space-y-4">
           <p className="text-2xl font-bold">No products found in this category.</p>
-          <Button variant="primary" onClick={() => setActiveCategory('All')}>Browse All Products</Button>
+          <Button variant="default" onClick={() => setActiveCategory('All')}>Browse All Products</Button>
         </div>
       )}
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

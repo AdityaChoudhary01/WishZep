@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
