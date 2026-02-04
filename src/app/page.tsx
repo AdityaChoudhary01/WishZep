@@ -37,18 +37,27 @@ export default function Home() {
       url: window.location.origin + `/products/${product.id}`,
     };
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
+    const copyToClipboard = async () => {
+      try {
         await navigator.clipboard.writeText(shareData.url);
         toast({
           title: "Link Copied! 🔗",
           description: "Product link copied to your clipboard.",
         });
+      } catch (err) {
+        console.error('Clipboard failed:', err);
+      }
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await copyToClipboard();
       }
     } catch (err) {
-      console.error('Error sharing:', err);
+      // Fallback to clipboard on permission errors or other failures
+      await copyToClipboard();
     }
   };
 

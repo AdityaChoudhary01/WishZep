@@ -100,18 +100,27 @@ export default function ProductDetailPage() {
       url: window.location.href,
     };
 
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
+    const copyToClipboard = async () => {
+      try {
         await navigator.clipboard.writeText(shareData.url);
         toast({
           title: "Link Copied! 🔗",
           description: "Product link copied to your clipboard.",
         });
+      } catch (err) {
+        console.error('Clipboard failed:', err);
+      }
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await copyToClipboard();
       }
     } catch (err) {
-      console.error('Error sharing:', err);
+      // If sharing fails (e.g. permission denied), fallback to clipboard
+      await copyToClipboard();
     }
   };
 
