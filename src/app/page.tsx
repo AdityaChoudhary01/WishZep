@@ -2,19 +2,24 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star, CheckCircle2, PackageSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const db = useFirestore();
 
+  // Optimized query to fetch the 3 most recent products
   const featuredQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), limit(3));
+    return query(
+      collection(db, 'products'), 
+      orderBy('createdAt', 'desc'),
+      limit(3)
+    );
   }, [db]);
 
   const { data: featuredProducts, isLoading } = useCollection(featuredQuery);
@@ -72,7 +77,7 @@ export default function Home() {
             { icon: Zap, title: 'Express Shipping', desc: 'Arrives in 2-3 days' },
             { icon: ShieldCheck, title: 'Secure Payment', desc: '100% safe checkouts' },
             { icon: Star, title: 'Premium Quality', desc: 'Handpicked selection' },
-            { icon: CheckCircle2, title: 'Verified Drops', desc: 'Authenticity guaranteed' },
+            { icon: CheckCircle2, title: 'Verified Drops', desc: 'Final Sale Exclusivity' },
           ].map((item, idx) => (
             <div key={idx} className="flex flex-col items-center text-center gap-2">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
@@ -85,7 +90,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Featured Products (Latest Drops) */}
       <section className="container mx-auto px-6 space-y-16">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-6 text-center md:text-left">
           <div className="space-y-4">
@@ -99,17 +104,19 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {isLoading ? (
-            [...Array(3)].map((_, i) => (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="aspect-square rounded-[3rem]" />
                 <Skeleton className="h-8 w-3/4 rounded-full" />
                 <Skeleton className="h-6 w-1/4 rounded-full" />
               </div>
-            ))
-          ) : (
-            featuredProducts?.map((p) => (
+            ))}
+          </div>
+        ) : featuredProducts && featuredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {featuredProducts.map((p) => (
               <Link href={`/products/${p.id}`} key={p.id} className="group">
                 <div className="glass rounded-[3rem] p-6 space-y-6 transition-all hover:-translate-y-4 hover:shadow-2xl hover:shadow-primary/20">
                   <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-muted">
@@ -143,9 +150,20 @@ export default function Home() {
                   </div>
                 </div>
               </Link>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 glass rounded-[3rem] text-center space-y-6">
+            <PackageSearch className="w-16 h-16 mx-auto text-muted-foreground" />
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black">No Drops Detected</h3>
+              <p className="text-muted-foreground">The vault is currently locked. Head to the admin dashboard to release the gear.</p>
+            </div>
+            <Link href="/admin/dashboard">
+              <Button variant="outline" className="rounded-full px-8">Access Admin Vault</Button>
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* Mesh Promo Section */}
