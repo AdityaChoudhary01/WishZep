@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -45,7 +44,6 @@ export default function ProductsPage() {
     if (!products) return [];
     
     return products.filter((p) => {
-      // 1. Partial Search Match (Name, Category, Description, Attributes)
       const matchesSearch = !searchParam || [
         p.name,
         p.category,
@@ -53,12 +51,8 @@ export default function ProductsPage() {
         p.attributes
       ].some(field => field?.toLowerCase().includes(searchParam));
       
-      // 2. Category Filter (Buttons)
       const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
 
-      // 3. Collection Filter (from URL query)
-      // We map collectionParam to category or name for broad matching
-      // Normalize 'aura-prime' etc to match 'Aura' or similar
       const normalizedCollection = collectionParam.replace('-', ' ');
       const matchesCollection = !collectionParam || 
         p.category?.toLowerCase() === collectionParam ||
@@ -89,16 +83,15 @@ export default function ProductsPage() {
 
   const clearFilters = () => {
     setActiveCategory('All');
-    // Using window.history or router.push to effectively clear the URL params
     router.replace('/products');
   };
 
   return (
     <div className="container mx-auto px-6 py-12 space-y-12">
       <div className="space-y-6">
-        <h1 className="text-5xl font-black tracking-tighter">OUR <span className="aura-text">CATALOGUE</span></h1>
+        <h1 className="text-5xl font-black tracking-tighter">THE <span className="wishzep-text">CATALOGUE</span></h1>
         <p className="text-muted-foreground text-lg max-w-2xl">
-          Carefully selected gear to elevate your performance and style. Browse our latest arrivals and timeless classics.
+          Carefully selected gear from WishZep to elevate your performance and style. Browse our latest arrivals.
         </p>
       </div>
 
@@ -132,10 +125,6 @@ export default function ProductsPage() {
               <DropdownMenuItem>Most Popular</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <div className="hidden md:flex glass rounded-full p-1">
-            <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm"><LayoutGrid className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" className="rounded-full"><List className="w-4 h-4" /></Button>
-          </div>
         </div>
       </div>
 
@@ -200,10 +189,6 @@ export default function ProductsPage() {
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate">{p.name}</h3>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">{p.category}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs text-muted-foreground">{p.rating || 4.5}</span>
-                    </div>
                   </div>
                   <p className="text-2xl font-black text-primary">${p.price}</p>
                 </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -56,7 +55,7 @@ export default function Navbar() {
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center rotate-12 group-hover:rotate-0 transition-transform shadow-lg">
             <span className="text-white font-bold text-2xl">W</span>
           </div>
-          <span className="text-2xl font-bold font-headline aura-text tracking-tighter">WishZep</span>
+          <span className="text-2xl font-bold font-headline wishzep-text tracking-tighter">WishZep</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -78,7 +77,7 @@ export default function Navbar() {
             <form onSubmit={handleSearch} className="relative animate-in slide-in-from-right-4">
               <Input
                 autoFocus
-                placeholder="Search aura..."
+                placeholder="Search WishZep..."
                 className="w-48 h-10 rounded-full glass pl-4 pr-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

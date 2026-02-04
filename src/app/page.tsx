@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -39,14 +38,14 @@ export default function Home() {
         <div className="container mx-auto px-6 relative z-10 grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-8 animate-fade-in">
             <Badge variant="outline" className="px-4 py-1 border-primary text-primary glass">
-              ✨ Discover the Aura Edition
+              ✨ Discover the WishZep Edition
             </Badge>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none">
               SHOP WITH <br />
-              <span className="aura-text">ATTITUDE.</span>
+              <span className="wishzep-text">ATTITUDE.</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-lg font-light leading-relaxed">
-              WishZep brings you the ultimate curated collection of high-energy gear, designed to complement your aura.
+              WishZep brings you the ultimate curated collection of high-energy gear, designed to complement your lifestyle.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <Link href="/products">
@@ -76,7 +75,7 @@ export default function Home() {
               <div className="absolute bottom-8 left-8 right-8 glass p-6 rounded-2xl">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-bold text-lg">Aura-X Techwear Jacket</h3>
+                    <h3 className="font-bold text-lg">WishZep Techwear Jacket</h3>
                     <p className="text-primary font-bold">$450.00</p>
                   </div>
                   <Link href="/products">
@@ -115,7 +114,7 @@ export default function Home() {
       <section className="container mx-auto px-6 space-y-12">
         <div className="flex justify-between items-end gap-6">
           <div className="space-y-2">
-            <h2 className="text-4xl font-black">LATEST <span className="aura-text">DROPS</span></h2>
+            <h2 className="text-4xl font-black">LATEST <span className="wishzep-text">DROPS</span></h2>
             <p className="text-muted-foreground">The most anticipated releases, available now.</p>
           </div>
           <Link href="/products">
@@ -185,7 +184,7 @@ export default function Home() {
           <div className="relative z-10 space-y-6 max-w-xl">
             <h2 className="text-5xl font-black text-white leading-tight">
               UP TO 50% OFF <br />
-              <span className="text-secondary">AURA ESSENTIALS</span>
+              <span className="text-secondary">WISHZEP ESSENTIALS</span>
             </h2>
             <Link href="/products">
               <Button size="lg" className="rounded-full bg-white text-primary hover:bg-white/90">

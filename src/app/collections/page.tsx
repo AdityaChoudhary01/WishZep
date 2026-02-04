@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -9,9 +8,9 @@ import { Button } from '@/components/ui/button';
 export default function CollectionsPage() {
   const collections = [
     {
-      id: 'aura-prime',
-      name: 'Aura Prime',
-      description: 'The foundation of techwear. Minimalist, functional, and charged with energy.',
+      id: 'wishzep-prime',
+      name: 'WishZep Prime',
+      description: 'The foundation of techwear. Minimalist, functional, and charged with WishZep energy.',
       image: 'https://picsum.photos/seed/coll-1/800/600',
       icon: Sparkles,
       color: 'from-purple-500/20 to-blue-500/20'
@@ -45,9 +44,9 @@ export default function CollectionsPage() {
   return (
     <div className="container mx-auto px-6 py-12 space-y-16">
       <div className="max-w-3xl space-y-6">
-        <h1 className="text-6xl font-black tracking-tighter">THE <span className="aura-text">COLLECTIONS</span></h1>
+        <h1 className="text-6xl font-black tracking-tighter">THE <span className="wishzep-text">COLLECTIONS</span></h1>
         <p className="text-xl text-muted-foreground font-light leading-relaxed">
-          Each collection is a curated energy field. Choose the one that resonates with your current aura and step into the future.
+          Each collection is a curated WishZep experience. Choose the one that resonates with your style and step into the future.
         </p>
       </div>
 

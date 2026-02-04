@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,10 +12,10 @@ export default function Footer() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-white font-bold text-xl">W</span>
             </div>
-            <span className="text-xl font-bold font-headline aura-text">WishZep</span>
+            <span className="text-xl font-bold font-headline wishzep-text">WishZep</span>
           </Link>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Charging your lifestyle with aura. Premium curated gear for the modern visionary. Experience the future of e-commerce.
+            Charging your lifestyle with WishZep. Premium curated gear for the modern visionary. Experience the future of e-commerce.
           </p>
         </div>
 
@@ -44,7 +43,7 @@ export default function Footer() {
 
         <div>
           <h4 className="font-bold mb-6">Stay Updated</h4>
-          <p className="text-sm text-muted-foreground mb-4">Subscribe to get notifications about new launches and sales.</p>
+          <p className="text-sm text-muted-foreground mb-4">Subscribe for WishZep notifications about new launches and sales.</p>
           <div className="flex gap-2">
             <Input placeholder="Enter email" className="glass bg-white/30" />
             <Button size="icon" className="bg-primary hover:bg-primary/90">

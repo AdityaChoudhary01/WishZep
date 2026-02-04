@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -42,7 +41,7 @@
       radial-gradient(at 50% 0%, hsla(202, 85%, 54%, 0.15) 0, transparent 50%),
       radial-gradient(at 100% 0%, hsla(285, 85%, 54%, 0.15) 0, transparent 50%);
   }
-  .aura-text {
+  .wishzep-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#BE29EC] to-[#29A6EC];
   }
 }

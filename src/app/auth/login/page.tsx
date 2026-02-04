@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -26,7 +25,7 @@ export default function LoginPage() {
     await setDoc(userRef, {
       id: user.uid,
       email: user.email || 'guest@wishzep.com',
-      displayName: user.displayName || 'Aura Guest',
+      displayName: user.displayName || 'WishZep Guest',
       profileImageUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/200`,
       role: 'customer',
       updatedAt: serverTimestamp(),
@@ -60,20 +59,17 @@ export default function LoginPage() {
     
     setIsLoading(true);
     const actionCodeSettings = {
-      // URL you want to redirect back to. The domain (e.g. stackblitz.io)
-      // must be in the authorized domains list in the Firebase Console.
       url: window.location.origin + '/auth/login',
       handleCodeInApp: true,
     };
 
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      // Save the email locally so you don't have to type it again on the landing page
       window.localStorage.setItem('emailForSignIn', email);
       setIsLinkSent(true);
       toast({
         title: "Link Sent! 📧",
-        description: "Check your inbox for the magic sign-in link.",
+        description: "Check your inbox for the WishZep magic sign-in link.",
       });
     } catch (error: any) {
       toast({
@@ -93,7 +89,7 @@ export default function LoginPage() {
       await syncUserProfile(result.user);
       toast({
         title: "Guest Access Granted 🔓",
-        description: "You're now browsing as a guest member.",
+        description: "You're now browsing as a WishZep guest member.",
       });
       router.push('/profile');
     } catch (error: any) {
@@ -115,7 +111,7 @@ export default function LoginPage() {
             <span className="text-white font-black text-3xl">W</span>
           </div>
           <h1 className="text-3xl font-black">Welcome to WishZep</h1>
-          <p className="text-muted-foreground">Access your curated aura collection</p>
+          <p className="text-muted-foreground">Access your curated WishZep collection</p>
         </div>
 
         <div className="space-y-6">
