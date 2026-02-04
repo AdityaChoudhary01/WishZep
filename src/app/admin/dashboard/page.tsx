@@ -5,9 +5,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Package, 
   Plus, 
-  Search, 
   Settings, 
-  ShieldCheck, 
   Camera, 
   Loader2, 
   AlertCircle,
@@ -18,17 +16,12 @@ import {
   Truck,
   Clock,
   CheckCircle2,
-  RefreshCcw,
   Menu,
   Tags,
   X,
   Save,
-  Upload,
   Layers,
-  FileText,
   ListPlus,
-  ChevronRight,
-  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -113,9 +106,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isUserAdmin) {
+      // Small delay to ensure Firestore rules sync up before fetching restricted data
       timer = setTimeout(() => {
         setIsConfirmedAdmin(true);
-      }, 500);
+      }, 1500);
     } else {
       setIsConfirmedAdmin(false);
     }
@@ -136,24 +130,11 @@ export default function AdminDashboard() {
   const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
 
   const ordersQuery = useMemoFirebase(() => {
+    // Only query if confirmed admin to avoid permission errors
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isConfirmedAdmin, activeTab]);
-  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery, true);
-
-  const claimAdminRole = async () => {
-    if (!db || !user) return;
-    try {
-      await setDoc(doc(db, 'roles_admin', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        assignedAt: serverTimestamp()
-      });
-      toast({ title: "Admin Access Granted!" });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Permission Denied" });
-    }
-  };
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
 
   const handleAddCategory = async () => {
     if (!db || !newCategory.trim()) return;
@@ -330,20 +311,13 @@ export default function AdminDashboard() {
             }}
             className={cn(
               "w-full flex items-center gap-3 rounded-xl h-12 px-4 transition-all text-sm font-bold",
-              activeTab === link.id ? "bg-primary text-white shadow-lg" : "hover:bg-primary/5"
+              activeTab === link.id ? "bg-primary text-white shadow-lg" : "hover:bg-primary/5 text-gray-600"
             )}
           >
             <link.icon className="w-5 h-5" /> {link.label}
           </button>
         ))}
       </div>
-      {!isUserAdmin && (
-        <div className="pt-4 px-2">
-          <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white h-12">
-            <ShieldCheck className="w-5 h-5" /> Claim Admin Access
-          </Button>
-        </div>
-      )}
     </nav>
   );
 
@@ -382,7 +356,7 @@ export default function AdminDashboard() {
           <Alert variant="destructive" className="rounded-[2rem] border-destructive/20 bg-destructive/5">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>Please claim admin access to manage products and orders.</AlertDescription>
+            <AlertDescription>Your account does not have administrative privileges.</AlertDescription>
           </Alert>
         )}
 
@@ -390,8 +364,8 @@ export default function AdminDashboard() {
           <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">PRODUCTS</span></h1>
-                <p className="text-muted-foreground text-sm font-medium">Control and edit your product catalog.</p>
+                <h1 className="text-4xl font-black tracking-tight uppercase">Manage <span className="wishzep-text">Products</span></h1>
+                <p className="text-muted-foreground text-sm font-medium">Add, edit, or remove items from your catalog.</p>
               </div>
               <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-14 px-8 font-black gap-2 shadow-xl shadow-primary/20">
                 <Plus className="w-6 h-6" /> ADD PRODUCT
@@ -454,13 +428,14 @@ export default function AdminDashboard() {
                       {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
                     </DialogTitle>
                   </DialogHeader>
+                  <Button variant="ghost" size="icon" onClick={() => setIsProductDialogOpen(false)} className="rounded-full"><X className="w-6 h-6" /></Button>
                 </div>
 
                 <div className="p-8 space-y-10">
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">Product Information</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Core Information</Label>
                         <Input 
                           placeholder="Product Name"
                           value={productFormData.name}
@@ -472,7 +447,7 @@ export default function AdminDashboard() {
                           onValueChange={(val) => setProductFormData({...productFormData, category: val})}
                         >
                           <SelectTrigger className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200 text-gray-900">
-                            <SelectValue placeholder="Category" />
+                            <SelectValue placeholder="Select Category" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border-gray-200">
                             {categories?.map(cat => (
@@ -504,7 +479,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Inventory Stock</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Inventory Count</Label>
                         <Input 
                           type="number"
                           value={productFormData.inventory}
@@ -515,7 +490,7 @@ export default function AdminDashboard() {
 
                       {isApparelCategory && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Available Sizes (Comma Separated)</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Available Sizes (S, M, L...)</Label>
                           <Input 
                             placeholder="S, M, L, XL"
                             value={productFormData.sizes}
@@ -528,7 +503,7 @@ export default function AdminDashboard() {
 
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Main Image</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Main Visual</Label>
                         <div 
                           className="relative aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary/50 transition-all bg-gray-50 hover:bg-gray-100" 
                           onClick={() => fileInputRef.current?.click()}
@@ -538,7 +513,7 @@ export default function AdminDashboard() {
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                               {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10 transition-transform group-hover:scale-110" />}
-                              <span className="text-[10px] font-black uppercase tracking-widest">Upload Main Image</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">Upload Image</span>
                             </div>
                           )}
                         </div>
@@ -546,7 +521,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">More Images</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Gallery (Multiple)</Label>
                         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                           {productFormData.images.map((img, idx) => (
                             <div key={idx} className="relative w-16 h-16 rounded-xl bg-gray-50 shrink-0 overflow-hidden border border-gray-200">
@@ -574,10 +549,10 @@ export default function AdminDashboard() {
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">Product Description</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Detailed Description</Label>
                         <Textarea 
                           value={productFormData.description}
-                          placeholder="Describe the product features and details..."
+                          placeholder="What makes this product special?"
                           onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
                           className="rounded-2xl bg-gray-50 min-h-[160px] p-6 leading-relaxed border-gray-200 focus:bg-white focus:border-primary transition-all text-gray-900" 
                         />
@@ -585,14 +560,14 @@ export default function AdminDashboard() {
                       
                       {isApparelCategory && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Size Chart</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Fit Blueprint (Size Chart)</Label>
                           <div 
                             className="h-24 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-all gap-3 bg-gray-50"
                             onClick={() => chartFileInputRef.current?.click()}
                           >
                             {productFormData.sizeChartUrl ? (
                               <div className="flex items-center gap-3 text-green-500 font-bold">
-                                <CheckCircle2 className="w-5 h-5" /> Chart Uploaded
+                                <CheckCircle2 className="w-5 h-5" /> Blueprint Attached
                               </div>
                             ) : (
                               <div className="flex items-center gap-3 text-gray-400">
@@ -607,7 +582,7 @@ export default function AdminDashboard() {
 
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Product Specifications</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Technical Specifications</Label>
                         <Button variant="ghost" size="sm" onClick={handleAddSpec} className="h-8 rounded-lg gap-2 font-bold text-[10px] hover:bg-primary/10">
                           <Plus className="w-3 h-3" /> ADD SPEC
                         </Button>
@@ -616,13 +591,13 @@ export default function AdminDashboard() {
                         {productFormData.specifications.map((spec, idx) => (
                           <div key={idx} className="flex gap-2 items-center group">
                             <Input 
-                              placeholder="Key" 
+                              placeholder="Spec Label" 
                               value={spec.key} 
                               onChange={(e) => handleSpecChange(idx, 'key', e.target.value)}
                               className="h-10 rounded-xl bg-gray-50 text-xs font-bold border-gray-200 text-gray-900"
                             />
                             <Input 
-                              placeholder="Value" 
+                              placeholder="Spec Value" 
                               value={spec.value} 
                               onChange={(e) => handleSpecChange(idx, 'value', e.target.value)}
                               className="h-10 rounded-xl bg-gray-50 text-xs border-gray-200 text-gray-900"
@@ -637,9 +612,9 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="pt-8 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-                    <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200 hover:bg-gray-50">CANCEL</Button>
+                    <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200 hover:bg-gray-50">DISCARD</Button>
                     <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-xl">
-                      <Save className="w-6 h-6" /> {editingProduct ? 'SAVE CHANGES' : 'ADD PRODUCT'}
+                      <Save className="w-6 h-6" /> {editingProduct ? 'UPDATE PRODUCT' : 'CREATE PRODUCT'}
                     </Button>
                   </div>
                 </div>
@@ -651,8 +626,8 @@ export default function AdminDashboard() {
         {activeTab === 'categories' && (
           <div className="space-y-6 animate-fade-in">
             <header>
-              <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">CATEGORIES</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Organize and group your products.</p>
+              <h1 className="text-4xl font-black tracking-tight uppercase">Product <span className="wishzep-text">Categories</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Group your items for better catalog browsing.</p>
             </header>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -661,9 +636,9 @@ export default function AdminDashboard() {
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
                     <ListPlus className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl font-black text-gray-900">Add Category</h3>
+                  <h3 className="text-2xl font-black text-gray-900">New Category</h3>
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Category Name</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Label Name</Label>
                     <Input 
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
@@ -681,7 +656,7 @@ export default function AdminDashboard() {
                     <TableHeader className="bg-gray-50">
                       <TableRow className="border-gray-100">
                         <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Name</TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest">ID</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Slug ID</TableHead>
                         <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -709,8 +684,8 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="space-y-6 animate-fade-in">
             <header>
-              <h1 className="text-4xl font-black tracking-tight">MANAGE <span className="wishzep-text">ORDERS</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">View and process customer orders.</p>
+              <h1 className="text-4xl font-black tracking-tight uppercase">Customer <span className="wishzep-text">Orders</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Fulfill and track global customer purchases.</p>
             </header>
 
             <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
@@ -718,26 +693,35 @@ export default function AdminDashboard() {
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-gray-50">
                     <TableRow className="hover:bg-transparent border-gray-100">
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order ID</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order #</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Placed On</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Total</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Actions</TableHead>
+                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Control</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {ordersLoading || !isConfirmedAdmin ? (
                       [...Array(5)].map((_, i) => <TableRow key={i}><TableCell className="px-8"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell className="text-right px-8"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell></TableRow>)
+                    ) : ordersError ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-20 text-center">
+                          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                          <p className="font-bold text-lg">Connection Issue</p>
+                          <p className="text-muted-foreground text-sm mb-6">Firestore rules are syncing. Please try again in a few seconds.</p>
+                          <Button variant="outline" onClick={() => window.location.reload()}>Retry Connection</Button>
+                        </TableCell>
+                      </TableRow>
                     ) : orders?.map((order) => (
                       <TableRow key={order.id} className="hover:bg-gray-50 transition-colors border-gray-100 h-24">
-                        <TableCell className="px-8 font-black font-mono text-[11px] text-gray-900">#{order.id.slice(0, 10)}</TableCell>
+                        <TableCell className="px-8 font-black font-mono text-[11px] text-gray-900">{order.id.slice(0, 10)}</TableCell>
                         <TableCell className="text-xs font-bold text-gray-400">{new Date(order.orderDate).toLocaleString()}</TableCell>
                         <TableCell className="font-black text-primary text-sm">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={cn(
-                            "px-4 py-1.5 rounded-full text-[9px] uppercase font-black tracking-widest",
-                            order.status === 'delivered' ? 'bg-green-500/20 text-green-500 border-green-500/20' : 
-                            order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500 border-blue-500/20' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/20'
+                            "px-4 py-1.5 rounded-full text-[9px] uppercase font-black tracking-widest border-none",
+                            order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                            order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
                           )}>
                             {order.status || 'PENDING'}
                           </Badge>
@@ -748,9 +732,9 @@ export default function AdminDashboard() {
                               <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary"><Settings className="w-5 h-5" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-white min-w-[200px] rounded-[1.5rem] border-gray-100 p-2 shadow-xl">
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-bold text-yellow-500 rounded-xl h-12 hover:bg-yellow-50"><Clock className="w-5 h-5" /> SET PENDING</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-bold text-blue-500 rounded-xl h-12 hover:bg-blue-50"><Truck className="w-5 h-5" /> SET SHIPPED</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-bold text-green-500 rounded-xl h-12 hover:bg-green-50"><CheckCircle2 className="w-5 h-5" /> SET DELIVERED</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-3 cursor-pointer font-bold text-yellow-600 rounded-xl h-12 hover:bg-yellow-50"><Clock className="w-5 h-5" /> SET PENDING</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-3 cursor-pointer font-bold text-blue-600 rounded-xl h-12 hover:bg-blue-50"><Truck className="w-5 h-5" /> SET SHIPPED</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-3 cursor-pointer font-bold text-green-600 rounded-xl h-12 hover:bg-green-50"><CheckCircle2 className="w-5 h-5" /> SET DELIVERED</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

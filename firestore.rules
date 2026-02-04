@@ -71,7 +71,6 @@ service cloud.firestore {
      */
     match /orders/{orderId} {
       // Allow users to list their own orders by filtering on userId, or admins to list all
-      // The limit check is removed to prevent mismatches with client-side queries
       allow list: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
       
       // Allow individuals to see their own orders, or admins to see any
@@ -90,13 +89,14 @@ service cloud.firestore {
 
     /**
      * @path /roles_admin/{userId}
+     * Secured: Only existing admins can manage roles. No self-claiming.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)); // Allow first claim
+      allow create: if false; // Removed self-claiming protocol
       allow update: if isAdmin();
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
   }
 }
