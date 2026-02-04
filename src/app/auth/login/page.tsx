@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Chrome, UserCheck, Send } from 'lucide-react';
+import { Mail, Chrome, Send } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithPopup, GoogleAuthProvider, signInAnonymously, sendSignInLinkToEmail } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, sendSignInLinkToEmail } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -24,8 +24,8 @@ export default function LoginPage() {
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, {
       id: user.uid,
-      email: user.email || 'guest@wishzep.com',
-      displayName: user.displayName || 'WishZep Guest',
+      email: user.email,
+      displayName: user.displayName || 'WishZep Member',
       profileImageUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/200`,
       role: 'customer',
       updatedAt: serverTimestamp(),
@@ -75,27 +75,6 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Failed to send link",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    try {
-      const result = await signInAnonymously(auth);
-      await syncUserProfile(result.user);
-      toast({
-        title: "Guest Access Granted 🔓",
-        description: "You're now browsing as a WishZep guest member.",
-      });
-      router.push('/profile');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Guest sign-in failed",
         description: error.message,
       });
     } finally {
@@ -158,23 +137,13 @@ export default function LoginPage() {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-4 text-muted-foreground font-bold">Or continue with</span></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button 
-              onClick={handleGoogleLogin}
-              variant="outline"
-              className="glass h-14 rounded-2xl gap-3 font-bold hover:bg-white/50 border-white/40"
-            >
-              <Chrome className="w-5 h-5 text-primary" /> Google
-            </Button>
-            <Button 
-              onClick={handleGuestLogin}
-              variant="outline"
-              disabled={isLoading}
-              className="glass h-14 rounded-2xl gap-3 font-bold hover:bg-white/50 border-white/40"
-            >
-              <UserCheck className="w-5 h-5 text-secondary" /> Guest
-            </Button>
-          </div>
+          <Button 
+            onClick={handleGoogleLogin}
+            variant="outline"
+            className="w-full glass h-14 rounded-2xl gap-3 font-bold hover:bg-white/50 border-white/40"
+          >
+            <Chrome className="w-5 h-5 text-primary" /> Continue with Google
+          </Button>
         </div>
 
         <p className="text-center text-xs text-muted-foreground leading-relaxed">
