@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -17,7 +18,10 @@ import {
   Loader2, 
   AlertCircle,
   Edit2,
-  Trash2
+  Trash2,
+  ImagePlus,
+  Table as TableIcon,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +51,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const CATEGORIES = ['Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -54,13 +62,16 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const editMultiFileInputRef = useRef<HTMLInputElement>(null);
+  const sizeChartRef = useRef<HTMLInputElement>(null);
   
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<any>({
     name: '',
     price: 0,
     discountPrice: 0,
@@ -68,10 +79,16 @@ export default function AdminDashboard() {
     description: '',
     inventory: 10,
     imageUrl: '',
-    attributes: ''
+    images: [],
+    attributes: '',
+    sizes: [],
+    sizeChartUrl: '',
+    specifications: {}
   });
 
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [newSpecKey, setNewSpecKey] = useState('');
+  const [newSpecValue, setNewSpecValue] = useState('');
 
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -88,19 +105,24 @@ export default function AdminDashboard() {
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'images' | 'sizeChartUrl', isEdit = false) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
-      if (isEdit) {
-        setEditingProduct((prev: any) => ({ ...prev, imageUrl: url }));
-      } else {
-        setNewProduct(prev => ({ ...prev, imageUrl: url }));
-      }
-      toast({ title: "Image Uploaded! 📸", description: "Product preview updated." });
+      const urls = await Promise.all(Array.from(files).map(file => uploadToCloudinary(file)));
+      
+      const target = isEdit ? setEditingProduct : setNewProduct;
+      
+      target((prev: any) => {
+        if (field === 'images') {
+          return { ...prev, images: [...(prev.images || []), ...urls] };
+        }
+        return { ...prev, [field]: urls[0] };
+      });
+
+      toast({ title: "Upload Success! 📸" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Upload Failed", description: error.message });
     } finally {
@@ -108,10 +130,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const addSpecification = (isEdit = false) => {
+    if (!newSpecKey || !newSpecValue) return;
+    const target = isEdit ? setEditingProduct : setNewProduct;
+    target((prev: any) => ({
+      ...prev,
+      specifications: { ...prev.specifications, [newSpecKey]: newSpecValue }
+    }));
+    setNewSpecKey('');
+    setNewSpecValue('');
+  };
+
+  const removeSpecification = (key: string, isEdit = false) => {
+    const target = isEdit ? setEditingProduct : setNewProduct;
+    target((prev: any) => {
+      const newSpecs = { ...prev.specifications };
+      delete newSpecs[key];
+      return { ...prev, specifications: newSpecs };
+    });
+  };
+
   const handleAddProduct = () => {
     if (!db || !isUserAdmin) return;
     if (!newProduct.imageUrl) {
-      toast({ variant: "destructive", title: "Missing Image", description: "Please upload a product image." });
+      toast({ variant: "destructive", title: "Missing Image", description: "Please upload a primary image." });
       return;
     }
     
@@ -125,11 +167,16 @@ export default function AdminDashboard() {
 
     toast({ title: "Product Added! ✨", description: `${newProduct.name} is now live.` });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: '', price: 0, discountPrice: 0, category: 'Footwear', description: '', inventory: 10, imageUrl: '', attributes: '' });
+    setNewProduct({ name: '', price: 0, discountPrice: 0, category: 'Footwear', description: '', inventory: 10, imageUrl: '', images: [], attributes: '', sizes: [], sizeChartUrl: '', specifications: {} });
   };
 
   const handleOpenEdit = (product: any) => {
-    setEditingProduct(product);
+    setEditingProduct({
+      ...product,
+      images: product.images || [],
+      specifications: product.specifications || {},
+      sizes: product.sizes || []
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -152,9 +199,9 @@ export default function AdminDashboard() {
 
   const handleDeleteProduct = (productId: string) => {
     if (!db || !isUserAdmin) return;
-    if (confirm("Are you sure you want to remove this product from the vault?")) {
+    if (confirm("Are you sure you want to remove this product?")) {
       deleteDocumentNonBlocking(doc(db, 'products', productId));
-      toast({ title: "Product Removed", description: "Item has been purged from inventory." });
+      toast({ title: "Product Removed" });
     }
   };
 
@@ -166,186 +213,211 @@ export default function AdminDashboard() {
         email: user.email,
         assignedAt: serverTimestamp()
       });
-      toast({ title: "Admin Access Granted! 🛡️", description: "You now have permissions to manage products." });
+      toast({ title: "Admin Access Granted! 🛡️" });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Permission Denied", description: "Could not claim admin role." });
+      toast({ variant: "destructive", title: "Permission Denied" });
     }
-  };
-
-  const seedSampleData = async () => {
-    if (!db || !isUserAdmin) return;
-    const samples = [
-      { name: 'Neo-Stomp Tech Sneakers', price: 2199, discountPrice: 1099, imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', description: 'High-performance techwear sneakers.', inventory: 45, attributes: 'Lightweight, Breathable', createdAt: serverTimestamp() },
-      { name: 'SonicWave Elite Pro', price: 2499, discountPrice: 1999, imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800', category: 'Audio', description: 'Noise-canceling headphones.', inventory: 12, attributes: '40h Battery, Bluetooth 5.3', createdAt: serverTimestamp() }
-    ];
-    samples.forEach(p => addDocumentNonBlocking(collection(db, 'products'), p));
-    toast({ title: "Seeding Success! ✨" });
   };
 
   if (isUserLoading || adminLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-          <p className="text-muted-foreground animate-pulse font-bold tracking-widest uppercase text-xs">Verifying Credentials...</p>
-        </div>
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
       </div>
     );
   }
 
+  const renderProductForm = (product: any, setProduct: any, isEdit = false) => {
+    const isApparel = product.category === 'Apparel';
+    
+    return (
+      <div className="space-y-6 pt-4">
+        {/* Images Section */}
+        <div className="space-y-4">
+          <Label className="font-bold text-xs uppercase tracking-widest">Visual Assets</ins></Label>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="relative aspect-square glass rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center group cursor-pointer" onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}>
+              {product.imageUrl ? <Image src={product.imageUrl} alt="Main" fill className="object-cover" /> : <Camera className="w-8 h-8 text-muted-foreground" />}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <span className="text-white text-[10px] font-bold uppercase">Main Image</span>
+              </div>
+            </div>
+            {product.images?.map((url: string, i: number) => (
+              <div key={i} className="relative aspect-square glass rounded-2xl overflow-hidden group">
+                <Image src={url} alt={`Gallery ${i}`} fill className="object-cover" />
+                <button 
+                  onClick={() => setProduct((p: any) => ({ ...p, images: p.images.filter((_: any, idx: number) => idx !== i) }))}
+                  className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button 
+              className="aspect-square glass rounded-2xl border-2 border-dashed border-white/40 flex items-center justify-center hover:bg-white/10 transition-colors"
+              onClick={() => (isEdit ? editMultiFileInputRef : multiFileInputRef).current?.click()}
+            >
+              <ImagePlus className="w-6 h-6 text-muted-foreground" />
+            </button>
+          </div>
+          <input type="file" ref={isEdit ? editFileInputRef : fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'imageUrl', isEdit)} />
+          <input type="file" ref={isEdit ? editMultiFileInputRef : multiFileInputRef} className="hidden" multiple accept="image/*" onChange={(e) => handleImageUpload(e, 'images', isEdit)} />
+        </div>
+
+        {/* Basic Info */}
+        <div className="grid gap-4">
+          <div className="grid gap-2"><Label>Product Name</Label><Input value={product.name || ''} onChange={e => setProduct({...product, name: e.target.value})} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between glass">{product.category} <MoreHorizontal className="w-4 h-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="glass">
+                  {CATEGORIES.map(cat => (
+                    <DropdownMenuItem key={cat} onClick={() => setProduct({...product, category: cat})}>{cat}</DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="grid gap-2"><Label>Inventory Stock</Label><Input type="number" value={product.inventory || 0} onChange={e => setProduct({...product, inventory: Number(e.target.value)})} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={product.price || 0} onChange={e => setProduct({...product, price: Number(e.target.value)})} /></div>
+            <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={product.discountPrice || 0} onChange={e => setProduct({...product, discountPrice: Number(e.target.value)})} /></div>
+          </div>
+        </div>
+
+        {/* Apparel Specific Features */}
+        {isApparel && (
+          <div className="space-y-4 p-6 glass rounded-[2rem] border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge className="bg-primary text-white">Apparel Unlocked</Badge>
+              <h4 className="font-bold text-sm uppercase tracking-wider">Garment Details</h4>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-xs">Available Sizes</Label>
+              <div className="flex flex-wrap gap-2">
+                {SIZES.map(size => (
+                  <div key={size} className="flex items-center gap-2 bg-white/30 px-3 py-1.5 rounded-lg border border-white/20">
+                    <Checkbox 
+                      id={`size-${size}`}
+                      checked={product.sizes?.includes(size)}
+                      onCheckedChange={(checked) => {
+                        const newSizes = checked 
+                          ? [...(product.sizes || []), size]
+                          : (product.sizes || []).filter((s: string) => s !== size);
+                        setProduct({...product, sizes: newSizes});
+                      }}
+                    />
+                    <Label htmlFor={`size-${size}`} className="cursor-pointer font-bold">{size}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Label className="text-xs">Size Chart Image</Label>
+              <div 
+                className="relative h-20 w-full glass rounded-xl border-2 border-dashed border-primary/20 flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors"
+                onClick={() => sizeChartRef.current?.click()}
+              >
+                {product.sizeChartUrl ? (
+                  <div className="flex items-center gap-3">
+                    <Check className="text-green-500" />
+                    <span className="text-xs font-medium">Chart Uploaded (Click to change)</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <TableIcon className="w-4 h-4" />
+                    <span className="text-xs">Upload Size Chart</span>
+                  </div>
+                )}
+                <input type="file" ref={sizeChartRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'sizeChartUrl', isEdit)} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Specifications Section */}
+        <div className="space-y-4">
+          <Label className="font-bold text-xs uppercase tracking-widest">Technical Specifications</Label>
+          <div className="grid gap-3">
+            {Object.entries(product.specifications || {}).map(([key, value]) => (
+              <div key={key} className="flex items-center gap-3 bg-white/20 p-3 rounded-xl group">
+                <div className="flex-1 flex gap-2">
+                  <span className="font-bold text-xs uppercase text-primary w-24 shrink-0">{key}:</span>
+                  <span className="text-xs text-muted-foreground">{value as string}</span>
+                </div>
+                <button onClick={() => removeSpecification(key, isEdit)} className="text-muted-foreground hover:text-destructive transition-colors"><X className="w-4 h-4" /></button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input placeholder="Key (e.g. Fabric)" value={newSpecKey} onChange={e => setNewSpecKey(e.target.value)} className="h-10 text-xs" />
+              <Input placeholder="Value (e.g. 100% Cotton)" value={newSpecValue} onChange={e => setNewSpecValue(e.target.value)} className="h-10 text-xs" />
+              <Button size="icon" variant="secondary" onClick={() => addSpecification(isEdit)} className="shrink-0"><Plus /></Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-2"><Label>Description</Label><Textarea value={product.description || ''} onChange={e => setProduct({...product, description: e.target.value})} className="min-h-[120px]" /></div>
+        <div className="grid gap-2"><Label>Aura Attributes</Label><Input value={product.attributes || ''} onChange={e => setProduct({...product, attributes: e.target.value})} placeholder="e.g. Slim Fit, Digital Mesh" /></div>
+
+        <Button onClick={isEdit ? handleSaveEdit : handleAddProduct} disabled={isUploading} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl shadow-primary/20">
+          {isEdit ? 'Save Changes' : 'Create Product'}
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex min-h-screen bg-background pt-0">
+    <div className="flex min-h-screen bg-background">
       <aside className="w-64 glass border-r border-white/20 p-6 hidden md:block">
         <div className="flex items-center gap-2 mb-10 px-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-white font-bold text-xl">W</span></div>
-          <span className="text-xl font-bold font-headline wishzep-text">Admin</span>
+          <span className="text-xl font-bold wishzep-text">Admin</span>
         </div>
         <nav className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl"><LayoutDashboard className="w-5 h-5" /> Dashboard</Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl bg-primary/10 text-primary"><Package className="w-5 h-5" /> Products</Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl" onClick={seedSampleData} disabled={!isUserAdmin}><Database className="w-5 h-5" /> Seed Demo Data</Button>
-          {!isUserAdmin && <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white mb-4"><ShieldCheck className="w-5 h-5" /> Claim Admin Status</Button>}
+          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl bg-primary/10 text-primary"><Package className="w-5 h-5" /> Inventory</Button>
+          {!isUserAdmin && <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"><ShieldCheck className="w-5 h-5" /> Claim Admin</Button>}
         </nav>
       </aside>
 
       <main className="flex-1 p-8 space-y-8">
         {!isUserAdmin && (
-          <Alert variant="destructive" className="rounded-3xl border-2 border-destructive/20 bg-destructive/5 glass mb-8">
+          <Alert variant="destructive" className="rounded-3xl">
             <AlertCircle className="h-5 w-5" />
-            <AlertTitle className="font-black uppercase tracking-tighter">Access Restricted</AlertTitle>
-            <AlertDescription className="text-sm opacity-80">
-              You are currently in read-only mode. To manage products, please click the <strong>Claim Admin Status</strong> button in the sidebar.
-            </AlertDescription>
+            <AlertTitle>Access Restricted</AlertTitle>
+            <AlertDescription>Claim admin status to manage products.</AlertDescription>
           </Alert>
         )}
 
         <header className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-black">Manage <span className="wishzep-text">Inventory</span></h1>
-            <p className="text-muted-foreground text-sm">Real-time control over your product catalogue.</p>
+            <h1 className="text-3xl font-black">Manage <span className="wishzep-text">Vault</span></h1>
+            <p className="text-muted-foreground text-sm">Control your high-performance catalogue.</p>
           </div>
-          <div className="flex gap-4">
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button disabled={!isUserAdmin} className="rounded-2xl h-12 px-6 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
-                  <Plus className="w-5 h-5" /> Add New Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="glass max-w-md overflow-y-auto max-h-[90vh]">
-                <DialogHeader><DialogTitle>Add New Product</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="relative w-full aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center">
-                      {newProduct.imageUrl ? (
-                        <Image src={newProduct.imageUrl} alt="Preview" fill className="object-cover" />
-                      ) : (
-                        <div className="text-center p-6">
-                          <Camera className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground font-bold uppercase">Product Preview</p>
-                        </div>
-                      )}
-                      {isUploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <Loader2 className="w-10 h-10 text-white animate-spin" />
-                        </div>
-                      )}
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="w-full rounded-xl glass border-white/40"
-                    >
-                      {newProduct.imageUrl ? 'Change Image' : 'Upload Image'}
-                    </Button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      className="hidden" 
-                      accept="image/*" 
-                      onChange={(e) => handleImageUpload(e, false)} 
-                    />
-                  </div>
-
-                  <div className="grid gap-2"><Label>Name</Label><Input value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
-                    <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={newProduct.discountPrice} onChange={e => setNewProduct({...newProduct, discountPrice: Number(e.target.value)})} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={newProduct.inventory} onChange={e => setNewProduct({...newProduct, inventory: Number(e.target.value)})} /></div>
-                    <div className="grid gap-2"><Label>Category</Label><Input value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} /></div>
-                  </div>
-                  <div className="grid gap-2"><Label>Attributes</Label><Input value={newProduct.attributes} onChange={e => setNewProduct({...newProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
-                  <div className="grid gap-2"><Label>Description</Label><Textarea value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} /></div>
-                  <Button onClick={handleAddProduct} disabled={isUploading} className="w-full h-12 rounded-xl bg-primary">Create Product</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={!isUserAdmin} className="rounded-2xl h-12 px-6 gap-2 bg-primary">
+                <Plus className="w-5 h-5" /> New Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh]">
+              <DialogHeader><DialogTitle>Add New Artifact</DialogTitle></DialogHeader>
+              {renderProductForm(newProduct, setNewProduct)}
+            </DialogContent>
+          </Dialog>
         </header>
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="glass max-w-md overflow-y-auto max-h-[90vh]">
+          <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh]">
             <DialogHeader><DialogTitle>Edit Product: {editingProduct?.name}</DialogTitle></DialogHeader>
-            {editingProduct && (
-              <div className="space-y-4 pt-4">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative w-full aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-dashed border-white/40 flex items-center justify-center">
-                    <Image src={editingProduct.imageUrl || `https://picsum.photos/seed/${editingProduct.id}/800/800`} alt="Preview" fill className="object-cover" />
-                    {isUploading && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Loader2 className="w-10 h-10 text-white animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => editFileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full rounded-xl glass border-white/40"
-                  >
-                    Change Image
-                  </Button>
-                  <input 
-                    type="file" 
-                    ref={editFileInputRef} 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={(e) => handleImageUpload(e, true)} 
-                  />
-                </div>
-
-                <div className="grid gap-2"><Label>Name</Label><Input value={editingProduct.name || ''} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={editingProduct.price || 0} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} /></div>
-                  <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={editingProduct.discountPrice || 0} onChange={e => setEditingProduct({...editingProduct, discountPrice: Number(e.target.value)})} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={editingProduct.inventory || 0} onChange={e => setEditingProduct({...editingProduct, inventory: Number(e.target.value)})} /></div>
-                  <div className="grid gap-2"><Label>Category</Label><Input value={editingProduct.category || ''} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} /></div>
-                </div>
-                <div className="grid gap-2"><Label>Attributes</Label><Input value={editingProduct.attributes || ''} onChange={e => setEditingProduct({...editingProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
-                <div className="grid gap-2"><Label>Description</Label><Textarea value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} /></div>
-                <Button onClick={handleSaveEdit} disabled={isUploading} className="w-full h-12 rounded-xl bg-primary">Save Changes</Button>
-              </div>
-            )}
+            {editingProduct && renderProductForm(editingProduct, setEditingProduct, true)}
           </DialogContent>
         </Dialog>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { label: 'Total SKU', value: products?.length || 0, icon: Package, color: 'text-primary' },
-            { label: 'Admin Status', value: isUserAdmin ? 'Authorized' : 'Locked', icon: ShieldCheck, color: isUserAdmin ? 'text-green-500' : 'text-red-500' },
-            { label: 'DB Status', value: 'Live', icon: Database, color: 'text-secondary' },
-          ].map((stat, i) => (
-            <div key={i} className="glass p-6 rounded-3xl space-y-4">
-              <div className="flex justify-between"><p className="text-sm font-bold uppercase text-muted-foreground">{stat.label}</p><stat.icon className={`w-5 h-5 ${stat.color}`} /></div>
-              <p className="text-3xl font-black">{stat.value}</p>
-            </div>
-          ))}
-        </div>
 
         <div className="glass rounded-[2rem] overflow-hidden">
           <Table>
@@ -356,39 +428,26 @@ export default function AdminDashboard() {
               {productsLoading ? [...Array(3)].map((_, i) => (
                 <TableRow key={i}><TableCell><Skeleton className="h-10 w-40" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell className="text-right"><Skeleton className="h-10 w-10 rounded-full ml-auto" /></TableCell></TableRow>
               )) : products?.map((p) => (
-                <TableRow key={p.id} className="hover:bg-white/20 border-white/10 transition-colors">
+                <TableRow key={p.id} className="hover:bg-white/20 transition-colors">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden relative">
                         <Image src={p.imageUrl || `https://picsum.photos/seed/${p.id}/100/100`} alt={p.name} fill className="object-cover" />
                       </div>
-                      {p.name}
+                      <span className="truncate max-w-[200px]">{p.name}</span>
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="outline">{p.category}</Badge></TableCell>
                   <TableCell>{p.inventory} units</TableCell>
-                  <TableCell className="font-bold">
-                    {p.discountPrice && p.discountPrice > 0 ? (
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground line-through">Rs.{p.price}</span>
-                        <span>Rs.{p.discountPrice}</span>
-                      </div>
-                    ) : (
-                      <span>Rs.{p.price}</span>
-                    )}
-                  </TableCell>
+                  <TableCell className="font-bold">Rs.{p.discountPrice || p.price}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full"><MoreHorizontal /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="glass">
-                        <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="gap-2 cursor-pointer">
-                          <Edit2 className="w-4 h-4" /> Edit Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteProduct(p.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
-                          <Trash2 className="w-4 h-4" /> Delete Product
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="gap-2 cursor-pointer"><Edit2 className="w-4 h-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteProduct(p.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive"><Trash2 className="w-4 h-4" /> Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
