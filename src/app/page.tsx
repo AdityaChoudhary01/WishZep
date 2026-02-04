@@ -135,7 +135,7 @@ export default function Home() {
                     </Button>
                   </div>
                   <div className="flex justify-between items-start pt-2">
-                    <div className="space-y-2 flex-1 pr-4">
+                    <div className="space-y-2 flex-1 pr-4 min-w-0">
                       <h3 className="font-black text-2xl group-hover:text-primary transition-colors truncate">
                         {p.name}
                       </h3>
