@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -11,10 +10,13 @@ import { cn } from '@/lib/utils';
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
   const cartItems = useCartStore((state) => state.items);
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -66,9 +68,9 @@ export default function Navbar() {
             </Button>
           </Link>
           <Link href="/cart" className="relative">
-            <Button variant="primary" size="icon" className="rounded-full shadow-lg shadow-primary/20">
+            <Button variant="default" size="icon" className="rounded-full shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5" />
-              {itemCount > 0 && (
+              {mounted && itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-secondary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
                   {itemCount}
                 </span>

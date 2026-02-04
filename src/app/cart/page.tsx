@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCartStore } from '@/lib/store';
@@ -7,10 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 export default function CartPage() {
+  const [mounted, setMounted] = useState(false);
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
   const total = getTotal();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="container mx-auto px-6 py-20 text-center">Loading your bag...</div>;
+  }
 
   if (items.length === 0) {
     return (
@@ -96,8 +105,10 @@ export default function CartPage() {
             </div>
             
             <div className="pt-4 space-y-4">
-              <Button className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-bold gap-2 group">
-                Checkout Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Button asChild className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-bold gap-2 group">
+                <Link href="/checkout">
+                  Checkout Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="w-3 h-3" /> Secure payment powered by Razorpay

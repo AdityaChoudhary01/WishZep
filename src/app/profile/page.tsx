@@ -1,20 +1,25 @@
-
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, orderBy } from 'firebase/firestore';
-import { User, Package, History, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { collection, orderBy, query } from 'firebase/firestore';
+import { Package, History, Settings, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -87,7 +92,9 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="font-bold text-lg">Order #{order.id.slice(0, 8)}</p>
-                      <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {mounted ? new Date(order.orderDate).toLocaleDateString() : '...'}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-12">
