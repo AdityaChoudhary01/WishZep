@@ -91,6 +91,13 @@ export default function AdminDashboard() {
   const secondaryFileInputRef = useRef<HTMLInputElement>(null);
   const chartFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to determine if current category is apparel
+  const isApparelCategory = useMemo(() => {
+    const cat = productFormData.category.toLowerCase();
+    const apparelKeywords = ['apparel', 'clothing', 'clothes', 'shirt', 'pant', 't-shirt', 'hoodie', 'bottoms', 'top', 'trousers', 'wear'];
+    return apparelKeywords.some(keyword => cat.includes(keyword));
+  }, [productFormData.category]);
+
   // Fetch admin role status
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -126,7 +133,6 @@ export default function AdminDashboard() {
   const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
 
   const ordersQuery = useMemoFirebase(() => {
-    // Only query orders if explicitly an admin and on orders tab
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isConfirmedAdmin, activeTab]);
@@ -264,8 +270,8 @@ export default function AdminDashboard() {
       category: productFormData.category,
       imageUrl: productFormData.imageUrl,
       images: productFormData.images,
-      sizes: productFormData.sizes.split(',').map(s => s.trim()).filter(Boolean),
-      sizeChartUrl: productFormData.sizeChartUrl,
+      sizes: isApparelCategory ? productFormData.sizes.split(',').map(s => s.trim()).filter(Boolean) : [],
+      sizeChartUrl: isApparelCategory ? productFormData.sizeChartUrl : '',
       specifications: specsObject,
       updatedAt: serverTimestamp(),
       createdAt: editingProduct ? editingProduct.createdAt : serverTimestamp()
@@ -437,7 +443,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Comprehensive Product Editor */}
             <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
               <DialogContent className="glass max-w-4xl rounded-[3rem] border-white/30 max-h-[90vh] overflow-y-auto p-0">
                 <div className="sticky top-0 z-50 glass border-b border-white/20 p-8 flex justify-between items-center">
@@ -506,15 +511,17 @@ export default function AdminDashboard() {
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Fit Variants (Comma Separated)</Label>
-                        <Input 
-                          placeholder="S, M, L, XL"
-                          value={productFormData.sizes}
-                          onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})}
-                          className="glass h-12 rounded-xl bg-white/20" 
-                        />
-                      </div>
+                      {isApparelCategory && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Fit Variants (Comma Separated)</Label>
+                          <Input 
+                            placeholder="S, M, L, XL"
+                            value={productFormData.sizes}
+                            onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})}
+                            className="glass h-12 rounded-xl bg-white/20" 
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-6">
@@ -573,24 +580,26 @@ export default function AdminDashboard() {
                         />
                       </div>
                       
-                      <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Fit Blueprint (Size Chart)</Label>
-                        <div 
-                          className="h-24 glass rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all gap-3"
-                          onClick={() => chartFileInputRef.current?.click()}
-                        >
-                          {productFormData.sizeChartUrl ? (
-                            <div className="flex items-center gap-3 text-green-500 font-bold">
-                              <CheckCircle2 className="w-5 h-5" /> Blueprint Attached
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3 text-muted-foreground">
-                              <Layers className="w-5 h-5" /> Upload Size Chart
-                            </div>
-                          )}
+                      {isApparelCategory && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Fit Blueprint (Size Chart)</Label>
+                          <div 
+                            className="h-24 glass rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all gap-3"
+                            onClick={() => chartFileInputRef.current?.click()}
+                          >
+                            {productFormData.sizeChartUrl ? (
+                              <div className="flex items-center gap-3 text-green-500 font-bold">
+                                <CheckCircle2 className="w-5 h-5" /> Blueprint Attached
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3 text-muted-foreground">
+                                <Layers className="w-5 h-5" /> Upload Size Chart
+                              </div>
+                            )}
+                          </div>
+                          <input type="file" ref={chartFileInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'chart')} />
                         </div>
-                        <input type="file" ref={chartFileInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'chart')} />
-                      </div>
+                      )}
                     </div>
 
                     <div className="space-y-4">

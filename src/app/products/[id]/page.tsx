@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { 
   ShoppingBag, 
@@ -62,7 +63,15 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useDoc(productRef);
 
   const allImages = product ? [product.imageUrl, ...(product.images || [])] : [];
-  const isApparel = product?.category?.toLowerCase() === 'apparel' || product?.category?.toLowerCase() === 'clothes' || product?.category?.toLowerCase() === 'clothing';
+  
+  // Consistent apparel detection logic
+  const isApparel = useMemo(() => {
+    if (!product?.category) return false;
+    const cat = product.category.toLowerCase();
+    const apparelKeywords = ['apparel', 'clothing', 'clothes', 'shirt', 'pant', 't-shirt', 'hoodie', 'bottoms', 'top', 'trousers', 'wear'];
+    return apparelKeywords.some(keyword => cat.includes(keyword));
+  }, [product?.category]);
+
   const availableSizes = product?.sizes || [];
 
   const handleAddToCart = (silent = false) => {
