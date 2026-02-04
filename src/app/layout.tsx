@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'WishZep | Modern Aura Shop',
@@ -25,9 +26,13 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <Navbar />
+          <Suspense fallback={<div className="h-20 glass fixed top-0 left-0 right-0 z-50 animate-pulse" />}>
+            <Navbar />
+          </Suspense>
           <main className="min-h-screen pt-20">
-            {children}
+            <Suspense fallback={<div className="container mx-auto p-20 text-center animate-pulse">Loading experience...</div>}>
+              {children}
+            </Suspense>
           </main>
           <Footer />
           <Toaster />

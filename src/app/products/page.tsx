@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronDown, ShoppingBag, X } from 'lucide-react';
@@ -21,7 +21,7 @@ import { useCartStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const db = useFirestore();
@@ -45,7 +45,6 @@ export default function ProductsPage() {
   const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
     
-    // 1. Filter
     let result = products.filter((p) => {
       const matchesSearch = !searchParam || [
         p.name,
@@ -66,7 +65,6 @@ export default function ProductsPage() {
       return matchesSearch && matchesCategory && matchesCollection;
     });
 
-    // 2. Sort
     switch (sortParam) {
       case 'price-low':
         result.sort((a, b) => {
@@ -122,7 +120,7 @@ export default function ProductsPage() {
     });
     toast({
       title: "Added to Bag!",
-      description: `${product.name} has been added to your WishZep collection.`,
+      description: `${product.name} has been added to your collection.`,
     });
   };
 
@@ -278,5 +276,13 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto p-20 text-center animate-pulse">Loading catalogue...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

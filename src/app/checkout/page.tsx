@@ -1,16 +1,17 @@
+
 "use client";
 
 import { useCartStore } from '@/lib/store';
 import { useUser, useFirestore } from '@/firebase';
 import { useState, useEffect } from 'react';
-import { CreditCard, Truck, ArrowRight } from 'lucide-react';
+import { CreditCard, Truck, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,7 +36,7 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = () => {
     if (!user || !db) {
       toast({ title: "Please sign in to place order", variant: "destructive" });
       router.push('/auth/login');
@@ -44,34 +45,40 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    try {
-      const orderRef = await addDoc(collection(db, 'users', user.uid, 'orders'), {
-        userId: user.uid,
-        orderDate: new Date().toISOString(),
-        totalAmount: total,
-        status: 'pending',
-        shippingAddress: `${shipping.address}, ${shipping.city}, ${shipping.zip}`,
-        paymentMethod: 'Credit Card',
-        createdAt: serverTimestamp()
-      });
+    // 1. Pre-generate the Order ID to use for order items immediately
+    const orderRef = doc(collection(db, 'users', user.uid, 'orders'));
+    
+    // 2. Queue the main order document
+    setDocumentNonBlocking(orderRef, {
+      userId: user.uid,
+      orderDate: new Date().toISOString(),
+      totalAmount: total,
+      status: 'pending',
+      shippingAddress: `${shipping.address}, ${shipping.city}, ${shipping.zip}`,
+      paymentMethod: 'Credit Card',
+      createdAt: serverTimestamp()
+    }, { merge: true });
 
-      items.forEach(item => {
-        addDocumentNonBlocking(collection(db, 'users', user.uid, 'orders', orderRef.id, 'order_items'), {
-          orderId: orderRef.id,
-          productId: item.id,
-          quantity: item.quantity,
-          price: item.price
-        });
-      });
-      
-      toast({ title: "Order Placed! ✨", description: "Redirecting to your profile." });
-      clearCart();
+    // 3. Queue each order item using the pre-generated Order ID
+    items.forEach(item => {
+      const itemRef = doc(collection(db, 'users', user.uid, 'orders', orderRef.id, 'order_items'));
+      setDocumentNonBlocking(itemRef, {
+        orderId: orderRef.id,
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name
+      }, { merge: true });
+    });
+    
+    // 4. Optimistically update UI
+    toast({ title: "Order Placed! ✨", description: "Your artifacts are being prepared." });
+    clearCart();
+    
+    // Slight delay before redirect to ensure the user sees the toast
+    setTimeout(() => {
       router.push('/profile');
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Order Failed", description: e.message });
-    } finally {
-      setIsProcessing(false);
-    }
+    }, 1500);
   };
 
   if (!mounted) {
@@ -83,7 +90,7 @@ export default function CheckoutPage() {
       <div className="p-20 text-center space-y-6">
         <h2 className="text-3xl font-black">Your bag is empty.</h2>
         <Button asChild className="rounded-full">
-          <a href="/products">Go Shopping</a>
+          <Link href="/products">Go Shopping</Link>
         </Button>
       </div>
     );
@@ -105,20 +112,20 @@ export default function CheckoutPage() {
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">Full Name</Label>
-                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.fullName} onChange={(e) => setShipping({...shipping, fullName: e.target.value})} />
+                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.fullName} onChange={(e) => setShipping({...shipping, fullName: e.target.value})} placeholder="Aditya Choudhary" />
               </div>
               <div className="space-y-2">
                 <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">Street Address</Label>
-                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.address} onChange={(e) => setShipping({...shipping, address: e.target.value})} />
+                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.address} onChange={(e) => setShipping({...shipping, address: e.target.value})} placeholder="123 Innovation St" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">City</Label>
-                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.city} onChange={(e) => setShipping({...shipping, city: e.target.value})} />
+                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.city} onChange={(e) => setShipping({...shipping, city: e.target.value})} placeholder="Bangalore" />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">ZIP Code</Label>
-                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.zip} onChange={(e) => setShipping({...shipping, zip: e.target.value})} />
+                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.zip} onChange={(e) => setShipping({...shipping, zip: e.target.value})} placeholder="560001" />
                 </div>
               </div>
             </div>
@@ -146,13 +153,13 @@ export default function CheckoutPage() {
             <h2 className="text-3xl font-black">Order Summary</h2>
             <div className="space-y-4">
               {items.map(item => (
-                <div key={item.id} className="flex justify-between items-center text-sm font-medium">
-                  <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <div key={`${item.id}-${item.selectedSize}`} className="flex justify-between items-center text-sm font-medium">
+                  <span className="text-muted-foreground">{item.quantity}x {item.name} {item.selectedSize ? `(${item.selectedSize})` : ''}</span>
+                  <span>Rs.{(item.price * item.quantity).toLocaleString()}</span>
                 </div>
               ))}
               <Separator className="bg-white/20" />
-              <div className="flex justify-between text-3xl font-black pt-4"><span>Total</span><span className="wishzep-text">${total.toFixed(2)}</span></div>
+              <div className="flex justify-between text-3xl font-black pt-4"><span>Total</span><span className="wishzep-text">Rs.{total.toLocaleString()}</span></div>
             </div>
 
             <Button 
@@ -160,7 +167,7 @@ export default function CheckoutPage() {
               disabled={isProcessing || !shipping.address || !shipping.fullName}
               className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3 shadow-2xl shadow-primary/20"
             >
-              {isProcessing ? "Processing..." : "Place Order"} <ArrowRight className="w-6 h-6" />
+              {isProcessing ? <><Loader2 className="w-6 h-6 animate-spin" /> Transmitting...</> : <>Place Order <ArrowRight className="w-6 h-6" /></>}
             </Button>
           </div>
         </div>
