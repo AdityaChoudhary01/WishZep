@@ -26,7 +26,9 @@ import {
   Upload,
   Layers,
   FileText,
-  ListPlus
+  ListPlus,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -458,18 +460,18 @@ export default function AdminDashboard() {
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Core Identity</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Info className="w-3 h-3" /> Core Identity</Label>
                         <Input 
                           placeholder="Artifact Name"
                           value={productFormData.name}
                           onChange={(e) => setProductFormData({...productFormData, name: e.target.value})}
-                          className="glass h-14 rounded-2xl bg-white/20 text-lg font-bold" 
+                          className="glass h-14 rounded-2xl bg-white/20 text-lg font-bold border-white/30 focus:bg-white/40 transition-all" 
                         />
                         <Select 
                           value={productFormData.category} 
                           onValueChange={(val) => setProductFormData({...productFormData, category: val})}
                         >
-                          <SelectTrigger className="glass h-14 rounded-2xl bg-white/20 font-bold">
+                          <SelectTrigger className="glass h-14 rounded-2xl bg-white/20 font-bold border-white/30">
                             <SelectValue placeholder="Registry Channel" />
                           </SelectTrigger>
                           <SelectContent className="glass border-white/20">
@@ -487,7 +489,7 @@ export default function AdminDashboard() {
                             type="number"
                             value={productFormData.price}
                             onChange={(e) => setProductFormData({...productFormData, price: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20" 
+                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -496,7 +498,7 @@ export default function AdminDashboard() {
                             type="number"
                             value={productFormData.discountPrice}
                             onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20" 
+                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
                           />
                         </div>
                       </div>
@@ -507,7 +509,7 @@ export default function AdminDashboard() {
                           type="number"
                           value={productFormData.inventory}
                           onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})}
-                          className="glass h-12 rounded-xl bg-white/20" 
+                          className="glass h-12 rounded-xl bg-white/20 border-white/30" 
                         />
                       </div>
 
@@ -518,7 +520,7 @@ export default function AdminDashboard() {
                             placeholder="S, M, L, XL"
                             value={productFormData.sizes}
                             onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})}
-                            className="glass h-12 rounded-xl bg-white/20" 
+                            className="glass h-12 rounded-xl bg-white/20 border-white/30" 
                           />
                         </div>
                       )}
@@ -526,16 +528,16 @@ export default function AdminDashboard() {
 
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Primary Visual</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-3 h-3" /> Primary Visual</Label>
                         <div 
-                          className="relative aspect-[4/3] glass rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-primary/20 hover:border-primary/50 transition-all" 
+                          className="relative aspect-[4/3] glass rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-primary/20 hover:border-primary/50 transition-all hover:bg-white/10" 
                           onClick={() => fileInputRef.current?.click()}
                         >
                           {productFormData.imageUrl ? (
                             <Image src={productFormData.imageUrl} alt="Preview" fill className="object-cover" />
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                              {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10" />}
+                              {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10 transition-transform group-hover:scale-110" />}
                               <span className="text-[10px] font-black uppercase tracking-widest">Main Media</span>
                             </div>
                           )}
@@ -547,17 +549,17 @@ export default function AdminDashboard() {
                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Additional Gallery</Label>
                         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                           {productFormData.images.map((img, idx) => (
-                            <div key={idx} className="relative w-16 h-16 rounded-xl glass shrink-0 overflow-hidden border border-white/20">
+                            <div key={idx} className="relative w-16 h-16 rounded-xl glass shrink-0 overflow-hidden border border-white/30">
                               <Image src={img} alt={`Gallery ${idx}`} fill className="object-cover" />
                               <button 
                                 onClick={() => setProductFormData(p => ({...p, images: p.images.filter((_, i) => i !== idx)}))}
-                                className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-white rounded-full flex items-center justify-center"
+                                className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-white rounded-full flex items-center justify-center shadow-lg"
                               ><X className="w-2.5 h-2.5" /></button>
                             </div>
                           ))}
                           <button 
                             onClick={() => secondaryFileInputRef.current?.click()}
-                            className="w-16 h-16 rounded-xl glass border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:bg-white/10"
+                            className="w-16 h-16 rounded-xl glass border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:bg-white/10 transition-colors"
                           >
                             <Plus className="w-5 h-5" />
                           </button>
@@ -572,11 +574,12 @@ export default function AdminDashboard() {
                   <div className="grid lg:grid-cols-2 gap-10">
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Technical Directives (Description)</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><FileText className="w-3 h-3" /> Technical Directives</Label>
                         <Textarea 
                           value={productFormData.description}
+                          placeholder="Describe the artifact's energy and functionality..."
                           onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
-                          className="glass rounded-2xl bg-white/20 min-h-[160px] p-6 leading-relaxed" 
+                          className="glass rounded-2xl bg-white/20 min-h-[160px] p-6 leading-relaxed border-white/30 focus:bg-white/40 transition-all" 
                         />
                       </div>
                       
@@ -584,7 +587,7 @@ export default function AdminDashboard() {
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                           <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Fit Blueprint (Size Chart)</Label>
                           <div 
-                            className="h-24 glass rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all gap-3"
+                            className="h-24 glass rounded-2xl border-2 border-dashed border-white/30 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all gap-3"
                             onClick={() => chartFileInputRef.current?.click()}
                           >
                             {productFormData.sizeChartUrl ? (
@@ -605,26 +608,26 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Artifact Specs</Label>
-                        <Button variant="ghost" size="sm" onClick={handleAddSpec} className="h-8 rounded-lg gap-2 font-bold text-[10px]">
+                        <Button variant="ghost" size="sm" onClick={handleAddSpec} className="h-8 rounded-lg gap-2 font-bold text-[10px] hover:bg-primary/10">
                           <Plus className="w-3 h-3" /> ADD SPEC
                         </Button>
                       </div>
                       <div className="space-y-3">
                         {productFormData.specifications.map((spec, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
+                          <div key={idx} className="flex gap-2 items-center group">
                             <Input 
                               placeholder="Key" 
                               value={spec.key} 
                               onChange={(e) => handleSpecChange(idx, 'key', e.target.value)}
-                              className="glass h-10 rounded-xl bg-white/20 text-xs font-bold"
+                              className="glass h-10 rounded-xl bg-white/20 text-xs font-bold border-white/30"
                             />
                             <Input 
                               placeholder="Value" 
                               value={spec.value} 
                               onChange={(e) => handleSpecChange(idx, 'value', e.target.value)}
-                              className="glass h-10 rounded-xl bg-white/20 text-xs"
+                              className="glass h-10 rounded-xl bg-white/20 text-xs border-white/30"
                             />
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveSpec(idx)} className="text-destructive h-10 w-10 shrink-0">
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveSpec(idx)} className="text-destructive h-10 w-10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -635,7 +638,7 @@ export default function AdminDashboard() {
 
                   <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
                     <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1">CANCEL</Button>
-                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-2xl shadow-primary/20">
+                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-transform">
                       <Save className="w-6 h-6" /> {editingProduct ? 'SAVE RE-CALIBRATION' : 'LAUNCH DROP'}
                     </Button>
                   </div>
@@ -654,7 +657,7 @@ export default function AdminDashboard() {
 
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-1">
-                <div className="glass p-8 rounded-[2rem] space-y-6 border border-white/20">
+                <div className="glass p-8 rounded-[2rem] space-y-6 border border-white/20 shadow-xl">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
                     <ListPlus className="w-6 h-6" />
                   </div>
@@ -665,10 +668,10 @@ export default function AdminDashboard() {
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
                       placeholder="e.g. HYPERWEAR" 
-                      className="glass h-14 rounded-2xl bg-white/20 font-bold"
+                      className="glass h-14 rounded-2xl bg-white/20 font-bold border-white/30 focus:bg-white/40 transition-all"
                     />
                   </div>
-                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl shadow-primary/20">ADD REGISTRY</Button>
+                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">ADD REGISTRY</Button>
                 </div>
               </div>
 
