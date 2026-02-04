@@ -17,7 +17,8 @@ import {
   Table as TableIcon,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,30 @@ export default function ProductDetailPage() {
     });
   };
 
+  const handleShare = async () => {
+    if (!product) return;
+    
+    const shareData = {
+      title: product.name,
+      text: `Check out this ${product.name} on WishZep!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Link Copied! 🔗",
+          description: "Product link copied to your clipboard.",
+        });
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -106,9 +131,14 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-6 py-12">
-      <Link href="/products" className="inline-flex items-center gap-2 text-sm font-medium hover:text-primary mb-8 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Collection
-      </Link>
+      <div className="flex justify-between items-center mb-8">
+        <Link href="/products" className="inline-flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to Collection
+        </Link>
+        <Button variant="ghost" size="icon" className="rounded-full glass" onClick={handleShare}>
+          <Share2 className="w-5 h-5" />
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* Left: Media Gallery */}
@@ -159,7 +189,9 @@ export default function ProductDetailPage() {
                 <span className="text-xs text-muted-foreground">(Featured Drop)</span>
               </div>
             </div>
-            <h1 className="text-5xl font-black tracking-tight leading-tight">{product.name}</h1>
+            <div className="flex justify-between items-start gap-4">
+              <h1 className="text-5xl font-black tracking-tight leading-tight flex-1">{product.name}</h1>
+            </div>
             <div className="flex items-baseline gap-4">
               {product.discountPrice > 0 ? (
                 <>

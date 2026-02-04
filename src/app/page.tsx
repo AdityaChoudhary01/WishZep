@@ -3,15 +3,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star, CheckCircle2, PackageSearch } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star, CheckCircle2, PackageSearch, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const db = useFirestore();
+  const { toast } = useToast();
 
   // Optimized query to fetch the 12 most recent products
   const featuredQuery = useMemoFirebase(() => {
@@ -24,6 +26,31 @@ export default function Home() {
   }, [db]);
 
   const { data: featuredProducts, isLoading } = useCollection(featuredQuery);
+
+  const handleShare = async (e: React.MouseEvent, product: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const shareData = {
+      title: product.name,
+      text: `Check out this ${product.name} on WishZep!`,
+      url: window.location.origin + `/products/${product.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Link Copied! 🔗",
+          description: "Product link copied to your clipboard.",
+        });
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-20 pb-20">
@@ -128,6 +155,15 @@ export default function Home() {
                       className="object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {/* Share Icon */}
+                    <button 
+                      onClick={(e) => handleShare(e, p)}
+                      className="absolute top-6 right-6 w-12 h-12 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-white transition-all z-10"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </button>
+
                     <Button
                       size="lg"
                       className="absolute bottom-6 right-6 rounded-2xl glass-dark text-white opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0"

@@ -4,7 +4,7 @@
 import { useState, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronDown, ShoppingBag, X } from 'lucide-react';
+import { ChevronDown, ShoppingBag, X, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -134,6 +134,31 @@ function ProductsContent() {
     });
   };
 
+  const handleShare = async (e: React.MouseEvent, product: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const shareData = {
+      title: product.name,
+      text: `Check out this ${product.name} on WishZep!`,
+      url: window.location.origin + `/products/${product.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Link Copied! 🔗",
+          description: "Product link copied to your clipboard.",
+        });
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
   const getSortLabel = () => {
     switch (sortParam) {
       case 'price-low': return 'Price: Low to High';
@@ -241,6 +266,15 @@ function ProductsContent() {
                       Out of Stock
                     </Badge>
                   )}
+                  
+                  {/* Share Icon */}
+                  <button 
+                    onClick={(e) => handleShare(e, p)}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-white transition-all z-10"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+
                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                     <Button 
                       disabled={p.inventory === 0}
