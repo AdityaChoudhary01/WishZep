@@ -34,7 +34,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export default function DynamicInfoPage() {
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = typeof params.slug === 'string' ? params.slug : params.slug?.[0];
+  
   const db = useFirestore();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
@@ -84,6 +86,8 @@ export default function DynamicInfoPage() {
   }
 
   const renderTemplate = () => {
+    if (!slug) return null;
+
     switch (slug) {
       case 'about':
         return (
