@@ -6,26 +6,22 @@ import {
   Package, 
   Plus, 
   Search, 
-  MoreHorizontal, 
   Settings, 
   ShieldCheck, 
-  X, 
   Camera, 
   Loader2, 
   AlertCircle,
   Edit2,
   Trash2,
   ImagePlus,
-  Table as TableIcon,
-  Check,
-  Tags,
-  ChevronDown,
   ShoppingBag,
   Truck,
   Clock,
   CheckCircle2,
   RefreshCcw,
-  Menu
+  Menu,
+  Tags,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -56,38 +52,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isConfirmedAdmin, setIsConfirmedAdmin] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newCategory, setNewCategory] = useState('');
   
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
-
-  const [newProduct, setNewProduct] = useState<any>({
-    name: '',
-    price: 0,
-    discountPrice: 0,
-    category: '',
-    description: '',
-    inventory: 10,
-    imageUrl: '',
-    images: [],
-    attributes: '',
-    sizes: [],
-    sizeChartUrl: '',
-    specifications: {}
-  });
 
   // Fetch admin role status
   const adminRoleRef = useMemoFirebase(() => {
@@ -98,36 +74,35 @@ export default function AdminDashboard() {
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole && !adminLoading;
 
-  // Propagation Delay Failsafe:
-  // When adminRole is detected, wait a brief moment for security rules to propagate
-  // before we allow high-privilege queries to run.
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isUserAdmin) {
       timer = setTimeout(() => {
         setIsConfirmedAdmin(true);
-      }, 1500); // 1.5s delay to allow backend sync
+      }, 1000);
     } else {
       setIsConfirmedAdmin(false);
     }
     return () => clearTimeout(timer);
   }, [isUserAdmin]);
 
-  // Products Query
+  // Data Queries
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
-
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
-  // Orders Query - Optimized to only run when tab is active AND admin status is propagated/confirmed
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('name', 'asc'));
+  }, [db]);
+  const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
+
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isConfirmedAdmin, activeTab]);
-
-  // Use SILENT permission error handling to prevent Next.js overlay crashes during propagation sync
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
 
   const claimAdminRole = async () => {
@@ -138,10 +113,22 @@ export default function AdminDashboard() {
         email: user.email,
         assignedAt: serverTimestamp()
       });
-      toast({ title: "Admin Access Granted! 🛡️", description: "Backend syncing started. Please wait a moment." });
+      toast({ title: "Admin Access Granted! 🛡️" });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Permission Denied" });
     }
+  };
+
+  const handleAddCategory = async () => {
+    if (!db || !newCategory.trim()) return;
+    const catId = newCategory.toLowerCase().replace(/\s+/g, '-');
+    await setDoc(doc(db, 'categories', catId), {
+      id: catId,
+      name: newCategory.trim(),
+      createdAt: new Date().toISOString()
+    });
+    setNewCategory('');
+    toast({ title: "Category Added! ✨" });
   };
 
   const handleUpdateOrderStatus = (order: any, newStatus: string) => {
@@ -164,9 +151,10 @@ export default function AdminDashboard() {
   const SidebarContent = () => (
     <nav className="space-y-4">
       <div className="space-y-1">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management Vault</p>
         {[
           { id: 'products', label: 'Inventory', icon: Package },
+          { id: 'categories', label: 'Categories', icon: Tags },
           { id: 'orders', label: 'Orders', icon: ShoppingBag },
         ].map((link) => (
           <Button 
@@ -176,7 +164,7 @@ export default function AdminDashboard() {
               setActiveTab(link.id);
               setIsMobileMenuOpen(false);
             }}
-            className={cn("w-full justify-start gap-3 rounded-xl h-12", activeTab === link.id ? "shadow-lg shadow-primary/20" : "")}
+            className={cn("w-full justify-start gap-3 rounded-xl h-12 transition-all", activeTab === link.id ? "shadow-lg shadow-primary/20" : "")}
           >
             <link.icon className="w-5 h-5" /> {link.label}
           </Button>
@@ -185,7 +173,7 @@ export default function AdminDashboard() {
       {!isUserAdmin && (
         <div className="pt-4 px-2">
           <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white h-12">
-            <ShieldCheck className="w-5 h-5" /> Claim Admin
+            <ShieldCheck className="w-5 h-5" /> Claim Admin Access
           </Button>
         </div>
       )}
@@ -213,7 +201,7 @@ export default function AdminDashboard() {
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-xl"><Menu className="w-6 h-6" /></Button>
           </SheetTrigger>
-          <SheetContent side="left" className="glass w-72 p-6">
+          <SheetContent side="left" className="glass w-72 p-6 border-white/20">
             <SheetHeader className="mb-8">
               <SheetTitle className="text-2xl font-black wishzep-text text-left">Admin Panel</SheetTitle>
             </SheetHeader>
@@ -224,10 +212,10 @@ export default function AdminDashboard() {
 
       <main className="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden">
         {!isUserAdmin && !adminLoading && (
-          <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5">
+          <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5 animate-in fade-in zoom-in duration-500">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>Claim admin status to manage products and fulfill orders.</AlertDescription>
+            <AlertDescription>This dialogue is reserved for verified WishZep Architects. Please claim access to proceed.</AlertDescription>
           </Alert>
         )}
 
@@ -280,6 +268,61 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'categories' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+            <header>
+              <h1 className="text-3xl md:text-4xl font-black">Tag <span className="wishzep-text">Registry</span></h1>
+              <p className="text-muted-foreground text-xs md:text-sm">Organize your frequency channels.</p>
+            </header>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-1 space-y-6">
+                <div className="glass p-8 rounded-[2rem] space-y-4">
+                  <h3 className="text-xl font-black">Register New</h3>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Channel Name</Label>
+                    <Input 
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="e.g. Hyperwear" 
+                      className="glass h-12 rounded-xl bg-white/30"
+                    />
+                  </div>
+                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-xl h-12 bg-primary font-bold">Register Category</Button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="glass rounded-[2rem] overflow-hidden border border-white/20">
+                  <Table>
+                    <TableHeader className="bg-white/30">
+                      <TableRow>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Category</TableHead>
+                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Slug</TableHead>
+                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Delete</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categoriesLoading ? [...Array(3)].map((_, i) => <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-32" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-8 w-8 ml-auto" /></TableCell></TableRow>) :
+                      categories?.map((cat) => (
+                        <TableRow key={cat.id} className="hover:bg-white/10 transition-colors h-16">
+                          <TableCell className="px-6 font-bold">{cat.name}</TableCell>
+                          <TableCell className="text-xs font-mono text-muted-foreground">{cat.id}</TableCell>
+                          <TableCell className="text-right px-6">
+                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => deleteDoc(doc(db!, 'categories', cat.id))}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'orders' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
             <header>
@@ -287,65 +330,56 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground text-xs md:text-sm">Fulfill the vision. Manage customer drops.</p>
             </header>
 
-            {ordersError ? (
-              <div className="glass p-8 rounded-[2rem] text-center space-y-6 border-destructive/20 bg-destructive/5">
-                <AlertCircle className="w-12 h-12 mx-auto text-destructive" />
-                <h3 className="text-xl font-black">Connection Syncing...</h3>
-                <p className="text-sm text-muted-foreground">Admin status is still propagating in the backend. This usually takes 5-10 seconds.</p>
-                <Button onClick={() => window.location.reload()} className="rounded-full gap-2 text-xs h-12 px-6"><RefreshCcw className="w-4 h-4" /> Retry Connection</Button>
-              </div>
-            ) : (
-              <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
-                <div className="overflow-x-auto">
-                  <Table className="min-w-[700px] md:min-w-full">
-                    <TableHeader className="bg-white/30">
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">ID</TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+              <div className="overflow-x-auto">
+                <Table className="min-w-[700px] md:min-w-full">
+                  <TableHeader className="bg-white/30">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">ID</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Date</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Amount</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ordersLoading || !isConfirmedAdmin ? (
+                      [...Array(5)].map((_, i) => <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell></TableRow>)
+                    ) : orders?.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
+                        <TableCell className="px-6 font-bold font-mono text-[10px]">#{order.id.slice(0, 8)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-black text-primary text-xs">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge className={cn(
+                            "px-3 py-1 rounded-full text-[9px] uppercase font-black",
+                            order.status === 'delivered' ? 'bg-green-500/20 text-green-500' : 
+                            order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500' : 'bg-yellow-500/20 text-yellow-500'
+                          )}>
+                            {order.status || 'pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-6">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20"><Settings className="w-4 h-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="glass min-w-[160px] rounded-xl border-white/20">
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-2 cursor-pointer font-bold text-yellow-500"><Clock className="w-4 h-4" /> Mark Pending</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-2 cursor-pointer font-bold text-blue-500"><Truck className="w-4 h-4" /> Mark Shipped</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-2 cursor-pointer font-bold text-green-500"><CheckCircle2 className="w-4 h-4" /> Mark Delivered</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ordersLoading || !isConfirmedAdmin ? (
-                        [...Array(5)].map((_, i) => <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell></TableRow>)
-                      ) : orders?.map((order) => (
-                        <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
-                          <TableCell className="px-6 font-bold font-mono text-[10px]">#{order.id.slice(0, 8)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()}</TableCell>
-                          <TableCell className="font-black text-primary text-xs">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge className={cn(
-                              "px-3 py-1 rounded-full text-[9px] uppercase font-black",
-                              order.status === 'delivered' ? 'bg-green-500/20 text-green-500' : 
-                              order.status === 'shipped' ? 'bg-blue-500/20 text-blue-500' : 'bg-yellow-500/20 text-yellow-500'
-                            )}>
-                              {order.status || 'pending'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right px-6">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/20"><Settings className="w-4 h-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="glass min-w-[160px] rounded-xl">
-                                <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'pending')} className="gap-2 cursor-pointer font-bold text-yellow-500"><Clock className="w-4 h-4" /> Mark Pending</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'shipped')} className="gap-2 cursor-pointer font-bold text-blue-500"><Truck className="w-4 h-4" /> Mark Shipped</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateOrderStatus(order, 'delivered')} className="gap-2 cursor-pointer font-bold text-green-500"><CheckCircle2 className="w-4 h-4" /> Mark Delivered</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {!ordersLoading && isConfirmedAdmin && orders?.length === 0 && (
-                        <TableRow><TableCell colSpan={5} className="py-20 text-center glass rounded-2xl"><ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" /><p className="font-bold text-muted-foreground">No orders in vault.</p></TableCell></TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                    {!ordersLoading && isConfirmedAdmin && orders?.length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="py-20 text-center glass rounded-2xl"><ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" /><p className="font-bold text-muted-foreground">No orders in vault.</p></TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            )}
+            </div>
           </div>
         )}
       </main>
