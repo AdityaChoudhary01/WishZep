@@ -1,12 +1,13 @@
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
-import { collection, orderBy, query, doc, updateDoc } from 'firebase/firestore';
-import { Package, History, Settings, LogOut, ChevronRight, Camera, Loader2 } from 'lucide-react';
+import { collection, orderBy, query, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Package, History, Settings, LogOut, ChevronRight, Camera, Loader2, Edit3, Save, X as CloseIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -22,6 +23,8 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,13 +37,18 @@ export default function ProfilePage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Fetch the user's Firestore document to get real-time profile updates (like image)
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user]);
 
   const { data: profileData, isLoading: isProfileLoading } = useDoc(userDocRef);
+
+  useEffect(() => {
+    if (profileData?.displayName) {
+      setEditedName(profileData.displayName);
+    }
+  }, [profileData]);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -73,9 +81,9 @@ export default function ProfilePage() {
     setIsUploading(true);
     try {
       const imageUrl = await uploadToCloudinary(file);
-      // Update the user document in Firestore. The useDoc hook will react to this change.
       await updateDoc(doc(db, 'users', user.uid), {
-        profileImageUrl: imageUrl
+        profileImageUrl: imageUrl,
+        updatedAt: serverTimestamp()
       });
       toast({ title: "Profile updated! ✨", description: "Your new photo is live." });
     } catch (error: any) {
@@ -86,6 +94,24 @@ export default function ProfilePage() {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!user || !db) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        displayName: editedName.trim(),
+        updatedAt: serverTimestamp()
+      });
+      setIsEditingName(false);
+      toast({ title: "Profile updated! ✨", description: "Your name has been saved." });
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "Failed to update name", 
+        description: error.message 
+      });
     }
   };
 
@@ -104,7 +130,6 @@ export default function ProfilePage() {
     return null;
   }
 
-  // Source of truth for profile image: Firestore doc, fallback to Auth photo, fallback to placeholder
   const profileImage = profileData?.profileImageUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/200`;
 
   return (
@@ -131,18 +156,42 @@ export default function ProfilePage() {
           />
         </div>
 
-        <div className="flex-1 text-center md:text-left space-y-2">
-          <h1 className="text-4xl font-black">{profileData?.displayName || user.displayName || 'WishZep Member'}</h1>
-          <p className="text-muted-foreground font-medium">{user.email}</p>
+        <div className="flex-1 text-center md:text-left space-y-4">
+          {isEditingName ? (
+            <div className="flex flex-col md:flex-row items-center gap-3">
+              <Input 
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                placeholder="Enter your name"
+                className="max-w-xs h-12 rounded-xl glass border-primary/30"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSaveName} className="rounded-xl h-12 bg-primary"><Save className="w-4 h-4 mr-2" /> Save</Button>
+                <Button variant="ghost" onClick={() => setIsEditingName(false)} className="rounded-xl h-12"><CloseIcon className="w-4 h-4" /></Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <h1 className="text-4xl font-black min-h-[1em]">
+                {profileData?.displayName || ''}
+              </h1>
+              <p className="text-muted-foreground font-medium">{user.email}</p>
+            </div>
+          )}
+          
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary">Member since 2024</Badge>
-            <Badge variant="outline" className="glass">Status: Platinum</Badge>
+            <Badge variant="secondary" className="bg-primary/10 text-primary">Member</Badge>
+            <Badge variant="outline" className="glass">Status: Active</Badge>
           </div>
         </div>
+        
         <div className="flex gap-4">
-          <Button variant="outline" className="rounded-xl glass gap-2">
-            <Settings className="w-4 h-4" /> Edit Profile
-          </Button>
+          {!isEditingName && (
+            <Button variant="outline" className="rounded-xl glass gap-2" onClick={() => setIsEditingName(true)}>
+              <Edit3 className="w-4 h-4" /> Edit Name
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             onClick={handleSignOut}

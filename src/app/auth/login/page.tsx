@@ -29,15 +29,22 @@ export default function LoginPage() {
   const syncUserProfile = async (user: any) => {
     if (!db) return;
     const userRef = doc(db, 'users', user.uid);
-    await setDoc(userRef, {
+    
+    const profileData: any = {
       id: user.uid,
       email: user.email,
-      displayName: user.displayName || 'WishZep Member',
       profileImageUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/200`,
       role: 'customer',
       updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(), 
-    }, { merge: true });
+    };
+
+    // Only set displayName if it exists in the Auth provider (e.g., Google)
+    // No default fallback as requested.
+    if (user.displayName) {
+      profileData.displayName = user.displayName;
+    }
+
+    await setDoc(userRef, profileData, { merge: true });
   };
 
   // Handle Magic Link completion
@@ -46,7 +53,6 @@ export default function LoginPage() {
       let emailForSignIn = window.localStorage.getItem('emailForSignIn');
       
       if (!emailForSignIn) {
-        // If email is missing from storage (e.g. different device), prompt the user
         emailForSignIn = window.prompt('Please provide your email for confirmation');
       }
 
@@ -103,7 +109,6 @@ export default function LoginPage() {
     
     setIsLoading(true);
     const actionCodeSettings = {
-      // Must match the URL in Firebase Console's authorized domains
       url: window.location.origin + '/auth/login',
       handleCodeInApp: true,
     };
