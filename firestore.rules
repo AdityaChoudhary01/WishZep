@@ -64,7 +64,7 @@ service cloud.firestore {
     }
 
     /**
-     * Admin access to all orders via collection group
+     * Global access for admins to read across any order collections
      */
     match /{path=**}/orders/{orderId} {
       allow read: if isAdmin();

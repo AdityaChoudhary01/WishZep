@@ -107,7 +107,9 @@ export default function AdminDashboard() {
   }, [db, user]);
 
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
-  const isUserAdmin = !!adminRole;
+  
+  // Important: Only consider the user an admin once the document has been successfully fetched.
+  const isUserAdmin = !!adminRole && !adminLoading;
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -124,12 +126,13 @@ export default function AdminDashboard() {
   const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
 
   // Fetch all orders across all users for the admin
+  // We only enable this query once admin status is confirmed to avoid permission errors.
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !isUserAdmin) return null;
     return query(collectionGroup(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isUserAdmin]);
 
-  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'images' | 'sizeChartUrl', isEdit = false) => {
     const files = e.target.files;
@@ -258,8 +261,6 @@ export default function AdminDashboard() {
   const handleUpdateOrderStatus = (order: any, newStatus: string) => {
     if (!db || !isUserAdmin) return;
     
-    // Paths for collection group updates need the specific document reference
-    // We can infer the path from order.userId and order.id
     const orderRef = doc(db, 'users', order.userId, 'orders', order.id);
     
     updateDocumentNonBlocking(orderRef, {
@@ -495,7 +496,7 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="flex-1 p-8 space-y-8">
-        {!isUserAdmin && (
+        {!isUserAdmin && !adminLoading && (
           <Alert variant="destructive" className="rounded-3xl">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>

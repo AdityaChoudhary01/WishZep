@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,9 +82,13 @@ export function useCollection<T = any>(
       (error: FirestoreError) => {
         let path: string = 'unknown';
         try {
-          path = memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+          // Attempt to extract the path or collection ID for the error message
+          const q = memoizedTargetRefOrQuery as any;
+          if (memoizedTargetRefOrQuery.type === 'collection') {
+            path = (memoizedTargetRefOrQuery as CollectionReference).path;
+          } else if (q._query && q._query.path) {
+            path = q._query.path.canonicalString() || q._query.collectionGroup || 'root/collectionGroup';
+          }
         } catch (e) {
           console.warn('Failed to extract path for Firestore error', e);
         }
