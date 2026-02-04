@@ -26,7 +26,8 @@ import {
   CheckCircle2,
   Lock,
   Eye,
-  Scale
+  Scale,
+  Code2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -148,22 +149,37 @@ export default function DynamicInfoPage() {
               </div>
             </section>
 
-            {/* Team/Community */}
+            {/* Developer Section */}
             <section className="text-center space-y-16">
               <div className="space-y-4">
-                <h2 className="text-5xl font-black">DRIVEN BY <span className="wishzep-text">COMMUNITY.</span></h2>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">We are a global team of experts in design, technology, and logistics, united by the WishZep vision.</p>
+                <h2 className="text-5xl font-black uppercase tracking-tighter">THE <span className="wishzep-text">ARCHITECT.</span></h2>
+                <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed">
+                  The visionary behind the WishZep experience, dedicated to pushing the boundaries of digital craft and high-performance design.
+                </p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-[3/4] glass rounded-[2.5rem] overflow-hidden relative group">
-                    <img src={`https://picsum.photos/seed/team-${i}/400/600`} alt="Team Member" className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute bottom-6 left-6 right-6 text-left">
-                      <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Expertise {i}</p>
-                      <p className="text-xl font-black text-white">Member Name</p>
+              <div className="max-w-md mx-auto aspect-[3/4] glass rounded-[4rem] overflow-hidden relative group border-2 border-primary/20 shadow-2xl shadow-primary/10">
+                <img 
+                  src="https://picsum.photos/seed/aditya-dev/800/1000" 
+                  alt="Aditya Choudhary" 
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-1000" 
+                  data-ai-hint="portrait man"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                <div className="absolute bottom-10 left-10 right-10 text-left space-y-3">
+                  <Badge className="bg-primary text-white border-none px-4 py-1 text-[10px] uppercase font-black tracking-[0.2em]">Lead Developer</Badge>
+                  <div className="space-y-1">
+                    <h3 className="text-4xl font-black text-white leading-none tracking-tight">Aditya Choudhary</h3>
+                    <p className="text-primary font-bold uppercase tracking-widest text-xs">Founder & Digital Architect</p>
+                  </div>
+                  <div className="flex gap-4 pt-2">
+                    <div className="w-8 h-8 rounded-lg glass-dark flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                      <Code2 className="w-4 h-4" />
+                    </div>
+                    <div className="w-8 h-8 rounded-lg glass-dark flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                      <Zap className="w-4 h-4" />
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </section>
           </div>
