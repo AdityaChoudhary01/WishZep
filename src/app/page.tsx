@@ -1,38 +1,24 @@
 
+"use client";
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ShoppingBag, ShieldCheck, Zap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, limit } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
-  const featuredProducts = [
-    {
-      id: '1',
-      name: 'Neo-Stomp Tech Sneakers',
-      price: 189,
-      image: 'https://picsum.photos/seed/wishzep-p1/800/800',
-      badge: 'Bestseller',
-      rating: 4.9
-    },
-    {
-      id: '2',
-      name: 'SonicWave Elite Pro',
-      price: 249,
-      image: 'https://picsum.photos/seed/wishzep-p2/800/800',
-      badge: 'Limited',
-      rating: 4.8
-    },
-    {
-      id: '3',
-      name: 'Zenith Glass Smartwatch',
-      price: 329,
-      image: 'https://picsum.photos/seed/wishzep-p3/800/800',
-      badge: 'New',
-      rating: 5.0
-    }
-  ];
+  const db = useFirestore();
+
+  const featuredQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'products'), limit(3));
+  }, [db]);
+
+  const { data: featuredProducts, isLoading } = useCollection(featuredQuery);
 
   return (
     <div className="flex flex-col gap-20 pb-20">
@@ -93,9 +79,11 @@ export default function Home() {
                     <h3 className="font-bold text-lg">Aura-X Techwear Jacket</h3>
                     <p className="text-primary font-bold">$450.00</p>
                   </div>
-                  <Button size="icon" className="rounded-full bg-white text-black hover:bg-white/90">
-                    <ShoppingBag className="w-5 h-5" />
-                  </Button>
+                  <Link href="/products">
+                    <Button size="icon" className="rounded-full bg-white text-black hover:bg-white/90">
+                      <ShoppingBag className="w-5 h-5" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -125,7 +113,7 @@ export default function Home() {
 
       {/* Featured Products */}
       <section className="container mx-auto px-6 space-y-12">
-        <div className="flex flex-col md:row md:justify-between items-end gap-6">
+        <div className="flex justify-between items-end gap-6">
           <div className="space-y-2">
             <h2 className="text-4xl font-black">LATEST <span className="aura-text">DROPS</span></h2>
             <p className="text-muted-foreground">The most anticipated releases, available now.</p>
@@ -138,43 +126,48 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featuredProducts.map((p) => (
-            <Link href={`/products/${p.id}`} key={p.id} className="group">
-              <div className="glass rounded-3xl p-4 space-y-4 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10">
-                <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
-                  <Image
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  {p.badge && (
-                    <Badge className="absolute top-4 left-4 bg-primary text-white">
-                      {p.badge}
-                    </Badge>
-                  )}
-                  <Button
-                    size="icon"
-                    className="absolute bottom-4 right-4 rounded-full glass-dark text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex justify-between items-start pt-2">
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
-                      {p.name}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-medium text-muted-foreground">{p.rating} (120 reviews)</span>
-                    </div>
-                  </div>
-                  <span className="text-xl font-black text-primary">${p.price}</span>
-                </div>
+          {isLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="aspect-square rounded-3xl" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/4" />
               </div>
-            </Link>
-          ))}
+            ))
+          ) : (
+            featuredProducts?.map((p) => (
+              <Link href={`/products/${p.id}`} key={p.id} className="group">
+                <div className="glass rounded-3xl p-4 space-y-4 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
+                    <Image
+                      src={p.imageUrl || `https://picsum.photos/seed/${p.id}/800/800`}
+                      alt={p.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <Button
+                      size="icon"
+                      className="absolute bottom-4 right-4 rounded-full glass-dark text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-between items-start pt-2">
+                    <div>
+                      <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                        {p.name}
+                      </h3>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs font-medium text-muted-foreground">4.9 (120 reviews)</span>
+                      </div>
+                    </div>
+                    <span className="text-xl font-black text-primary">${p.price}</span>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
       </section>
 
@@ -183,7 +176,7 @@ export default function Home() {
         <div className="relative rounded-3xl overflow-hidden bg-primary h-[400px] flex items-center px-12 group">
           <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary mix-blend-multiply opacity-50" />
           <Image
-            src="https://picsum.photos/seed/wishzep-p4/1200/600"
+            src="https://picsum.photos/seed/wishzep-promo/1200/600"
             alt="Promo"
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-1000"
@@ -194,9 +187,11 @@ export default function Home() {
               UP TO 50% OFF <br />
               <span className="text-secondary">AURA ESSENTIALS</span>
             </h2>
-            <Button size="lg" className="rounded-full bg-white text-primary hover:bg-white/90">
-              Claim Discount
-            </Button>
+            <Link href="/products">
+              <Button size="lg" className="rounded-full bg-white text-primary hover:bg-white/90">
+                Claim Discount
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

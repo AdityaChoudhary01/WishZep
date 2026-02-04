@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCartStore } from '@/lib/store';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
   const { toast } = useToast();
   const total = getTotal();
 
+  const [isProcessing, setIsProcessing] = useState(false);
   const [shipping, setShipping] = useState({
     fullName: '',
     address: '',
@@ -29,40 +31,47 @@ export default function CheckoutPage() {
     zip: ''
   });
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!user || !db) {
       toast({ title: "Please sign in to place order", variant: "destructive" });
       return;
     }
 
-    const orderData = {
-      userId: user.uid,
-      orderDate: new Date().toISOString(),
-      totalAmount: total,
-      status: 'pending',
-      shippingAddress: `${shipping.address}, ${shipping.city}, ${shipping.zip}`,
-      paymentMethod: 'Credit Card',
-      items: items.map(i => ({
-        productId: i.id,
-        quantity: i.quantity,
-        price: i.price
-      }))
-    };
+    setIsProcessing(true);
 
-    addDocumentNonBlocking(collection(db, 'users', user.uid, 'orders'), orderData);
-    
-    toast({
-      title: "Order Placed! ✨",
-      description: "Redirecting to your profile.",
-    });
+    try {
+      // 1. Create main order document
+      const orderRef = await addDoc(collection(db, 'users', user.uid, 'orders'), {
+        userId: user.uid,
+        orderDate: new Date().toISOString(),
+        totalAmount: total,
+        status: 'pending',
+        shippingAddress: `${shipping.address}, ${shipping.city}, ${shipping.zip}`,
+        paymentMethod: 'Credit Card',
+        createdAt: serverTimestamp()
+      });
 
-    clearCart();
-    setTimeout(() => router.push('/profile'), 2000);
+      // 2. Add individual order items to the subcollection as per backend.json
+      items.forEach(item => {
+        addDocumentNonBlocking(collection(db, 'users', user.uid, 'orders', orderRef.id, 'order_items'), {
+          orderId: orderRef.id,
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        });
+      });
+      
+      toast({ title: "Order Placed! ✨", description: "Redirecting to your profile." });
+      clearCart();
+      router.push('/profile');
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Order Failed", description: e.message });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  if (items.length === 0) {
-    return <div className="p-20 text-center">Your bag is empty.</div>;
-  }
+  if (items.length === 0) return <div className="p-20 text-center">Your bag is empty.</div>;
 
   return (
     <div className="container mx-auto px-6 py-12">
@@ -70,7 +79,6 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div className="space-y-12">
-          {/* Shipping */}
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -80,52 +88,29 @@ export default function CheckoutPage() {
             </div>
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="font-bold uppercase text-[10px] tracking-widest ml-1">Full Name</Label>
-                <Input 
-                  id="fullName" 
-                  className="glass h-14 rounded-2xl bg-white/30 border-white/20" 
-                  value={shipping.fullName}
-                  onChange={(e) => setShipping({...shipping, fullName: e.target.value})}
-                />
+                <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">Full Name</Label>
+                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.fullName} onChange={(e) => setShipping({...shipping, fullName: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address" className="font-bold uppercase text-[10px] tracking-widest ml-1">Street Address</Label>
-                <Input 
-                  id="address" 
-                  className="glass h-14 rounded-2xl bg-white/30 border-white/20" 
-                  value={shipping.address}
-                  onChange={(e) => setShipping({...shipping, address: e.target.value})}
-                />
+                <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">Street Address</Label>
+                <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.address} onChange={(e) => setShipping({...shipping, address: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city" className="font-bold uppercase text-[10px] tracking-widest ml-1">City</Label>
-                  <Input 
-                    id="city" 
-                    className="glass h-14 rounded-2xl bg-white/30 border-white/20" 
-                    value={shipping.city}
-                    onChange={(e) => setShipping({...shipping, city: e.target.value})}
-                  />
+                  <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">City</Label>
+                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.city} onChange={(e) => setShipping({...shipping, city: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="zip" className="font-bold uppercase text-[10px] tracking-widest ml-1">ZIP Code</Label>
-                  <Input 
-                    id="zip" 
-                    className="glass h-14 rounded-2xl bg-white/30 border-white/20" 
-                    value={shipping.zip}
-                    onChange={(e) => setShipping({...shipping, zip: e.target.value})}
-                  />
+                  <Label className="font-bold uppercase text-[10px] tracking-widest ml-1">ZIP Code</Label>
+                  <Input className="glass h-14 rounded-2xl bg-white/30 border-white/20" value={shipping.zip} onChange={(e) => setShipping({...shipping, zip: e.target.value})} />
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Payment Mock */}
           <section className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-secondary" />
-              </div>
+              <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center"><CreditCard className="w-5 h-5 text-secondary" /></div>
               <h2 className="text-2xl font-black">Payment Method</h2>
             </div>
             <div className="glass rounded-[2rem] p-8 space-y-4">
@@ -136,14 +121,10 @@ export default function CheckoutPage() {
                 </div>
                 <Badge variant="secondary" className="bg-primary/20 text-primary">Default</Badge>
               </div>
-              <Button variant="ghost" className="w-full h-12 rounded-xl border-2 border-dashed border-white/20 hover:border-primary/40 text-muted-foreground">
-                + Add New Card
-              </Button>
             </div>
           </section>
         </div>
 
-        {/* Order Summary Sidebar */}
         <div className="lg:sticky lg:top-24 h-fit">
           <div className="glass rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
             <h2 className="text-3xl font-black">Order Summary</h2>
@@ -155,38 +136,16 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <Separator className="bg-white/20" />
-              <div className="space-y-2">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Shipping</span>
-                  <span className="text-green-500 font-bold">FREE</span>
-                </div>
-                <div className="flex justify-between text-3xl font-black pt-4">
-                  <span>Total</span>
-                  <span className="aura-text">${total.toFixed(2)}</span>
-                </div>
-              </div>
+              <div className="flex justify-between text-3xl font-black pt-4"><span>Total</span><span className="aura-text">${total.toFixed(2)}</span></div>
             </div>
 
             <Button 
               onClick={handlePlaceOrder}
-              disabled={!shipping.address || !shipping.fullName}
+              disabled={isProcessing || !shipping.address || !shipping.fullName}
               className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-bold gap-3 shadow-2xl shadow-primary/20"
             >
-              Place Order <ArrowRight className="w-6 h-6" />
+              {isProcessing ? "Processing..." : "Place Order"} <ArrowRight className="w-6 h-6" />
             </Button>
-
-            <div className="flex items-center justify-center gap-4 py-4">
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                <ShieldCheck className="w-3 h-3 text-green-500" /> Secure SSL Encryption
-              </div>
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                <MapPin className="w-3 h-3 text-primary" /> Delivery in 2-4 days
-              </div>
-            </div>
           </div>
         </div>
       </div>
