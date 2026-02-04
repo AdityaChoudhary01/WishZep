@@ -5,11 +5,52 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Github, Chrome } from 'lucide-react';
-import Link from 'next/link';
+import { Mail, Chrome } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      toast({
+        title: "Success! ✨",
+        description: "You've successfully signed in with Google.",
+      });
+      router.push('/profile');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Sign in failed",
+        description: error.message || "Could not sign in with Google.",
+      });
+    }
+  };
+
+  const handleEmailLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setIsLoading(true);
+    // In a real app, you'd call sendSignInLinkToEmail(auth, email, actionCodeSettings)
+    // For this prototype, we'll simulate the magic link request
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Magic Link Sent! ✉️",
+        description: `Check ${email} for your secure login link.`,
+      });
+    }, 1500);
+  };
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[80vh] px-6">
@@ -18,11 +59,11 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6 rotate-6">
             <span className="text-white font-black text-3xl">W</span>
           </div>
-          <h1 className="text-3xl font-black">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your WishZep account</p>
+          <h1 className="text-3xl font-black">Sign In</h1>
+          <p className="text-muted-foreground">Access your WishZep aura collective</p>
         </div>
 
-        <div className="space-y-4">
+        <form onSubmit={handleEmailLink} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="font-bold uppercase text-[10px] tracking-widest text-muted-foreground ml-1">Email Address</Label>
             <div className="relative">
@@ -31,33 +72,39 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
+                required
                 className="glass h-14 pl-12 rounded-2xl bg-white/30 border-white/20 focus:border-primary"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </div>
-          <Button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-bold shadow-lg shadow-primary/20">
-            Get Magic Link
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-bold shadow-lg shadow-primary/20"
+          >
+            {isLoading ? "Sending..." : "Get Magic Link"}
           </Button>
-        </div>
+        </form>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/20"></span></div>
           <div className="relative flex justify-center text-xs uppercase"><span className="glass px-2 text-muted-foreground">Or continue with</span></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="glass h-14 rounded-2xl gap-2 font-bold hover:bg-white/50">
-            <Chrome className="w-5 h-5 text-red-500" /> Google
-          </Button>
-          <Button variant="outline" className="glass h-14 rounded-2xl gap-2 font-bold hover:bg-white/50">
-            <Github className="w-5 h-5" /> GitHub
+        <div className="space-y-4">
+          <Button 
+            onClick={handleGoogleLogin}
+            variant="outline" 
+            className="glass w-full h-14 rounded-2xl gap-3 font-bold hover:bg-white/50"
+          >
+            <Chrome className="w-5 h-5 text-red-500" /> Sign in with Google
           </Button>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          New to WishZep? <Link href="/auth/register" className="text-primary font-bold hover:underline">Create an account</Link>
+        <p className="text-center text-xs text-muted-foreground leading-relaxed">
+          By signing in, you agree to our <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
         </p>
       </div>
     </div>
