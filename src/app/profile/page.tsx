@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
 import { collection, orderBy, query, doc, updateDoc } from 'firebase/firestore';
 import { Package, History, Settings, LogOut, ChevronRight, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +34,14 @@ export default function ProfilePage() {
     }
   }, [user, isUserLoading, router]);
 
+  // Fetch the user's Firestore document to get real-time profile updates (like image)
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+
+  const { data: profileData, isLoading: isProfileLoading } = useDoc(userDocRef);
+
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, 'users', user.uid, 'orders'), orderBy('orderDate', 'desc'));
@@ -66,6 +73,7 @@ export default function ProfilePage() {
     setIsUploading(true);
     try {
       const imageUrl = await uploadToCloudinary(file);
+      // Update the user document in Firestore. The useDoc hook will react to this change.
       await updateDoc(doc(db, 'users', user.uid), {
         profileImageUrl: imageUrl
       });
@@ -81,18 +89,30 @@ export default function ProfilePage() {
     }
   };
 
-  if (isUserLoading) return <div className="p-20 text-center">Charging your profile...</div>;
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground animate-pulse font-bold tracking-widest uppercase text-xs">Charging profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return null;
   }
+
+  // Source of truth for profile image: Firestore doc, fallback to Auth photo, fallback to placeholder
+  const profileImage = profileData?.profileImageUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/200`;
 
   return (
     <div className="container mx-auto px-6 py-12 space-y-12">
       <header className="flex flex-col md:flex-row items-center gap-8 glass p-10 rounded-[3rem]">
         <div className="relative group">
           <Avatar className="w-32 h-32 border-4 border-primary shadow-2xl transition-transform group-hover:scale-105">
-            <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.uid}/200`} />
+            <AvatarImage src={profileImage} className="object-cover" />
             <AvatarFallback className="text-4xl font-black bg-primary/10">{user.email?.[0].toUpperCase()}</AvatarFallback>
           </Avatar>
           <button 
@@ -112,7 +132,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex-1 text-center md:text-left space-y-2">
-          <h1 className="text-4xl font-black">{user.displayName || 'WishZep Member'}</h1>
+          <h1 className="text-4xl font-black">{profileData?.displayName || user.displayName || 'WishZep Member'}</h1>
           <p className="text-muted-foreground font-medium">{user.email}</p>
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary">Member since 2024</Badge>
