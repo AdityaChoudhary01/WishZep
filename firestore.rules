@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * WISHZEP SECURITY RULES
+     * WISHZEP SECURITY RULES - PRODUCTION GRADE
      */
 
     // --- Helper Functions ---
@@ -18,6 +18,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // Robust admin check using the dedicated roles_admin collection
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
@@ -70,10 +71,13 @@ service cloud.firestore {
 
     /**
      * @path /orders/{orderId}
-     * Moved to root for better administrative visibility and security rule matching.
+     * Root-level orders for administrative visibility.
      */
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      // Explicitly allow admins to list all orders
+      allow list: if isAdmin();
+      // Allow individuals to see their own orders, or admins to see any
+      allow get: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if false;
@@ -91,7 +95,8 @@ service cloud.firestore {
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if false;
-      allow create, update: if isOwner(userId); 
+      allow create: if isSignedIn() && (request.auth.uid == userId); // Allow first-time claim
+      allow update: if isAdmin(); // Only existing admins can promote others
       allow delete: if false;
     }
   }

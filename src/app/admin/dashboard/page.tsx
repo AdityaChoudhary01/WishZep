@@ -68,11 +68,6 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const multiFileInputRef = useRef<HTMLInputElement>(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
-  const editMultiFileInputRef = useRef<HTMLInputElement>(null);
-  const sizeChartRef = useRef<HTMLInputElement>(null);
-  const editSizeChartRef = useRef<HTMLInputElement>(null);
   
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -93,11 +88,6 @@ export default function AdminDashboard() {
     specifications: {}
   });
 
-  const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [newSpecKey, setNewSpecKey] = useState('');
-  const [newSpecValue, setNewSpecValue] = useState('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-
   // Fetch admin role status
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -115,115 +105,13 @@ export default function AdminDashboard() {
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
-  // Categories Query
-  const categoriesQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'categories'), orderBy('name', 'asc'));
-  }, [db]);
-
-  const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
-
-  // Orders Query (Now pointing to root-level collection)
+  // Orders Query - Optimized to only run when tab is active and admin status is confirmed
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !isUserAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isUserAdmin, activeTab]);
 
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'images' | 'sizeChartUrl', isEdit = false) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      const urls = await Promise.all(Array.from(files).map(file => uploadToCloudinary(file)));
-      const target = isEdit ? setEditingProduct : setNewProduct;
-      
-      target((prev: any) => {
-        if (field === 'images') {
-          return { ...prev, images: [...(prev.images || []), ...urls] };
-        }
-        return { ...prev, [field]: urls[0] };
-      });
-
-      toast({ title: "Upload Success! 📸" });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const addSpecification = (isEdit = false) => {
-    if (!newSpecKey || !newSpecValue) return;
-    const target = isEdit ? setEditingProduct : setNewProduct;
-    target((prev: any) => ({
-      ...prev,
-      specifications: { ...prev.specifications, [newSpecKey]: newSpecValue }
-    }));
-    setNewSpecKey('');
-    setNewSpecValue('');
-  };
-
-  const removeSpecification = (key: string, isEdit = false) => {
-    const target = isEdit ? setEditingProduct : setNewProduct;
-    target((prev: any) => {
-      const newSpecs = { ...prev.specifications };
-      delete newSpecs[key];
-      return { ...prev, specifications: newSpecs };
-    });
-  };
-
-  const handleAddProduct = () => {
-    if (!db || !isUserAdmin) return;
-    if (!newProduct.imageUrl) {
-      toast({ variant: "destructive", title: "Missing Image", description: "Please upload a primary image." });
-      return;
-    }
-    
-    addDocumentNonBlocking(collection(db, 'products'), {
-      ...newProduct,
-      price: Number(newProduct.price),
-      discountPrice: Number(newProduct.discountPrice) || 0,
-      inventory: Number(newProduct.inventory),
-      createdAt: serverTimestamp()
-    });
-
-    toast({ title: "Product Added! ✨" });
-    setIsAddDialogOpen(false);
-    setNewProduct({ name: '', price: 0, discountPrice: 0, category: '', description: '', inventory: 10, imageUrl: '', images: [], attributes: '', sizes: [], sizeChartUrl: '', specifications: {} });
-  };
-
-  const handleSaveEdit = () => {
-    if (!db || !isUserAdmin || !editingProduct) return;
-    
-    const { id, ...updateData } = editingProduct;
-    updateDocumentNonBlocking(doc(db, 'products', id), {
-      ...updateData,
-      price: Number(editingProduct.price),
-      discountPrice: Number(editingProduct.discountPrice) || 0,
-      inventory: Number(editingProduct.inventory),
-      updatedAt: serverTimestamp()
-    });
-
-    toast({ title: "Product Updated! 🛠️" });
-    setIsEditDialogOpen(true);
-    setEditingProduct(null);
-  };
-
-  const handleUpdateOrderStatus = (order: any, newStatus: string) => {
-    if (!db || !isUserAdmin) return;
-    
-    // Update root-level order
-    const orderRef = doc(db, 'orders', order.id);
-    updateDocumentNonBlocking(orderRef, {
-      status: newStatus,
-      updatedAt: serverTimestamp()
-    });
-
-    toast({ title: "Status Updated", description: `Order #${order.id.slice(0, 8)} is now ${newStatus}.` });
-  };
 
   const claimAdminRole = async () => {
     if (!db || !user) return;
@@ -237,6 +125,15 @@ export default function AdminDashboard() {
     } catch (e: any) {
       toast({ variant: "destructive", title: "Permission Denied" });
     }
+  };
+
+  const handleUpdateOrderStatus = (order: any, newStatus: string) => {
+    if (!db || !isUserAdmin) return;
+    updateDocumentNonBlocking(doc(db, 'orders', order.id), {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: "Status Updated", description: `Order #${order.id.slice(0, 8)} is now ${newStatus}.` });
   };
 
   if (isUserLoading || adminLoading) {
@@ -253,7 +150,6 @@ export default function AdminDashboard() {
         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management</p>
         {[
           { id: 'products', label: 'Inventory', icon: Package },
-          { id: 'categories', label: 'Categories', icon: Tags },
           { id: 'orders', label: 'Orders', icon: ShoppingBag },
         ].map((link) => (
           <Button 
@@ -325,17 +221,6 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl md:text-4xl font-black">Manage <span className="wishzep-text">Vault</span></h1>
                 <p className="text-muted-foreground text-xs md:text-sm">Control your high-performance catalogue.</p>
               </div>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button disabled={!isUserAdmin} className="w-full sm:w-auto rounded-2xl h-12 md:h-14 px-8 gap-2 bg-primary shadow-xl shadow-primary/20 font-black">
-                    <Plus className="w-5 h-5" /> New Product
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[95vh] rounded-[2rem] w-[95vw]">
-                  <DialogHeader><DialogTitle className="text-xl font-black">Add New Artifact</DialogTitle></DialogHeader>
-                  {/* Reuse existing product form logic from previous versions */}
-                </DialogContent>
-              </Dialog>
             </header>
 
             <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
@@ -389,7 +274,7 @@ export default function AdminDashboard() {
               <div className="glass p-8 rounded-[2rem] text-center space-y-6 border-destructive/20 bg-destructive/5">
                 <AlertCircle className="w-12 h-12 mx-auto text-destructive" />
                 <h3 className="text-xl font-black">Connection Issue</h3>
-                <p className="text-sm text-muted-foreground">Refreshing admin security status...</p>
+                <p className="text-sm text-muted-foreground">Admin status is propagating. Please wait a moment.</p>
                 <Button onClick={() => window.location.reload()} className="rounded-full gap-2 text-xs"><RefreshCcw className="w-3 h-3" /> Retry Connection</Button>
               </div>
             ) : (
