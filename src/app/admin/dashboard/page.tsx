@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -484,7 +483,7 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Credits (Base)</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Original Price</Label>
                           <Input 
                             type="number"
                             value={productFormData.price}
@@ -493,7 +492,7 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Discounted</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Discounted Price</Label>
                           <Input 
                             type="number"
                             value={productFormData.discountPrice}
@@ -638,7 +637,7 @@ export default function AdminDashboard() {
 
                   <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
                     <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1">CANCEL</Button>
-                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-transform">
+                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10">
                       <Save className="w-6 h-6" /> {editingProduct ? 'SAVE RE-CALIBRATION' : 'LAUNCH DROP'}
                     </Button>
                   </div>
@@ -671,7 +670,7 @@ export default function AdminDashboard() {
                       className="glass h-14 rounded-2xl bg-white/20 font-bold border-white/30 focus:bg-white/40 transition-all"
                     />
                   </div>
-                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">ADD REGISTRY</Button>
+                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">ADD REGISTRY</Button>
                 </div>
               </div>
 
