@@ -1,9 +1,10 @@
+
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronDown, Star, ShoppingBag, LayoutGrid, List, X } from 'lucide-react';
+import { ChevronDown, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,8 +30,8 @@ export default function ProductsPage() {
 
   const searchParam = searchParams.get('search')?.toLowerCase() || '';
   const collectionParam = searchParams.get('collection')?.toLowerCase() || '';
+  const categoryParam = searchParams.get('category') || 'All';
   
-  const [activeCategory, setActiveCategory] = useState('All');
   const categories = ['All', 'Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
 
   const productsQuery = useMemoFirebase(() => {
@@ -44,6 +45,7 @@ export default function ProductsPage() {
     if (!products) return [];
     
     return products.filter((p) => {
+      // Partial string matching across multiple fields
       const matchesSearch = !searchParam || [
         p.name,
         p.category,
@@ -51,9 +53,10 @@ export default function ProductsPage() {
         p.attributes
       ].some(field => field?.toLowerCase().includes(searchParam));
       
-      const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+      const matchesCategory = categoryParam === 'All' || p.category === categoryParam;
 
-      const normalizedCollection = collectionParam.replace('-', ' ');
+      // Handle special collection filters from home/collections pages
+      const normalizedCollection = collectionParam.replace(/-/g, ' ');
       const matchesCollection = !collectionParam || 
         p.category?.toLowerCase() === collectionParam ||
         p.category?.toLowerCase() === normalizedCollection ||
@@ -62,7 +65,17 @@ export default function ProductsPage() {
       
       return matchesSearch && matchesCategory && matchesCollection;
     });
-  }, [products, searchParam, activeCategory, collectionParam]);
+  }, [products, searchParam, categoryParam, collectionParam]);
+
+  const handleCategoryChange = (cat: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (cat === 'All') {
+      params.delete('category');
+    } else {
+      params.set('category', cat);
+    }
+    router.push(`/products?${params.toString()}`);
+  };
 
   const handleQuickAdd = (e: React.MouseEvent, product: any) => {
     e.preventDefault();
@@ -77,21 +90,20 @@ export default function ProductsPage() {
     });
     toast({
       title: "Added to Bag!",
-      description: `${product.name} has been added.`,
+      description: `${product.name} has been added to your WishZep collection.`,
     });
   };
 
   const clearFilters = () => {
-    setActiveCategory('All');
-    router.replace('/products');
+    router.push('/products');
   };
 
   return (
     <div className="container mx-auto px-6 py-12 space-y-12">
       <div className="space-y-6">
-        <h1 className="text-5xl font-black tracking-tighter">THE <span className="wishzep-text">CATALOGUE</span></h1>
+        <h1 className="text-5xl font-black tracking-tighter">WISHZEP <span className="wishzep-text">CATALOGUE</span></h1>
         <p className="text-muted-foreground text-lg max-w-2xl">
-          Carefully selected gear from WishZep to elevate your performance and style. Browse our latest arrivals.
+          High-performance gear curated for the modern visionary. Explore the full WishZep lineup.
         </p>
       </div>
 
@@ -100,12 +112,12 @@ export default function ProductsPage() {
           {categories.map((cat) => (
             <Button
               key={cat}
-              variant={activeCategory === cat ? 'default' : 'outline'}
+              variant={categoryParam === cat ? 'default' : 'outline'}
               className={cn(
                 "rounded-full px-6 transition-all",
-                activeCategory === cat ? "shadow-lg shadow-primary/30" : "glass"
+                categoryParam === cat ? "shadow-lg shadow-primary/30" : "glass"
               )}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
             >
               {cat}
             </Button>
@@ -116,30 +128,30 @@ export default function ProductsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="glass gap-2 rounded-full w-full md:w-auto">
-                Sort By: Newest <ChevronDown className="w-4 h-4" />
+                Sort By: Recommended <ChevronDown className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="glass">
               <DropdownMenuItem>Price: Low to High</DropdownMenuItem>
               <DropdownMenuItem>Price: High to Low</DropdownMenuItem>
-              <DropdownMenuItem>Most Popular</DropdownMenuItem>
+              <DropdownMenuItem>Newest First</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
       {/* Active Filter Indicators */}
-      {(searchParam || collectionParam || activeCategory !== 'All') && (
-        <div className="flex items-center gap-4 animate-fade-in">
-          <span className="text-sm font-bold text-muted-foreground">RESULTS FOR:</span>
-          <div className="flex flex-wrap gap-2">
-            {searchParam && <Badge className="bg-primary/10 text-primary px-3 py-1">" {searchParam} "</Badge>}
-            {collectionParam && <Badge className="bg-secondary/10 text-secondary px-3 py-1">Collection: {collectionParam}</Badge>}
-            {activeCategory !== 'All' && <Badge className="bg-accent/10 text-accent px-3 py-1">{activeCategory}</Badge>}
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs gap-1 hover:text-destructive">
-              <X className="w-3 h-3" /> Clear All
-            </Button>
+      {(searchParam || collectionParam || categoryParam !== 'All') && (
+        <div className="flex items-center gap-4 animate-fade-in bg-white/10 p-4 rounded-2xl border border-white/20">
+          <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Active Filters:</span>
+          <div className="flex flex-wrap gap-2 flex-1">
+            {searchParam && <Badge className="bg-primary text-white px-4 py-1 rounded-full">Search: "{searchParam}"</Badge>}
+            {collectionParam && <Badge className="bg-secondary text-white px-4 py-1 rounded-full">Collection: {collectionParam}</Badge>}
+            {categoryParam !== 'All' && <Badge className="bg-accent text-white px-4 py-1 rounded-full">{categoryParam}</Badge>}
           </div>
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 rounded-xl gap-2 hover:bg-destructive/10 hover:text-destructive">
+            <X className="w-4 h-4" /> Reset All
+          </Button>
         </div>
       )}
 
@@ -147,13 +159,13 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="space-y-4">
-              <Skeleton className="aspect-[4/5] rounded-[2rem]" />
-              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="aspect-[4/5] rounded-[2.5rem]" />
+              <Skeleton className="h-6 w-3/4" />
               <Skeleton className="h-4 w-1/4" />
             </div>
           ))}
         </div>
-      ) : (
+      ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {filteredProducts.map((p) => (
             <Link href={`/products/${p.id}`} key={p.id} className="group">
@@ -196,13 +208,18 @@ export default function ProductsPage() {
             </Link>
           ))}
         </div>
-      )}
-
-      {!isLoading && filteredProducts.length === 0 && (
-        <div className="py-20 text-center space-y-4 animate-fade-in">
-          <p className="text-2xl font-bold">No results found for your search.</p>
-          <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
-          <Button variant="default" onClick={clearFilters}>Browse All Products</Button>
+      ) : (
+        <div className="py-24 text-center space-y-6 glass rounded-[3rem] animate-fade-in">
+          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
+            <X className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black">No WishZep Gear Found</h2>
+            <p className="text-muted-foreground text-lg">We couldn't find anything matching your current filters.</p>
+          </div>
+          <Button variant="default" size="lg" onClick={clearFilters} className="rounded-full px-10">
+            Browse All Products
+          </Button>
         </div>
       )}
     </div>

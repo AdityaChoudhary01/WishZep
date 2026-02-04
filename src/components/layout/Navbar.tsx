@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -7,7 +8,7 @@ import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   
   const router = useRouter();
+  const searchParams = useSearchParams();
   const cartItems = useCartStore((state) => state.items);
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -30,7 +32,9 @@ export default function Navbar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      const params = new URLSearchParams();
+      params.set('search', searchQuery.trim());
+      router.push(`/products?${params.toString()}`);
       setIsSearchOpen(false);
       setSearchQuery('');
     }
@@ -38,8 +42,8 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Shop All', href: '/products' },
-    { name: 'New Arrivals', href: '/products?filter=new' },
-    { name: 'Best Sellers', href: '/products?filter=bestsellers' },
+    { name: 'Footwear', href: '/products?category=Footwear' },
+    { name: 'Audio', href: '/products?category=Audio' },
     { name: 'Collections', href: '/collections' },
   ];
 
@@ -77,24 +81,26 @@ export default function Navbar() {
             <form onSubmit={handleSearch} className="relative animate-in slide-in-from-right-4">
               <Input
                 autoFocus
-                placeholder="Search WishZep..."
-                className="w-48 h-10 rounded-full glass pl-4 pr-10"
+                placeholder="Find gear..."
+                className="w-48 h-10 rounded-full glass pl-4 pr-10 border-primary/30"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                onBlur={() => {
+                  if (!searchQuery) setIsSearchOpen(false);
+                }}
               />
               <Button type="submit" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8">
-                <Search className="w-4 h-4" />
+                <Search className="w-4 h-4 text-primary" />
               </Button>
             </form>
           ) : (
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsSearchOpen(true)}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 transition-colors" onClick={() => setIsSearchOpen(true)}>
               <Search className="w-5 h-5" />
             </Button>
           )}
           
           <Link href="/profile">
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 transition-colors">
               <User className="w-5 h-5" />
             </Button>
           </Link>
@@ -103,7 +109,7 @@ export default function Navbar() {
             <Button variant="default" size="icon" className="rounded-full shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5" />
               {mounted && itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-secondary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                <span className="absolute -top-1 -right-1 bg-secondary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">
                   {itemCount}
                 </span>
               )}
@@ -127,7 +133,7 @@ export default function Navbar() {
             <Link
               key={link.name}
               href={link.href}
-              className="text-lg font-semibold hover:text-primary"
+              className="text-lg font-semibold hover:text-primary p-2 rounded-lg hover:bg-primary/5 transition-all"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {link.name}
