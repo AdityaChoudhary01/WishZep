@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useRef } from 'react';
-import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database, ShieldCheck, X, Camera, Loader2 } from 'lucide-react';
+import { Package, Plus, Search, MoreHorizontal, Settings, BarChart3, Users, LayoutDashboard, Database, ShieldCheck, X, Camera, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [newProduct, setNewProduct] = useState({
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
     return doc(db, 'roles_admin', user.uid);
   }, [db, user]);
 
-  const { data: adminRole } = useDoc(adminRoleRef);
+  const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole;
 
   const productsQuery = useMemoFirebase(() => {
@@ -112,12 +112,23 @@ export default function AdminDashboard() {
   const seedSampleData = async () => {
     if (!db || !isUserAdmin) return;
     const samples = [
-      { name: 'Neo-Stomp Tech Sneakers', price: 189, imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', description: 'High-performance techwear sneakers.', inventory: 45, attributes: 'Lightweight, Breathable' },
-      { name: 'SonicWave Elite Pro', price: 249, imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800', category: 'Audio', description: 'Noise-canceling headphones.', inventory: 12, attributes: '40h Battery, Bluetooth 5.3' }
+      { name: 'Neo-Stomp Tech Sneakers', price: 189, imageUrl: 'https://picsum.photos/seed/wishzep-p1/800/800', category: 'Footwear', description: 'High-performance techwear sneakers.', inventory: 45, attributes: 'Lightweight, Breathable', createdAt: serverTimestamp() },
+      { name: 'SonicWave Elite Pro', price: 249, imageUrl: 'https://picsum.photos/seed/wishzep-p2/800/800', category: 'Audio', description: 'Noise-canceling headphones.', inventory: 12, attributes: '40h Battery, Bluetooth 5.3', createdAt: serverTimestamp() }
     ];
     samples.forEach(p => addDocumentNonBlocking(collection(db, 'products'), p));
     toast({ title: "Seeding Success! ✨" });
   };
+
+  if (isUserLoading || adminLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground animate-pulse font-bold tracking-widest uppercase text-xs">Verifying Credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background pt-0">
@@ -129,12 +140,22 @@ export default function AdminDashboard() {
         <nav className="space-y-2">
           <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl"><LayoutDashboard className="w-5 h-5" /> Dashboard</Button>
           <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl bg-primary/10 text-primary"><Package className="w-5 h-5" /> Products</Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl" onClick={seedSampleData}><Database className="w-5 h-5" /> Seed Demo Data</Button>
+          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl" onClick={seedSampleData} disabled={!isUserAdmin}><Database className="w-5 h-5" /> Seed Demo Data</Button>
           {!isUserAdmin && <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white mb-4"><ShieldCheck className="w-5 h-5" /> Claim Admin Status</Button>}
         </nav>
       </aside>
 
       <main className="flex-1 p-8 space-y-8">
+        {!isUserAdmin && (
+          <Alert variant="destructive" className="rounded-3xl border-2 border-destructive/20 bg-destructive/5 glass mb-8">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle className="font-black uppercase tracking-tighter">Access Restricted</AlertTitle>
+            <AlertDescription className="text-sm opacity-80">
+              You are currently in read-only mode. To manage products, please click the <strong>Claim Admin Status</strong> button in the sidebar.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <header className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-black">Manage <span className="wishzep-text">Inventory</span></h1>
