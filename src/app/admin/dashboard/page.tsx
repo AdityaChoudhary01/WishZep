@@ -317,17 +317,17 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                <div className="grid gap-2"><Label>Name</Label><Input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} /></div>
+                <div className="grid gap-2"><Label>Name</Label><Input value={editingProduct.name || ''} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} /></div>
-                  <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={editingProduct.discountPrice} onChange={e => setEditingProduct({...editingProduct, discountPrice: Number(e.target.value)})} /></div>
+                  <div className="grid gap-2"><Label>Original Price (Rs.)</Label><Input type="number" value={editingProduct.price || 0} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} /></div>
+                  <div className="grid gap-2"><Label>Discount Price (Rs.)</Label><Input type="number" value={editingProduct.discountPrice || 0} onChange={e => setEditingProduct({...editingProduct, discountPrice: Number(e.target.value)})} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={editingProduct.inventory} onChange={e => setEditingProduct({...editingProduct, inventory: Number(e.target.value)})} /></div>
-                  <div className="grid gap-2"><Label>Category</Label><Input value={editingProduct.category} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} /></div>
+                  <div className="grid gap-2"><Label>Stock</Label><Input type="number" value={editingProduct.inventory || 0} onChange={e => setEditingProduct({...editingProduct, inventory: Number(e.target.value)})} /></div>
+                  <div className="grid gap-2"><Label>Category</Label><Input value={editingProduct.category || ''} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})} /></div>
                 </div>
-                <div className="grid gap-2"><Label>Attributes</Label><Input value={editingProduct.attributes} onChange={e => setEditingProduct({...editingProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
-                <div className="grid gap-2"><Label>Description</Label><Textarea value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} /></div>
+                <div className="grid gap-2"><Label>Attributes</Label><Input value={editingProduct.attributes || ''} onChange={e => setEditingProduct({...editingProduct, attributes: e.target.value})} placeholder="e.g. Slim Fit, Cotton" /></div>
+                <div className="grid gap-2"><Label>Description</Label><Textarea value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} /></div>
                 <Button onClick={handleSaveEdit} disabled={isUploading} className="w-full h-12 rounded-xl bg-primary">Save Changes</Button>
               </div>
             )}
