@@ -21,7 +21,9 @@ import {
   RefreshCcw,
   Menu,
   Tags,
-  X
+  X,
+  Save,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,16 +36,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -61,9 +64,23 @@ export default function AdminDashboard() {
   const [isConfirmedAdmin, setIsConfirmedAdmin] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   
+  // Product Form State
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productFormData, setProductFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    discountPrice: '',
+    inventory: '',
+    category: '',
+    imageUrl: ''
+  });
+
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch admin role status
   const adminRoleRef = useMemoFirebase(() => {
@@ -79,7 +96,7 @@ export default function AdminDashboard() {
     if (isUserAdmin) {
       timer = setTimeout(() => {
         setIsConfirmedAdmin(true);
-      }, 1000);
+      }, 1500);
     } else {
       setIsConfirmedAdmin(false);
     }
@@ -103,7 +120,7 @@ export default function AdminDashboard() {
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
   }, [db, isConfirmedAdmin, activeTab]);
-  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
+  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery, true);
 
   const claimAdminRole = async () => {
     if (!db || !user) return;
@@ -140,6 +157,88 @@ export default function AdminDashboard() {
     toast({ title: "Status Updated", description: `Order #${order.id.slice(0, 8)} is now ${newStatus}.` });
   };
 
+  const handleOpenProductDialog = (product: any = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setProductFormData({
+        name: product.name,
+        description: product.description,
+        price: product.price.toString(),
+        discountPrice: (product.discountPrice || '').toString(),
+        inventory: product.inventory.toString(),
+        category: product.category,
+        imageUrl: product.imageUrl
+      });
+    } else {
+      setEditingProduct(null);
+      setProductFormData({
+        name: '',
+        description: '',
+        price: '',
+        discountPrice: '',
+        inventory: '',
+        category: '',
+        imageUrl: ''
+      });
+    }
+    setIsProductDialogOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setProductFormData(prev => ({ ...prev, imageUrl: url }));
+      toast({ title: "Image Uploaded! 📸" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Upload Failed" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveProduct = async () => {
+    if (!db || !isUserAdmin) return;
+    
+    const productData = {
+      name: productFormData.name,
+      description: productFormData.description,
+      price: parseFloat(productFormData.price),
+      discountPrice: productFormData.discountPrice ? parseFloat(productFormData.discountPrice) : 0,
+      inventory: parseInt(productFormData.inventory),
+      category: productFormData.category,
+      imageUrl: productFormData.imageUrl,
+      updatedAt: serverTimestamp(),
+      createdAt: editingProduct ? editingProduct.createdAt : serverTimestamp()
+    };
+
+    try {
+      if (editingProduct) {
+        await updateDoc(doc(db, 'products', editingProduct.id), productData);
+        toast({ title: "Product Updated! ✨" });
+      } else {
+        const newDocRef = doc(collection(db, 'products'));
+        await setDoc(newDocRef, { ...productData, id: newDocRef.id });
+        toast({ title: "New Drop Added! 🚀" });
+      }
+      setIsProductDialogOpen(false);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Save Failed" });
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!db || !isUserAdmin || !window.confirm("Delete this artifact from vault?")) return;
+    try {
+      await deleteDoc(doc(db, 'products', id));
+      toast({ title: "Artifact Purged" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Deletion Failed" });
+    }
+  };
+
   if (isUserLoading || adminLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -157,17 +256,19 @@ export default function AdminDashboard() {
           { id: 'categories', label: 'Categories', icon: Tags },
           { id: 'orders', label: 'Orders', icon: ShoppingBag },
         ].map((link) => (
-          <Button 
+          <button 
             key={link.id}
-            variant={activeTab === link.id ? 'default' : 'ghost'} 
             onClick={() => {
               setActiveTab(link.id);
               setIsMobileMenuOpen(false);
             }}
-            className={cn("w-full justify-start gap-3 rounded-xl h-12 transition-all", activeTab === link.id ? "shadow-lg shadow-primary/20" : "")}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-xl h-12 px-4 transition-all text-sm font-bold",
+              activeTab === link.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "hover:bg-primary/5"
+            )}
           >
             <link.icon className="w-5 h-5" /> {link.label}
-          </Button>
+          </button>
         ))}
       </div>
       {!isUserAdmin && (
@@ -212,10 +313,10 @@ export default function AdminDashboard() {
 
       <main className="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden">
         {!isUserAdmin && !adminLoading && (
-          <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5 animate-in fade-in zoom-in duration-500">
+          <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>This dialogue is reserved for verified WishZep Architects. Please claim access to proceed.</AlertDescription>
+            <AlertDescription>Verification required. Please claim admin access to manage the WishZep vault.</AlertDescription>
           </Alert>
         )}
 
@@ -226,6 +327,9 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl md:text-4xl font-black">Manage <span className="wishzep-text">Vault</span></h1>
                 <p className="text-muted-foreground text-xs md:text-sm">Control your high-performance catalogue.</p>
               </div>
+              <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-14 px-8 font-black gap-2 shadow-xl shadow-primary/20">
+                <Plus className="w-6 h-6" /> New Drop
+              </Button>
             </header>
 
             <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
@@ -257,7 +361,14 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium text-muted-foreground text-xs">{p.inventory} units</TableCell>
                         <TableCell className="font-black text-primary text-xs md:text-sm">Rs.{p.discountPrice || p.price}</TableCell>
                         <TableCell className="text-right px-6">
-                           <Button variant="ghost" size="icon" className="rounded-xl"><Edit2 className="w-4 h-4" /></Button>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => handleOpenProductDialog(p)}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="rounded-xl text-destructive hover:bg-destructive/10" onClick={() => handleDeleteProduct(p.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -265,6 +376,108 @@ export default function AdminDashboard() {
                 </Table>
               </div>
             </div>
+
+            {/* Product Edit/Add Dialog */}
+            <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+              <DialogContent className="glass max-w-2xl rounded-[2.5rem] border-white/30 max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-3xl font-black wishzep-text">
+                    {editingProduct ? 'Update Artifact' : 'New Drop Initiation'}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Artifact Name</Label>
+                        <Input 
+                          value={productFormData.name}
+                          onChange={(e) => setProductFormData({...productFormData, name: e.target.value})}
+                          className="glass h-12 rounded-xl bg-white/30" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Frequency (Category)</Label>
+                        <Select 
+                          value={productFormData.category} 
+                          onValueChange={(val) => setProductFormData({...productFormData, category: val})}
+                        >
+                          <SelectTrigger className="glass h-12 rounded-xl bg-white/30">
+                            <SelectValue placeholder="Select Channel" />
+                          </SelectTrigger>
+                          <SelectContent className="glass border-white/20">
+                            {categories?.map(cat => (
+                              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Base Price</Label>
+                          <Input 
+                            type="number"
+                            value={productFormData.price}
+                            onChange={(e) => setProductFormData({...productFormData, price: e.target.value})}
+                            className="glass h-12 rounded-xl bg-white/30" 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Discount Price</Label>
+                          <Input 
+                            type="number"
+                            value={productFormData.discountPrice}
+                            onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})}
+                            className="glass h-12 rounded-xl bg-white/30" 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Inventory Stock</Label>
+                        <Input 
+                          type="number"
+                          value={productFormData.inventory}
+                          onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})}
+                          className="glass h-12 rounded-xl bg-white/30" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Visual ID (Image)</Label>
+                        <div className="relative aspect-square glass rounded-2xl overflow-hidden group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                          {productFormData.imageUrl ? (
+                            <Image src={productFormData.imageUrl} alt="Preview" fill className="object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+                              {isUploading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Upload className="w-8 h-8" />}
+                              <span className="text-[10px] font-black uppercase">Upload Media</span>
+                            </div>
+                          )}
+                        </div>
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Technical Specs (Description)</Label>
+                    <Textarea 
+                      value={productFormData.description}
+                      onChange={(e) => setProductFormData({...productFormData, description: e.target.value})}
+                      className="glass rounded-xl bg-white/30 min-h-[120px]" 
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="pt-6">
+                  <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-xl h-14 px-8 font-bold">Cancel</Button>
+                  <Button onClick={handleSaveProduct} className="rounded-xl h-14 px-12 font-black bg-primary gap-2">
+                    <Save className="w-5 h-5" /> {editingProduct ? 'Save Changes' : 'Launch Drop'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
