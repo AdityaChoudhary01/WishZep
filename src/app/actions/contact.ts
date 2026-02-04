@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 
 /**
  * Server Action to send contact emails via SMTP.
- * Note: Use environment variables in production for credentials.
+ * This uses a more robust configuration for Gmail SMTP.
  */
 export async function sendContactEmail(formData: FormData) {
   const name = formData.get('name') as string;
@@ -15,28 +15,45 @@ export async function sendContactEmail(formData: FormData) {
     return { success: false, error: 'All fields are required.' };
   }
 
-  // Create transporter using provided credentials
+  // Create transporter with explicit Gmail settings
+  // Using Port 465 with SSL is typically more reliable for Gmail App Passwords
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, 
     auth: {
       user: 'aadiwrld01@gmail.com',
-      pass: 'nlmd ijup xarw nkuv', // App-specific password
+      pass: 'nlmd ijup xarw nkuv', 
     },
   });
 
   const mailOptions = {
-    from: email,
+    // Gmail often rejects "from" addresses that don't match the authenticated user.
+    // We use the authenticated user as the sender and put the visitor in replyTo.
+    from: `"WishZep Support" <aadiwrld01@gmail.com>`,
     to: 'aadiwrld01@gmail.com',
-    subject: `WishZep Contact Form: Message from ${name}`,
     replyTo: email,
-    text: `You have a new message from the WishZep Contact Form.\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+    subject: `WishZep Contact Form: ${name}`,
+    text: `New message from: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     html: `
-      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #BE29EC;">New WishZep Contact Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong></p>
-        <p style="background: #f9f9f9; padding: 15px; border-radius: 5px;">${message}</p>
+      <div style="font-family: sans-serif; padding: 40px; background-color: #f8f9fa; color: #212529;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #eee;">
+          <h2 style="color: #BE29EC; font-size: 24px; margin-bottom: 24px; font-weight: 900; letter-spacing: -0.5px;">NEW WISHZEP INQUIRY</h2>
+          <hr style="border: none; border-top: 1px solid #eee; margin-bottom: 24px;">
+          <div style="margin-bottom: 20px;">
+            <p style="font-size: 12px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 4px;">Sender Name</p>
+            <p style="font-size: 16px; margin: 0; font-weight: 600;">${name}</p>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <p style="font-size: 12px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 4px;">Email Address</p>
+            <p style="font-size: 16px; margin: 0; font-weight: 600; color: #29A6EC;">${email}</p>
+          </div>
+          <div style="margin-top: 32px; padding: 24px; background: #fdfdfd; border-radius: 16px; border: 1px solid #f0f0f0; border-left: 6px solid #BE29EC;">
+            <p style="font-size: 12px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 8px;">Message Content</p>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">${message.replace(/\n/g, '<br>')}</p>
+          </div>
+          <p style="margin-top: 40px; font-size: 11px; color: #bbb; text-align: center;">This is an automated delivery from the WishZep Contact Engine.</p>
+        </div>
       </div>
     `,
   };
@@ -45,7 +62,11 @@ export async function sendContactEmail(formData: FormData) {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('Nodemailer Error:', error);
-    return { success: false, error: 'Failed to send email. Check SMTP settings or App Password.' };
+    console.error('SMTP Delivery Error:', error);
+    // Returning a more helpful error for the user
+    return { 
+      success: false, 
+      error: 'SMTP Authentication failed. Ensure 2-Step Verification is enabled and the App Password is correct.' 
+    };
   }
 }
