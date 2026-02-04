@@ -48,6 +48,7 @@ export default function CheckoutPage() {
 
     const orderRef = doc(collection(db, 'orders'));
     
+    // Save order root details
     setDocumentNonBlocking(orderRef, {
       userId: user.uid,
       orderDate: new Date().toISOString(),
@@ -58,6 +59,7 @@ export default function CheckoutPage() {
       createdAt: serverTimestamp()
     }, { merge: true });
 
+    // Save individual items into subcollection
     items.forEach(item => {
       const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
       setDocumentNonBlocking(itemRef, {
@@ -65,7 +67,8 @@ export default function CheckoutPage() {
         productId: item.id,
         quantity: item.quantity,
         price: item.price,
-        name: item.name
+        name: item.name,
+        image: item.image // Critical for displaying in order details later
       }, { merge: true });
     });
     

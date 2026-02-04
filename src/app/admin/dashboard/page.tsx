@@ -428,7 +428,7 @@ export default function AdminDashboard() {
                       {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
                     </DialogTitle>
                   </DialogHeader>
-                  <Button variant="ghost" size="icon" onClick={() => setIsProductDialogOpen(false)} className="rounded-full"><X className="w-6 h-6" /></Button>
+                  {/* Close button is automatically handled by DialogContent's X icon from shadcn */}
                 </div>
 
                 <div className="p-8 space-y-10">

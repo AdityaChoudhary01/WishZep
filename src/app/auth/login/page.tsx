@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Chrome, Send, Loader2, ShieldCheck, Zap } from 'lucide-react';
+import { Mail, Chrome, Send, Loader2, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { 
   signInWithPopup, 
@@ -16,12 +16,14 @@ import {
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCompletingSignIn, setIsCompletingSignIn] = useState(false);
   const [isLinkSent, setIsLinkSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const auth = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
@@ -82,8 +84,10 @@ export default function LoginPage() {
   }, [auth, router, toast]);
 
   const handleGoogleLogin = async () => {
+    setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
+      // Ensure the popup isn't blocked by client-side extensions
       const result = await signInWithPopup(auth, provider);
       await syncUserProfile(result.user);
       
@@ -93,10 +97,22 @@ export default function LoginPage() {
       });
       router.push('/profile');
     } catch (error: any) {
+      console.error('Google Sign-In Error:', error);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        setAuthError("The sign-in popup was closed before completion. Please try again and keep the window open.");
+      } else if (error.message?.includes('blocked-by-client')) {
+        setAuthError("Sign-in was blocked by your browser. Please disable AdBlockers or Privacy Extensions for this site.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setAuthError(`This domain (${window.location.hostname}) is not authorized in the Firebase Console. Please add it to 'Authorized Domains' in Auth Settings.`);
+      } else {
+        setAuthError(error.message || "An unexpected error occurred during sign-in.");
+      }
+
       toast({
         variant: "destructive",
         title: "Sign in failed",
-        description: error.message || "Could not sign in with Google.",
+        description: "Check the warning message below for details.",
       });
     }
   };
@@ -106,6 +122,7 @@ export default function LoginPage() {
     if (!email) return;
     
     setIsLoading(true);
+    setAuthError(null);
     const actionCodeSettings = {
       url: window.location.origin + '/auth/login',
       handleCodeInApp: true,
@@ -120,6 +137,8 @@ export default function LoginPage() {
         description: "Check your inbox for the WishZep magic sign-in link.",
       });
     } catch (error: any) {
+      console.error('Magic Link Error:', error);
+      setAuthError(error.message);
       toast({
         variant: "destructive",
         title: "Failed to send link",
@@ -154,6 +173,16 @@ export default function LoginPage() {
           <h1 className="text-3xl font-black">Welcome to WishZep</h1>
           <p className="text-muted-foreground">Access your curated WishZep collection</p>
         </div>
+
+        {authError && (
+          <Alert variant="destructive" className="rounded-2xl bg-destructive/5 border-destructive/20 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle className="text-xs font-bold uppercase tracking-wider">Sign-in Notice</AlertTitle>
+            <AlertDescription className="text-xs opacity-90 leading-relaxed">
+              {authError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-6 relative z-10">
           {!isLinkSent ? (
