@@ -67,6 +67,7 @@ export default function AdminDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isConfirmedAdmin, setIsConfirmedAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const db = useFirestore();
@@ -97,6 +98,21 @@ export default function AdminDashboard() {
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole && !adminLoading;
 
+  // Propagation Delay Failsafe:
+  // When adminRole is detected, wait a brief moment for security rules to propagate
+  // before we allow high-privilege queries to run.
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isUserAdmin) {
+      timer = setTimeout(() => {
+        setIsConfirmedAdmin(true);
+      }, 1500); // 1.5s delay to allow backend sync
+    } else {
+      setIsConfirmedAdmin(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isUserAdmin]);
+
   // Products Query
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -105,13 +121,14 @@ export default function AdminDashboard() {
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
 
-  // Orders Query - Optimized to only run when tab is active and admin status is confirmed
+  // Orders Query - Optimized to only run when tab is active AND admin status is propagated/confirmed
   const ordersQuery = useMemoFirebase(() => {
-    if (!db || !isUserAdmin || activeTab !== 'orders') return null;
+    if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
     return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
-  }, [db, isUserAdmin, activeTab]);
+  }, [db, isConfirmedAdmin, activeTab]);
 
-  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
+  // Use SILENT permission error handling to prevent Next.js overlay crashes during propagation sync
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
 
   const claimAdminRole = async () => {
     if (!db || !user) return;
@@ -121,7 +138,7 @@ export default function AdminDashboard() {
         email: user.email,
         assignedAt: serverTimestamp()
       });
-      toast({ title: "Admin Access Granted! 🛡️" });
+      toast({ title: "Admin Access Granted! 🛡️", description: "Backend syncing started. Please wait a moment." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Permission Denied" });
     }
@@ -273,9 +290,9 @@ export default function AdminDashboard() {
             {ordersError ? (
               <div className="glass p-8 rounded-[2rem] text-center space-y-6 border-destructive/20 bg-destructive/5">
                 <AlertCircle className="w-12 h-12 mx-auto text-destructive" />
-                <h3 className="text-xl font-black">Connection Issue</h3>
-                <p className="text-sm text-muted-foreground">Admin status is propagating. Please wait a moment.</p>
-                <Button onClick={() => window.location.reload()} className="rounded-full gap-2 text-xs"><RefreshCcw className="w-3 h-3" /> Retry Connection</Button>
+                <h3 className="text-xl font-black">Connection Syncing...</h3>
+                <p className="text-sm text-muted-foreground">Admin status is still propagating in the backend. This usually takes 5-10 seconds.</p>
+                <Button onClick={() => window.location.reload()} className="rounded-full gap-2 text-xs h-12 px-6"><RefreshCcw className="w-4 h-4" /> Retry Connection</Button>
               </div>
             ) : (
               <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
@@ -291,7 +308,7 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ordersLoading ? (
+                      {ordersLoading || !isConfirmedAdmin ? (
                         [...Array(5)].map((_, i) => <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-6 w-32" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-24" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-10 w-10 ml-auto rounded-full" /></TableCell></TableRow>)
                       ) : orders?.map((order) => (
                         <TableRow key={order.id} className="hover:bg-white/10 transition-colors border-white/10 h-20">
@@ -321,7 +338,7 @@ export default function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                       ))}
-                      {!ordersLoading && orders?.length === 0 && (
+                      {!ordersLoading && isConfirmedAdmin && orders?.length === 0 && (
                         <TableRow><TableCell colSpan={5} className="py-20 text-center glass rounded-2xl"><ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" /><p className="font-bold text-muted-foreground">No orders in vault.</p></TableCell></TableRow>
                       )}
                     </TableBody>

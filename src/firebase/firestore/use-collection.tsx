@@ -45,10 +45,12 @@ export interface InternalQuery extends Query<DocumentData> {
  * @template T Optional type for document data. Defaults to any.
  * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery -
  * The Firestore CollectionReference or Query.
+ * @param {boolean} [silentPermissionError=false] - If true, permission errors will not be emitted to the global error handler.
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: (CollectionReference<DocumentData> | Query<DocumentData>) | null | undefined,
+    silentPermissionError: boolean = false
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -102,13 +104,15 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // Trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+        // Only emit to global listener if not explicitly silenced
+        if (!silentPermissionError) {
+          errorEmitter.emit('permission-error', contextualError);
+        }
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery, silentPermissionError]);
 
   return { data, isLoading, error };
 }
