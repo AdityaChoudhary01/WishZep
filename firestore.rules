@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -40,8 +41,6 @@ service cloud.firestore {
 
     /**
      * @path /products/{productId}
-     * @allow get, list: Public
-     * @allow create, update, delete: Admin only
      */
     match /products/{productId} {
       allow get, list: if true;
@@ -49,8 +48,15 @@ service cloud.firestore {
     }
 
     /**
+     * @path /categories/{categoryId}
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
      * @path /pages/{pageId}
-     * @allow get, list: Public
      */
     match /pages/{pageId} {
       allow get, list: if true;
@@ -89,8 +95,6 @@ service cloud.firestore {
 
     /**
      * @path /roles_admin/{userId}
-     * @note Allow any signed-in user to 'get' a role document to check status.
-     * @note Owners can create or update their own admin record in this prototype.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();

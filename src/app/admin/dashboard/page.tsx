@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { 
   Package, 
   Plus, 
@@ -20,7 +21,9 @@ import {
   Trash2,
   ImagePlus,
   Table as TableIcon,
-  Check
+  Check,
+  Tags,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,8 +54,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const CATEGORIES = ['Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 export default function AdminDashboard() {
@@ -74,7 +77,7 @@ export default function AdminDashboard() {
     name: '',
     price: 0,
     discountPrice: 0,
-    category: 'Footwear',
+    category: '',
     description: '',
     inventory: 10,
     imageUrl: '',
@@ -88,6 +91,7 @@ export default function AdminDashboard() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -103,6 +107,13 @@ export default function AdminDashboard() {
   }, [db]);
 
   const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
+
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('name', 'asc'));
+  }, [db]);
+
+  const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'images' | 'sizeChartUrl', isEdit = false) => {
     const files = e.target.files;
@@ -155,6 +166,10 @@ export default function AdminDashboard() {
       toast({ variant: "destructive", title: "Missing Image", description: "Please upload a primary image." });
       return;
     }
+    if (!newProduct.category) {
+      toast({ variant: "destructive", title: "Missing Category", description: "Please select a category." });
+      return;
+    }
     
     addDocumentNonBlocking(collection(db, 'products'), {
       ...newProduct,
@@ -166,7 +181,7 @@ export default function AdminDashboard() {
 
     toast({ title: "Product Added! ✨", description: `${newProduct.name} is now live.` });
     setIsAddDialogOpen(false);
-    setNewProduct({ name: '', price: 0, discountPrice: 0, category: 'Footwear', description: '', inventory: 10, imageUrl: '', images: [], attributes: '', sizes: [], sizeChartUrl: '', specifications: {} });
+    setNewProduct({ name: '', price: 0, discountPrice: 0, category: '', description: '', inventory: 10, imageUrl: '', images: [], attributes: '', sizes: [], sizeChartUrl: '', specifications: {} });
   };
 
   const handleOpenEdit = (product: any) => {
@@ -201,6 +216,26 @@ export default function AdminDashboard() {
     if (confirm("Are you sure you want to remove this product?")) {
       deleteDocumentNonBlocking(doc(db, 'products', productId));
       toast({ title: "Product Removed" });
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!db || !isUserAdmin || !newCategoryName.trim()) return;
+    
+    addDocumentNonBlocking(collection(db, 'categories'), {
+      name: newCategoryName.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    toast({ title: "Category Created! 🏷️", description: `${newCategoryName} added to the vault.` });
+    setNewCategoryName('');
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    if (!db || !isUserAdmin) return;
+    if (confirm("Are you sure? Products in this category might need updating.")) {
+      deleteDocumentNonBlocking(doc(db, 'categories', categoryId));
+      toast({ title: "Category Removed" });
     }
   };
 
@@ -271,12 +306,20 @@ export default function AdminDashboard() {
               <Label>Category</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between glass">{product.category} <MoreHorizontal className="w-4 h-4" /></Button>
+                  <Button variant="outline" className="w-full justify-between glass">
+                    {product.category || 'Select Category'} <ChevronRight className="w-4 h-4 rotate-90" />
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass">
-                  {CATEGORIES.map(cat => (
-                    <DropdownMenuItem key={cat} onClick={() => setProduct({...product, category: cat})}>{cat}</DropdownMenuItem>
-                  ))}
+                <DropdownMenuContent className="glass min-w-[200px]">
+                  {categoriesLoading ? (
+                    <div className="p-2 text-center text-xs">Loading categories...</div>
+                  ) : categories?.length ? (
+                    categories.map(cat => (
+                      <DropdownMenuItem key={cat.id} onClick={() => setProduct({...product, category: cat.name})}>{cat.name}</DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-center text-xs">No categories found. Add one in the Categories tab.</div>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -375,12 +418,35 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen bg-background">
       <aside className="w-64 glass border-r border-white/20 p-6 hidden md:block">
         <div className="flex items-center gap-2 mb-10 px-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-white font-bold text-xl">W</span></div>
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center rotate-12"><span className="text-white font-black text-2xl">W</span></div>
           <span className="text-xl font-bold wishzep-text">Admin</span>
         </div>
-        <nav className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl bg-primary/10 text-primary"><Package className="w-5 h-5" /> Inventory</Button>
-          {!isUserAdmin && <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"><ShieldCheck className="w-5 h-5" /> Claim Admin</Button>}
+        <nav className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management</p>
+            <Button 
+              variant={activeTab === 'products' ? 'default' : 'ghost'} 
+              onClick={() => setActiveTab('products')}
+              className={cn("w-full justify-start gap-3 rounded-xl h-12", activeTab === 'products' ? "shadow-lg shadow-primary/20" : "")}
+            >
+              <Package className="w-5 h-5" /> Inventory
+            </Button>
+            <Button 
+              variant={activeTab === 'categories' ? 'default' : 'ghost'} 
+              onClick={() => setActiveTab('categories')}
+              className={cn("w-full justify-start gap-3 rounded-xl h-12", activeTab === 'categories' ? "shadow-lg shadow-primary/20" : "")}
+            >
+              <Tags className="w-5 h-5" /> Categories
+            </Button>
+          </div>
+
+          <div className="pt-4 space-y-2">
+            {!isUserAdmin && (
+              <Button onClick={claimAdminRole} className="w-full justify-start gap-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white h-12">
+                <ShieldCheck className="w-5 h-5" /> Claim Admin
+              </Button>
+            )}
+          </div>
         </nav>
       </aside>
 
@@ -389,72 +455,147 @@ export default function AdminDashboard() {
           <Alert variant="destructive" className="rounded-3xl">
             <AlertCircle className="h-5 w-5" />
             <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>Claim admin status to manage products.</AlertDescription>
+            <AlertDescription>Claim admin status to manage products and categories.</AlertDescription>
           </Alert>
         )}
 
-        <header className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-black">Manage <span className="wishzep-text">Vault</span></h1>
-            <p className="text-muted-foreground text-sm">Control your high-performance catalogue.</p>
+        {activeTab === 'products' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
+            <header className="flex justify-between items-center">
+              <div>
+                <h1 className="text-4xl font-black">Manage <span className="wishzep-text">Vault</span></h1>
+                <p className="text-muted-foreground text-sm">Control your high-performance catalogue.</p>
+              </div>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button disabled={!isUserAdmin} className="rounded-2xl h-14 px-8 gap-2 bg-primary shadow-xl shadow-primary/20">
+                    <Plus className="w-6 h-6" /> New Product
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh] rounded-[2.5rem]">
+                  <DialogHeader><DialogTitle className="text-2xl font-black">Add New Artifact</DialogTitle></DialogHeader>
+                  {renderProductForm(newProduct, setNewProduct)}
+                </DialogContent>
+              </Dialog>
+            </header>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh] rounded-[2.5rem]">
+                <DialogHeader><DialogTitle className="text-2xl font-black">Edit Product: {editingProduct?.name}</DialogTitle></DialogHeader>
+                {editingProduct && renderProductForm(editingProduct, setEditingProduct, true)}
+              </DialogContent>
+            </Dialog>
+
+            <div className="glass rounded-[2rem] overflow-hidden border border-white/20 shadow-2xl">
+              <Table>
+                <TableHeader className="bg-white/30">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Product</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Category</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Stock</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Price</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productsLoading ? [...Array(3)].map((_, i) => (
+                    <TableRow key={i}><TableCell className="px-6"><Skeleton className="h-10 w-40" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell className="text-right px-6"><Skeleton className="h-10 w-10 rounded-full ml-auto" /></TableCell></TableRow>
+                  )) : products?.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-white/20 transition-colors border-white/10 h-20">
+                      <TableCell className="font-bold px-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden relative border border-white/20">
+                            <Image src={p.imageUrl || `https://picsum.photos/seed/${p.id}/100/100`} alt={p.name} fill className="object-cover" />
+                          </div>
+                          <span className="truncate max-w-[200px]">{p.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell><Badge variant="outline" className="glass px-3 py-1">{p.category}</Badge></TableCell>
+                      <TableCell className="font-medium text-muted-foreground">{p.inventory} units</TableCell>
+                      <TableCell className="font-black text-primary">Rs.{p.discountPrice || p.price}</TableCell>
+                      <TableCell className="text-right px-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/40"><MoreHorizontal /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="glass min-w-[140px] rounded-xl">
+                            <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="gap-2 cursor-pointer font-bold"><Edit2 className="w-4 h-4" /> Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteProduct(p.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive font-bold"><Trash2 className="w-4 h-4" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={!isUserAdmin} className="rounded-2xl h-12 px-6 gap-2 bg-primary">
-                <Plus className="w-5 h-5" /> New Product
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh]">
-              <DialogHeader><DialogTitle>Add New Artifact</DialogTitle></DialogHeader>
-              {renderProductForm(newProduct, setNewProduct)}
-            </DialogContent>
-          </Dialog>
-        </header>
+        )}
 
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="glass max-w-2xl overflow-y-auto max-h-[90vh]">
-            <DialogHeader><DialogTitle>Edit Product: {editingProduct?.name}</DialogTitle></DialogHeader>
-            {editingProduct && renderProductForm(editingProduct, setEditingProduct, true)}
-          </DialogContent>
-        </Dialog>
+        {activeTab === 'categories' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-4 max-w-4xl mx-auto">
+            <header className="space-y-2">
+              <h1 className="text-4xl font-black">Tag <span className="wishzep-text">Mastery</span></h1>
+              <p className="text-muted-foreground text-sm">Organize your drops with custom categories.</p>
+            </header>
 
-        <div className="glass rounded-[2rem] overflow-hidden">
-          <Table>
-            <TableHeader className="bg-white/30">
-              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Stock</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
-            </TableHeader>
-            <TableBody>
-              {productsLoading ? [...Array(3)].map((_, i) => (
-                <TableRow key={i}><TableCell><Skeleton className="h-10 w-40" /></TableCell><TableCell><Skeleton className="h-6 w-20" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell><Skeleton className="h-6 w-16" /></TableCell><TableCell className="text-right"><Skeleton className="h-10 w-10 rounded-full ml-auto" /></TableCell></TableRow>
-              )) : products?.map((p) => (
-                <TableRow key={p.id} className="hover:bg-white/20 transition-colors">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden relative">
-                        <Image src={p.imageUrl || `https://picsum.photos/seed/${p.id}/100/100`} alt={p.name} fill className="object-cover" />
+            <div className="glass p-8 rounded-[2rem] space-y-6">
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label className="ml-1 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">Category Name</Label>
+                  <Input 
+                    placeholder="e.g. Digital Footwear" 
+                    value={newCategoryName} 
+                    onChange={e => setNewCategoryName(e.target.value)} 
+                    className="h-14 rounded-2xl glass border-white/20 text-lg"
+                  />
+                </div>
+                <div className="pt-6">
+                  <Button 
+                    disabled={!isUserAdmin || !newCategoryName.trim()} 
+                    onClick={handleAddCategory}
+                    className="h-14 rounded-2xl px-10 bg-primary shadow-xl shadow-primary/20 font-black"
+                  >
+                    Add Category
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="ml-1 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">Active Categories</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {categoriesLoading ? (
+                    [...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)
+                  ) : categories?.map((cat) => (
+                    <div key={cat.id} className="flex items-center justify-between glass p-4 rounded-2xl group hover:border-primary/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <Tags className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold">{cat.name}</span>
                       </div>
-                      <span className="truncate max-w-[200px]">{p.name}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        disabled={!isUserAdmin}
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </TableCell>
-                  <TableCell><Badge variant="outline">{p.category}</Badge></TableCell>
-                  <TableCell>{p.inventory} units</TableCell>
-                  <TableCell className="font-bold">Rs.{p.discountPrice || p.price}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full"><MoreHorizontal /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="glass">
-                        <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="gap-2 cursor-pointer"><Edit2 className="w-4 h-4" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteProduct(p.id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive"><Trash2 className="w-4 h-4" /> Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  ))}
+                  {!categoriesLoading && categories?.length === 0 && (
+                    <div className="col-span-full py-12 text-center glass rounded-2xl space-y-2">
+                      <Tags className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
+                      <p className="font-bold text-muted-foreground">No categories defined yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

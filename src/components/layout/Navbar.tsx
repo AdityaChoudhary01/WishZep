@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,17 +31,27 @@ export default function Navbar() {
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const db = useFirestore();
-  const productsQuery = useMemoFirebase(() => {
+  
+  // Use manual categories if available, else fallback to hardcoded common ones for safety
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('name', 'asc'));
+  }, [db]);
+  const { data: categories } = useCollection(categoriesQuery);
+
+  const productCategoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return collection(db, 'products');
   }, [db]);
-  const { data: products } = useCollection(productsQuery);
+  const { data: products } = useCollection(productCategoriesQuery);
 
   const dynamicCategories = useMemo(() => {
-    if (!products) return [];
-    const cats = new Set(products.map(p => p.category).filter(Boolean));
-    return Array.from(cats).sort();
-  }, [products]);
+    // Priority: 1. Manually created categories, 2. Categories extracted from products
+    const manualCats = categories?.map(c => c.name) || [];
+    const productCats = products?.map(p => p.category).filter(Boolean) || [];
+    const allCats = new Set([...manualCats, ...productCats]);
+    return Array.from(allCats).sort();
+  }, [categories, products]);
 
   useEffect(() => {
     setMounted(true);

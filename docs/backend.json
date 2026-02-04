@@ -47,7 +47,7 @@
         },
         "category": {
           "type": "string",
-          "description": "Category of the product."
+          "description": "Category name of the product."
         },
         "sizes": {
           "type": "array",
@@ -74,6 +74,28 @@
         "inventory",
         "category"
       ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a product category.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the category."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the category."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the category was created.",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "name"]
     },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -222,36 +244,6 @@
         "quantity",
         "price"
       ]
-    },
-    "Page": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Page",
-      "type": "object",
-      "description": "Represents a page for the informational pages.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the page."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the page."
-        },
-        "content": {
-          "type": "string",
-          "description": "Content of the page."
-        },
-        "slug": {
-          "type": "string",
-          "description": "Slug of the page."
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "content",
-        "slug"
-      ]
     }
   },
   "auth": {
@@ -273,6 +265,22 @@
             {
               "name": "productId",
               "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores product categories.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "Unique identifier for the category."
             }
           ]
         }

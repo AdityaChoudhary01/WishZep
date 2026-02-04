@@ -33,14 +33,24 @@ function ProductsContent() {
   const categoryParam = searchParams.get('category') || 'All';
   const sortParam = searchParams.get('sort') || 'recommended';
   
-  const categories = ['All', 'Footwear', 'Audio', 'Tech', 'Apparel', 'Accessories'];
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'categories'), orderBy('name', 'asc'));
+  }, [db]);
+  const { data: manualCategories } = useCollection(categoriesQuery);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('name', 'asc'));
   }, [db]);
-
   const { data: products, isLoading } = useCollection(productsQuery);
+
+  const categories = useMemo(() => {
+    const manualNames = manualCategories?.map(c => c.name) || [];
+    const productCats = products?.map(p => p.category).filter(Boolean) || [];
+    const unique = Array.from(new Set(['All', ...manualNames, ...productCats])).sort();
+    return unique;
+  }, [manualCategories, products]);
 
   const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
@@ -281,7 +291,7 @@ function ProductsContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto p-20 text-center animate-pulse">Loading catalogue...</div>}>
+    <Suspense fallback={<div className="container mx-auto p-20 text-center animate-pulse">Loading experience...</div>}>
       <ProductsContent />
     </Suspense>
   );
