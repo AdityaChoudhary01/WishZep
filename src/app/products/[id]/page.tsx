@@ -64,13 +64,13 @@ export default function ProductDetailPage() {
 
   const allImages = useMemo(() => {
     if (!product) return [];
-    return [product.imageUrl, ...(product.images || [])];
+    return [product.imageUrl, ...(product.images || [])].filter(Boolean);
   }, [product]);
   
   const isApparel = useMemo(() => {
     if (!product?.category) return false;
     const cat = product.category.toLowerCase();
-    const apparelKeywords = ['apparel', 'clothing', 'shirt', 'hoodie', 'bottoms', 'wear'];
+    const apparelKeywords = ['apparel', 'clothing', 'clothes', 'shirt', 'hoodie', 'bottoms', 'wear', 't-shirt', 'jacket'];
     return apparelKeywords.some(keyword => cat.includes(keyword));
   }, [product?.category]);
 
@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = (silent = false) => {
     if (!product) return false;
     if (isApparel && availableSizes.length > 0 && !selectedSize) {
-      toast({ variant: "destructive", title: "Size Protocol Error", description: "Select a size frequency to continue." });
+      toast({ variant: "destructive", title: "Please Select a Size", description: "You need to pick a size before adding this to your bag." });
       return false;
     }
     
@@ -96,8 +96,8 @@ export default function ProductDetailPage() {
     
     if (!silent) {
       toast({
-        title: "Artifact Captured! ✨",
-        description: `${product.name} ${selectedSize ? `(${selectedSize})` : ''} added to your bag.`,
+        title: "Added to Bag!",
+        description: `${product.name} ${selectedSize ? `(${selectedSize})` : ''} is now in your cart.`,
       });
     }
     return true;
@@ -115,11 +115,11 @@ export default function ProductDetailPage() {
       if (navigator.share) await navigator.share(shareData);
       else {
         await navigator.clipboard.writeText(shareData.url);
-        toast({ title: "Link Cloned! 🔗" });
+        toast({ title: "Link Copied!" });
       }
     } catch (err) {
       await navigator.clipboard.writeText(shareData.url);
-      toast({ title: "Link Cloned! 🔗" });
+      toast({ title: "Link Copied!" });
     }
   };
 
@@ -135,13 +135,13 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) return <div className="p-20 text-center font-bold">Artifact frequency lost.</div>;
+  if (!product) return <div className="p-20 text-center font-bold">Product not found.</div>;
 
   return (
     <div className="container mx-auto px-6 py-12">
       <div className="flex justify-between items-center mb-8">
         <Link href="/products" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:text-primary transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Collection Index
+          <ArrowLeft className="w-4 h-4" /> Back to Shop
         </Link>
         <Button variant="ghost" size="icon" className="rounded-full glass" onClick={handleShare}>
           <Share2 className="w-5 h-5" />
@@ -159,19 +159,21 @@ export default function ProductDetailPage() {
               </div>
             )}
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {allImages.map((img, i) => (
-              <button key={i} onClick={() => setActiveImageIdx(i)} className={cn("relative w-24 h-24 rounded-2xl overflow-hidden glass shrink-0 transition-all border-2", activeImageIdx === i ? "border-primary scale-105 shadow-lg" : "border-transparent opacity-60 hover:opacity-100")}>
-                <Image src={img} alt={`Thumb ${i}`} fill className="object-cover" />
-              </button>
-            ))}
-          </div>
+          {allImages.length > 1 && (
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {allImages.map((img, i) => (
+                <button key={i} onClick={() => setActiveImageIdx(i)} className={cn("relative w-24 h-24 rounded-2xl overflow-hidden glass shrink-0 transition-all border-2", activeImageIdx === i ? "border-primary scale-105 shadow-lg" : "border-transparent opacity-60 hover:opacity-100")}>
+                  <Image src={img} alt={`Photo ${i}`} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-primary/10 text-primary font-black uppercase tracking-widest text-[10px]">Prime Artifact</Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary font-black uppercase tracking-widest text-[10px]">WishZep Original</Badge>
               <div className="flex items-center gap-1"><Star className="w-4 h-4 fill-yellow-400 text-yellow-400" /><span className="text-sm font-black">4.9</span></div>
             </div>
             <h1 className="text-5xl font-black tracking-tighter leading-none">{product.name}</h1>
@@ -194,14 +196,14 @@ export default function ProductDetailPage() {
           {isApparel && availableSizes.length > 0 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-black uppercase tracking-[0.2em] text-primary">Ergonomic Fit</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-primary">Pick Your Size</label>
                 {product.sizeChartUrl && (
                   <Dialog>
                     <DialogTrigger asChild>
-                      <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:text-primary transition-colors glass px-4 py-2 rounded-full border border-primary/20"><TableIcon className="w-3.5 h-3.5" /> Size Protocol</button>
+                      <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:text-primary transition-colors glass px-4 py-2 rounded-full border border-primary/20"><TableIcon className="w-3.5 h-3.5" /> Size Guide</button>
                     </DialogTrigger>
                     <DialogContent className="glass max-w-3xl border-white/30 rounded-[2.5rem] p-8">
-                      <DialogHeader><DialogTitle className="text-2xl font-black">Size Protocol Chart</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle className="text-2xl font-black">Size Guide Chart</DialogTitle></DialogHeader>
                       <div className="relative aspect-video w-full rounded-2xl overflow-hidden mt-6 bg-white/10">
                         <Image src={product.sizeChartUrl} alt="Size Chart" fill className="object-contain" />
                       </div>
@@ -227,10 +229,10 @@ export default function ProductDetailPage() {
             </div>
             <div className="flex-1 flex gap-4">
               <Button variant="outline" onClick={() => handleAddToCart(false)} disabled={product.inventory === 0} className="flex-1 h-16 rounded-2xl glass border-primary/40 text-lg font-black gap-2 hover:bg-primary/5">
-                <ShoppingBag className="w-6 h-6" /> Bag
+                <ShoppingBag className="w-6 h-6" /> Add to Bag
               </Button>
               <Button onClick={handleBuyNow} disabled={product.inventory === 0} className="flex-1 h-16 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-black gap-2 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]">
-                <Zap className="w-6 h-6 fill-white" /> Drop Now
+                <Zap className="w-6 h-6 fill-white" /> Buy Now
               </Button>
             </div>
           </div>
@@ -239,7 +241,7 @@ export default function ProductDetailPage() {
             {product.specifications && Object.keys(product.specifications).length > 0 && (
               <AccordionItem value="specs" className="border-white/10">
                 <AccordionTrigger className="text-xs font-black uppercase tracking-[0.2em] hover:no-underline py-8">
-                  <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><Info className="w-4 h-4" /></div>Technical Specs</div>
+                  <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><Info className="w-4 h-4" /></div>Technical Details</div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-0 pb-6 border-t border-white/5 mt-2">
@@ -255,10 +257,10 @@ export default function ProductDetailPage() {
             )}
             <AccordionItem value="shipping" className="border-white/10">
               <AccordionTrigger className="text-xs font-black uppercase tracking-[0.2em] hover:no-underline py-8">
-                 <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary"><Truck className="w-4 h-4" /></div>Logistics</div>
+                 <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary"><Truck className="w-4 h-4" /></div>Delivery Info</div>
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-8 leading-relaxed font-medium px-2">
-                Dispatched within 24 hours. Global Express delivery in 2-5 days. Final Sale model.
+                We ship all orders within 24 hours. You can expect delivery in 2-5 days. All sales are final.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
