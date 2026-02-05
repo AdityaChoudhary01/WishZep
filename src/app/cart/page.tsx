@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCartStore } from '@/lib/store';
@@ -66,7 +67,7 @@ export default function CartPage() {
                       {item.selectedColor && `Color: ${item.selectedColor}`}
                     </p>
                   </div>
-                  <p className="text-xl font-black text-primary">${item.price}</p>
+                  <p className="text-xl font-black text-primary">Rs.{item.price.toLocaleString()}</p>
                 </div>
                 
                 <div className="flex justify-between items-center pt-4">
@@ -90,7 +91,7 @@ export default function CartPage() {
             <div className="space-y-4">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
-                <span>${total.toFixed(2)}</span>
+                <span>Rs.{total.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
@@ -99,7 +100,7 @@ export default function CartPage() {
               <Separator className="bg-white/20" />
               <div className="flex justify-between text-2xl font-black">
                 <span>Total</span>
-                <span className="wishzep-text">${total.toFixed(2)}</span>
+                <span className="wishzep-text">Rs.{total.toLocaleString()}</span>
               </div>
             </div>
             

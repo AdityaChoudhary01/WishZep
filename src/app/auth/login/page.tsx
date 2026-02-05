@@ -84,10 +84,14 @@ export default function LoginPage() {
   }, [auth, router, toast]);
 
   const handleGoogleLogin = async () => {
-    setAuthError(null);
+    // Avoid state changes that trigger re-renders before popup
     try {
       const provider = new GoogleAuthProvider();
+      // Ensure popup is triggered directly by user interaction
       const result = await signInWithPopup(auth, provider);
+      
+      // Clear error only after successful result
+      setAuthError(null);
       await syncUserProfile(result.user);
       
       toast({
@@ -98,18 +102,23 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
       
+      let errorMessage = "An unexpected error occurred.";
+      
       if (error.code === 'auth/popup-closed-by-user') {
-        setAuthError("Sign-in window closed. In Cloud Workstations, please ensure your browser isn't blocking popups and that your dynamic domain is added to 'Authorized Domains' in Firebase Console (Auth > Settings).");
+        errorMessage = `The sign-in window was closed before completion. This often happens if the domain ("${window.location.hostname}") is not authorized in your Firebase Console (Auth > Settings > Authorized Domains) or if a popup blocker is active.`;
       } else if (error.code === 'auth/unauthorized-domain') {
-        setAuthError(`Domain Not Authorized: Add "${window.location.hostname}" to 'Authorized Domains' in your Firebase Console.`);
+        errorMessage = `Domain Not Authorized: Please add "${window.location.hostname}" to 'Authorized Domains' in your Firebase Console.`;
+      } else if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+        errorMessage = "Sign-in was blocked by a browser extension (like an AdBlocker). Please disable extensions for this site and try again.";
       } else {
-        setAuthError(error.message || "An unexpected error occurred. If popups fail, try the 'Magic Link' method below.");
+        errorMessage = error.message;
       }
 
+      setAuthError(errorMessage);
       toast({
         variant: "destructive",
         title: "Sign-in Notice",
-        description: "Check the troubleshooting info below.",
+        description: "Check the diagnostics below.",
       });
     }
   };
