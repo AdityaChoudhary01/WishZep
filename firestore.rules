@@ -72,18 +72,21 @@ service cloud.firestore {
      * @path /orders/{orderId}
      */
     match /orders/{orderId} {
-      // Allow list if the query filters by the user's UID
-      allow list: if isSignedIn() && (isAdmin() || request.query.limit <= 100 && resource.data.userId == request.auth.uid);
+      // Allow listing orders. Non-admins MUST filter by their own userId.
+      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       
-      // Allow get if the user owns the order or is admin
+      // Allow getting a specific order if user owns it or is admin
       allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       
+      // Allow creating orders for yourself
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Only admins can update order status
       allow update: if isAdmin();
       allow delete: if false;
 
       match /order_items/{orderItemId} {
-        // Nested collection rules: items belong to the parent order
+        // Items are readable if the parent order is accessible
         allow read: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
         allow create: if isSignedIn();
         allow update, delete: if isAdmin();

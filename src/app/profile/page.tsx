@@ -107,8 +107,7 @@ export default function ProfilePage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // Client-side filtering is handled by firestore security rules
-    // and manual sorting is done in useMemo to avoid index errors.
+    // We must filter by userId to satisfy security rules for listing
     return query(
       collection(db, 'orders'), 
       where('userId', '==', user.uid)
@@ -119,6 +118,7 @@ export default function ProfilePage() {
 
   const sortedOrders = useMemo(() => {
     if (!orders) return [];
+    // Sorting on client side to avoid index creation requirements for testing
     return [...orders].sort((a, b) => {
       const dateA = a.orderDate ? new Date(a.orderDate).getTime() : 0;
       const dateB = b.orderDate ? new Date(b.orderDate).getTime() : 0;
