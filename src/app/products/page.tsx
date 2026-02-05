@@ -37,7 +37,7 @@ function ProductsContent() {
   
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch categories
+  // Fetch only categories explicitly added by admin
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
@@ -51,13 +51,12 @@ function ProductsContent() {
   }, [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  // Extract unique categories
+  // Extract unique categories - Restricted to the admin's 'categories' collection
   const categories = useMemo(() => {
     const manualNames = manualCategories?.map(c => c.name) || [];
-    const productCats = products?.map(p => p.category).filter(Boolean) || [];
-    const unique = Array.from(new Set(['All', ...manualNames, ...productCats])).sort();
+    const unique = Array.from(new Set(['All', ...manualNames])).sort();
     return unique;
-  }, [manualCategories, products]);
+  }, [manualCategories]);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {

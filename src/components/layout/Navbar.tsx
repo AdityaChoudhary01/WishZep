@@ -26,7 +26,6 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   
   const router = useRouter();
-  const searchParams = useSearchParams();
   const cartItems = useCartStore((state) => state.items);
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -42,25 +41,16 @@ export default function Navbar() {
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole && !adminLoading;
 
-  // Categories Fetching
+  // Categories Fetching - Restricted to explicitly created categories only
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
   }, [db]);
-  const { data: categories } = useCollection(categoriesQuery);
-
-  const productCategoriesQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return collection(db, 'products');
-  }, [db]);
-  const { data: products } = useCollection(productCategoriesQuery);
+  const { data: manualCategories } = useCollection(categoriesQuery);
 
   const dynamicCategories = useMemo(() => {
-    const manualCats = categories?.map(c => c.name) || [];
-    const productCats = products?.map(p => p.category).filter(Boolean) || [];
-    const allCats = new Set([...manualCats, ...productCats]);
-    return Array.from(allCats).sort();
-  }, [categories, products]);
+    return (manualCategories?.map(c => c.name) || []).sort();
+  }, [manualCategories]);
 
   useEffect(() => {
     setMounted(true);
@@ -105,16 +95,16 @@ export default function Navbar() {
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group relative">
-                Categories <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform" />
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="glass min-w-[200px] rounded-2xl p-2 border-white/20">
-              {dynamicCategories.length > 0 ? (
-                dynamicCategories.map((cat) => (
+          {dynamicCategories.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group relative">
+                  Categories <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform" />
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="glass min-w-[200px] rounded-2xl p-2 border-white/20">
+                {dynamicCategories.map((cat) => (
                   <DropdownMenuItem key={cat} asChild>
                     <Link 
                       href={`/products?category=${cat}`}
@@ -123,12 +113,10 @@ export default function Navbar() {
                       {cat}
                     </Link>
                   </DropdownMenuItem>
-                ))
-              ) : (
-                <div className="p-4 text-xs text-muted-foreground text-center">No categories yet</div>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {isUserAdmin && (
             <Link
@@ -201,21 +189,23 @@ export default function Navbar() {
             Shop All
           </Link>
           
-          <div className="p-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Categories</p>
-            <div className="grid grid-cols-2 gap-2">
-              {dynamicCategories.map((cat) => (
-                <Link
-                  key={cat}
-                  href={`/products?category=${cat}`}
-                  className="text-sm font-medium hover:text-primary transition-all"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {cat}
-                </Link>
-              ))}
+          {dynamicCategories.length > 0 && (
+            <div className="p-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Categories</p>
+              <div className="grid grid-cols-2 gap-2">
+                {dynamicCategories.map((cat) => (
+                  <Link
+                    key={cat}
+                    href={`/products?category=${cat}`}
+                    className="text-sm font-medium hover:text-primary transition-all"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {cat}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {isUserAdmin && (
             <Link
