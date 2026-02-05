@@ -59,6 +59,37 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
+  const validateShipping = () => {
+    if (!shipping.fullName || !shipping.contactNumber || !shipping.address || !shipping.city || !shipping.zip) {
+      toast({ title: "Incomplete Protocol", description: "All mandatory shipping fields must be completed.", variant: "destructive" });
+      return false;
+    }
+
+    // Indian Mobile Number Validation (10 digits)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(shipping.contactNumber)) {
+      toast({ 
+        title: "Invalid Contact", 
+        description: "Please provide a valid 10-digit Indian mobile number.", 
+        variant: "destructive" 
+      });
+      return false;
+    }
+
+    // Indian PIN Code Validation (6 digits)
+    const pinRegex = /^\d{6}$/;
+    if (!pinRegex.test(shipping.zip)) {
+      toast({ 
+        title: "Invalid PIN Code", 
+        description: "Please provide a valid 6-digit PIN code.", 
+        variant: "destructive" 
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handlePlaceOrder = async () => {
     if (!user || !db) {
       toast({ title: "Authentication Required", description: "Please sign in to place your order.", variant: "destructive" });
@@ -66,10 +97,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!shipping.fullName || !shipping.contactNumber || !shipping.address || !shipping.city || !shipping.zip) {
-      toast({ title: "Incomplete Protocol", description: "All mandatory shipping fields must be completed.", variant: "destructive" });
-      return;
-    }
+    if (!validateShipping()) return;
 
     setIsProcessing(true);
 
@@ -185,14 +213,15 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5" /> Primary Contact
+                    <Phone className="w-3.5 h-3.5" /> 10-digit Mobile Number
                   </Label>
                   <Input 
                     type="tel"
+                    maxLength={10}
                     className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                     value={shipping.contactNumber} 
-                    onChange={(e) => setShipping({...shipping, contactNumber: e.target.value})} 
-                    placeholder="98765 43210" 
+                    onChange={(e) => setShipping({...shipping, contactNumber: e.target.value.replace(/\D/g, '')})} 
+                    placeholder="9876543210" 
                   />
                 </div>
                 <div className="space-y-3">
@@ -201,10 +230,11 @@ export default function CheckoutPage() {
                   </Label>
                   <Input 
                     type="tel"
+                    maxLength={10}
                     className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                     value={shipping.secondaryContact} 
-                    onChange={(e) => setShipping({...shipping, secondaryContact: e.target.value})} 
-                    placeholder="Backup Phone Number" 
+                    onChange={(e) => setShipping({...shipping, secondaryContact: e.target.value.replace(/\D/g, '')})} 
+                    placeholder="Backup Number" 
                   />
                 </div>
               </div>
@@ -235,13 +265,14 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" /> PIN Code
+                    <Hash className="w-3.5 h-3.5" /> 6-digit PIN Code
                   </Label>
                   <Input 
-                    type="number"
+                    type="text"
+                    maxLength={6}
                     className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                     value={shipping.zip} 
-                    onChange={(e) => setShipping({...shipping, zip: e.target.value})} 
+                    onChange={(e) => setShipping({...shipping, zip: e.target.value.replace(/\D/g, '')})} 
                     placeholder="560001" 
                   />
                 </div>
