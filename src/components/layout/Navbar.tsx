@@ -2,15 +2,15 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingBag, User, Search, Menu, X, ChevronDown } from 'lucide-react';
+import { ShoppingBag, User, Search, Menu, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,8 +31,18 @@ export default function Navbar() {
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const db = useFirestore();
+  const { user } = useUser();
   
-  // Use manual categories if available, else fallback to hardcoded common ones for safety
+  // Admin Check
+  const adminRoleRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'roles_admin', user.uid);
+  }, [db, user]);
+
+  const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
+  const isUserAdmin = !!adminRole && !adminLoading;
+
+  // Categories Fetching
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
@@ -46,7 +56,6 @@ export default function Navbar() {
   const { data: products } = useCollection(productCategoriesQuery);
 
   const dynamicCategories = useMemo(() => {
-    // Priority: 1. Manually created categories, 2. Categories extracted from products
     const manualCats = categories?.map(c => c.name) || [];
     const productCats = products?.map(p => p.category).filter(Boolean) || [];
     const allCats = new Set([...manualCats, ...productCats]);
@@ -120,6 +129,15 @@ export default function Navbar() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {isUserAdmin && (
+            <Link
+              href="/admin/dashboard"
+              className="text-sm font-black text-primary hover:opacity-80 transition-all flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-full"
+            >
+              <ShieldCheck className="w-4 h-4" /> Admin Panel
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -182,6 +200,7 @@ export default function Navbar() {
           >
             Shop All
           </Link>
+          
           <div className="p-2">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Categories</p>
             <div className="grid grid-cols-2 gap-2">
@@ -197,6 +216,16 @@ export default function Navbar() {
               ))}
             </div>
           </div>
+
+          {isUserAdmin && (
+            <Link
+              href="/admin/dashboard"
+              className="text-lg font-black text-primary p-2 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-3"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <ShieldCheck className="w-5 h-5" /> Admin Dashboard
+            </Link>
+          )}
         </div>
       )}
     </nav>
