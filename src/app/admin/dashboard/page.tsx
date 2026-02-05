@@ -27,7 +27,8 @@ import {
   MapPin,
   CreditCard,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Table as TableIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -231,7 +232,7 @@ export default function AdminDashboard() {
       if (s.key.trim()) specsObject[s.key.trim()] = s.value;
     });
 
-    const isApparel = ['apparel', 'clothing', 'shirt', 'hoodie', 'bottoms', 'wear'].some(k => productFormData.category.toLowerCase().includes(k));
+    const isApparel = ['apparel', 'clothing', 'shirt', 'hoodie', 'bottoms', 'wear', 'clothes'].some(k => productFormData.category.toLowerCase().includes(k));
 
     const productData = {
       name: productFormData.name,
@@ -252,15 +253,15 @@ export default function AdminDashboard() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), productData);
-        toast({ title: "Product Updated!" });
+        toast({ title: "Product updated successfully!" });
       } else {
         const newDocRef = doc(collection(db, 'products'));
         await setDoc(newDocRef, { ...productData, id: newDocRef.id });
-        toast({ title: "Product Added!" });
+        toast({ title: "Product added successfully!" });
       }
       setIsProductDialogOpen(false);
     } catch (error) {
-      toast({ variant: "destructive", title: "Save Failed" });
+      toast({ variant: "destructive", title: "Could not save product." });
     }
   };
 
@@ -271,9 +272,9 @@ export default function AdminDashboard() {
     try {
       const url = await uploadToCloudinary(file);
       setProductFormData(prev => ({ ...prev, imageUrl: url }));
-      toast({ title: "Hero Image Updated!" });
+      toast({ title: "Main image updated!" });
     } catch (error) {
-      toast({ variant: "destructive", title: "Upload Failed" });
+      toast({ variant: "destructive", title: "Image upload failed." });
     } finally {
       setIsUploading(false);
     }
@@ -290,9 +291,9 @@ export default function AdminDashboard() {
         newUrls.push(url);
       }
       setProductFormData(prev => ({ ...prev, images: [...prev.images, ...newUrls] }));
-      toast({ title: `${files.length} Image(s) Added!` });
+      toast({ title: `${files.length} images added!` });
     } catch (error) {
-      toast({ variant: "destructive", title: "Secondary Upload Failed" });
+      toast({ variant: "destructive", title: "Gallery upload failed." });
     } finally {
       setIsUploading(false);
     }
@@ -305,9 +306,9 @@ export default function AdminDashboard() {
     try {
       const url = await uploadToCloudinary(file);
       setProductFormData(prev => ({ ...prev, sizeChartUrl: url }));
-      toast({ title: "Size Chart Updated!" });
+      toast({ title: "Size chart updated!" });
     } catch (error) {
-      toast({ variant: "destructive", title: "Chart Upload Failed" });
+      toast({ variant: "destructive", title: "Size chart upload failed." });
     } finally {
       setIsUploading(false);
     }
@@ -341,12 +342,12 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!db || !isUserAdmin || !window.confirm("Delete this product?")) return;
+    if (!db || !isUserAdmin || !window.confirm("Are you sure you want to delete this product?")) return;
     try {
       await deleteDoc(doc(db, 'products', id));
-      toast({ title: "Product Deleted" });
+      toast({ title: "Product deleted." });
     } catch (error) {
-      toast({ variant: "destructive", title: "Delete Failed" });
+      toast({ variant: "destructive", title: "Could not delete product." });
     }
   };
 
@@ -357,11 +358,11 @@ export default function AdminDashboard() {
   const SidebarContent = () => (
     <nav className="space-y-4">
       <div className="space-y-1">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Dashboard</p>
         {[
-          { id: 'products', label: 'Products', icon: Package },
+          { id: 'products', label: 'All Products', icon: Package },
           { id: 'categories', label: 'Categories', icon: Tags },
-          { id: 'orders', label: 'Orders', icon: ShoppingBag },
+          { id: 'orders', label: 'Recent Orders', icon: ShoppingBag },
         ].map((link) => (
           <button 
             key={link.id}
@@ -395,8 +396,8 @@ export default function AdminDashboard() {
         {!isUserAdmin && !adminLoading && (
           <Alert variant="destructive" className="rounded-[2rem] border-destructive/20 bg-destructive/5">
             <AlertCircle className="h-5 w-5" />
-            <AlertTitle>Access Restricted</AlertTitle>
-            <AlertDescription>Your account does not have administrative privileges.</AlertDescription>
+            <AlertTitle>No Access</AlertTitle>
+            <AlertDescription>You do not have permission to view this page.</AlertDescription>
           </Alert>
         )}
 
@@ -404,8 +405,8 @@ export default function AdminDashboard() {
           <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-4xl font-black tracking-tight uppercase">Product <span className="wishzep-text">Vault</span></h1>
-                <p className="text-muted-foreground text-sm font-medium">Manage your curated high-energy catalogue.</p>
+                <h1 className="text-4xl font-black tracking-tight uppercase">Product <span className="wishzep-text">List</span></h1>
+                <p className="text-muted-foreground text-sm font-medium">Manage your items and stock levels.</p>
               </div>
               <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-14 px-8 font-black gap-2 shadow-xl shadow-primary/20">
                 <Plus className="w-6 h-6" /> ADD PRODUCT
@@ -416,11 +417,11 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader className="bg-gray-50/50">
                   <TableRow>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Product</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest px-6">Item Name</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Category</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Stock</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">In Stock</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Price</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Actions</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-6">Edit/Delete</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -435,7 +436,7 @@ export default function AdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell><Badge variant="outline" className="text-[9px] font-black uppercase">{p.category}</Badge></TableCell>
-                      <TableCell className="font-bold text-muted-foreground text-xs">{p.inventory} UNITS</TableCell>
+                      <TableCell className="font-bold text-muted-foreground text-xs">{p.inventory} ITEMS</TableCell>
                       <TableCell className="font-black text-primary text-sm">Rs.{p.discountPrice || p.price}</TableCell>
                       <TableCell className="text-right px-6">
                         <div className="flex justify-end gap-2">
@@ -451,17 +452,16 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Categories Tab ... (unchanged) */}
         {activeTab === 'categories' && (
            <div className="space-y-6 animate-fade-in">
              <header>
-              <h1 className="text-4xl font-black tracking-tight uppercase">Filing <span className="wishzep-text">System</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Organize artifacts into logical groupings.</p>
+              <h1 className="text-4xl font-black tracking-tight uppercase">Product <span className="wishzep-text">Categories</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Create and organize product groups.</p>
             </header>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-white p-8 rounded-[2rem] space-y-6 border border-gray-100 shadow-sm">
                 <h3 className="text-2xl font-black text-gray-900">New Category</h3>
-                <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Footwear" className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" />
+                <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Shoes" className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" />
                 <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black text-white">ADD CATEGORY</Button>
               </div>
               <div className="md:col-span-2 bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
@@ -478,12 +478,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Orders Tab ... (unchanged) */}
         {activeTab === 'orders' && (
            <div className="space-y-6 animate-fade-in">
             <header>
-              <h1 className="text-4xl font-black tracking-tight uppercase">Logistics <span className="wishzep-text">Control</span></h1>
-              <p className="text-muted-foreground text-sm font-medium">Fulfill and track customer artifact deliveries.</p>
+              <h1 className="text-4xl font-black tracking-tight uppercase">Order <span className="wishzep-text">Management</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">View and update customer orders.</p>
             </header>
 
             <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
@@ -492,9 +491,9 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest px-8">Order ID</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Customer</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Total</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest">Total Price</TableHead>
                     <TableHead className="font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">Manage</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest px-8">View Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -518,7 +517,7 @@ export default function AdminDashboard() {
                           <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
                             <div className="bg-primary p-8 text-white">
                               <DialogHeader>
-                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase">FULFILLMENT LOG</DialogTitle>
+                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase">Order Details</DialogTitle>
                               </DialogHeader>
                               <div className="flex justify-between items-center mt-2">
                                 <div><p className="text-xs font-bold opacity-80 uppercase tracking-widest">ID: {order.id}</p></div>
@@ -529,17 +528,17 @@ export default function AdminDashboard() {
                               <div className="grid md:grid-cols-2 gap-10">
                                 <div className="space-y-6">
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><User className="w-3.5 h-3.5" /> Recipient Intelligence</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><User className="w-3.5 h-3.5" /> Customer Information</h4>
                                     <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-3">
                                       <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Full Name</p><p className="font-black">{order.shippingDetails?.fullName}</p></div>
                                       <div className="grid grid-cols-2 gap-4">
-                                        <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Primary Contact</p><p className="font-bold text-sm text-primary">{order.shippingDetails?.contactNumber}</p></div>
-                                        <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Secondary</p><p className="font-bold text-sm">{order.shippingDetails?.secondaryContact || 'N/A'}</p></div>
+                                        <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Phone Number</p><p className="font-bold text-sm text-primary">{order.shippingDetails?.contactNumber}</p></div>
+                                        <div><p className="text-[9px] font-bold text-muted-foreground uppercase">Backup Phone</p><p className="font-bold text-sm">{order.shippingDetails?.secondaryContact || 'N/A'}</p></div>
                                       </div>
                                     </div>
                                   </div>
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Destination coordinates</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Shipping Address</h4>
                                     <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
                                       <p className="text-sm font-bold leading-relaxed">{order.shippingDetails?.address}</p>
                                       <p className="text-sm font-black text-muted-foreground">{order.shippingDetails?.city}, {order.shippingDetails?.zip}</p>
@@ -548,13 +547,13 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="space-y-6">
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Package className="w-3.5 h-3.5" /> Artifact Batch</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Package className="w-3.5 h-3.5" /> Items Ordered</h4>
                                     <AdminOrderItemsList orderId={order.id} />
                                   </div>
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><CreditCard className="w-3.5 h-3.5" /> Summary</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><CreditCard className="w-3.5 h-3.5" /> Payment Summary</h4>
                                     <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100">
-                                      <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-bold text-muted-foreground uppercase">Gateway</span><span className="text-xs font-bold">{order.paymentMethod}</span></div>
+                                      <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-bold text-muted-foreground uppercase">Method</span><span className="text-xs font-bold">{order.paymentMethod}</span></div>
                                       <div className="flex justify-between items-center pt-2 border-t border-gray-200"><span className="text-xs font-black">TOTAL</span><span className="text-lg font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</span></div>
                                     </div>
                                   </div>
@@ -562,7 +561,7 @@ export default function AdminDashboard() {
                               </div>
                               <Separator className="bg-gray-100" />
                               <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Execution Control</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Update Order Status</h4>
                                 <div className="flex flex-wrap gap-4">
                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'pending')} variant="outline" className="flex-1 h-14 rounded-xl gap-3 font-bold text-yellow-600 hover:bg-yellow-50 border-yellow-200"><Clock className="w-5 h-5" /> PENDING</Button>
                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} variant="outline" className="flex-1 h-14 rounded-xl gap-3 font-bold text-blue-600 hover:bg-blue-50 border-blue-200"><Truck className="w-5 h-5" /> SHIPPED</Button>
@@ -586,15 +585,17 @@ export default function AdminDashboard() {
         <DialogContent className="max-w-5xl rounded-[2rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-2xl">
           <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
             <DialogHeader>
-              <DialogTitle className="text-3xl font-black text-gray-900 uppercase">{editingProduct ? 'RECONFIGURE ARTIFACT' : 'GENESIS ARTIFACT'}</DialogTitle>
+              <DialogTitle className="text-3xl font-black text-gray-900 uppercase">
+                {editingProduct ? 'Edit Product' : 'Add New Product'}
+              </DialogTitle>
             </DialogHeader>
           </div>
           <div className="p-8 space-y-12">
             <div className="grid lg:grid-cols-2 gap-12">
               <div className="space-y-8">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Primary Identity</Label>
-                  <Input placeholder="Product Name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-14 rounded-2xl bg-gray-50 text-lg font-bold border-gray-200" />
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Basic Information</Label>
+                  <Input placeholder="Product Name (e.g. Blue Denim Jacket)" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-14 rounded-2xl bg-gray-50 text-lg font-bold border-gray-200" />
                   <Select value={productFormData.category} onValueChange={(val) => setProductFormData({...productFormData, category: val})}>
                     <SelectTrigger className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200"><SelectValue placeholder="Select Category" /></SelectTrigger>
                     <SelectContent className="bg-white">{categories?.map(cat => <SelectItem key={cat.id} value={cat.name} className="font-bold">{cat.name}</SelectItem>)}</SelectContent>
@@ -602,27 +603,27 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">Base Price</Label><Input type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-primary">Drop Price</Label><Input type="number" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-primary/20" /></div>
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">Regular Price</Label><Input type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-primary">Discount Price (Optional)</Label><Input type="number" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-primary/20" /></div>
                 </div>
 
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">Vault Inventory</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
+                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">Stock Quantity</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
 
                 {/* Apparel Specific Section */}
-                {['apparel', 'clothing', 'shirt', 'hoodie', 'bottoms', 'wear'].some(k => productFormData.category.toLowerCase().includes(k)) && (
+                {['apparel', 'clothing', 'shirt', 'hoodie', 'bottoms', 'wear', 'clothes'].some(k => productFormData.category.toLowerCase().includes(k)) && (
                   <div className="space-y-6 p-6 rounded-[2rem] bg-primary/5 border border-primary/10 animate-fade-in">
-                    <h4 className="text-xs font-black uppercase text-primary flex items-center gap-2"><Layers className="w-4 h-4" /> Apparel Protocols</h4>
+                    <h4 className="text-xs font-black uppercase text-primary flex items-center gap-2"><Layers className="w-4 h-4" /> Clothing Details</h4>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Available Sizes (Comma separated)</Label>
+                      <Label className="text-[10px] font-black uppercase text-gray-500">Available Sizes (Separate with commas, e.g. S, M, L, XL)</Label>
                       <Input placeholder="S, M, L, XL" value={productFormData.sizes} onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})} className="h-12 rounded-xl bg-white font-bold" />
                     </div>
                     <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Size Chart Visual</Label>
+                      <Label className="text-[10px] font-black uppercase text-gray-500">Size Chart Photo</Label>
                       <div className="flex gap-4 items-center">
                         <div className="relative w-16 h-16 rounded-xl bg-white overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                           {productFormData.sizeChartUrl ? <Image src={productFormData.sizeChartUrl} alt="Chart" fill className="object-cover" /> : <TableIcon className="w-6 h-6 text-gray-300" />}
                         </div>
-                        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => sizeChartInputRef.current?.click()}>{productFormData.sizeChartUrl ? 'Change Chart' : 'Upload Chart'}</Button>
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => sizeChartInputRef.current?.click()}>{productFormData.sizeChartUrl ? 'Change Photo' : 'Upload Size Chart'}</Button>
                         <input type="file" ref={sizeChartInputRef} className="hidden" accept="image/*" onChange={handleSizeChartUpload} />
                       </div>
                     </div>
@@ -632,9 +633,9 @@ export default function AdminDashboard() {
 
               <div className="space-y-8">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-4 h-4" /> Visual Identity</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Camera className="w-4 h-4" /> Product Images</Label>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Hero Artifact Image</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Main Product Photo</p>
                     <div className="relative aspect-video rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary/50 transition-all bg-gray-50 flex flex-col items-center justify-center text-gray-400" onClick={() => fileInputRef.current?.click()}>
                       {productFormData.imageUrl ? <Image src={productFormData.imageUrl} alt="Hero" fill className="object-cover" /> : isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10" />}
                     </div>
@@ -643,8 +644,8 @@ export default function AdminDashboard() {
 
                   <div className="space-y-4 pt-4">
                     <div className="flex justify-between items-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Secondary Perspectives ({productFormData.images.length})</p>
-                      <Button variant="ghost" size="sm" className="text-[10px] h-8 font-black uppercase" onClick={() => secondaryImagesInputRef.current?.click()}>Add More</Button>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">More Photos ({productFormData.images.length})</p>
+                      <Button variant="ghost" size="sm" className="text-[10px] h-8 font-black uppercase" onClick={() => secondaryImagesInputRef.current?.click()}>Add Photos</Button>
                       <input type="file" ref={secondaryImagesInputRef} className="hidden" accept="image/*" multiple onChange={handleSecondaryImageUpload} />
                     </div>
                     <div className="grid grid-cols-4 gap-3">
@@ -662,19 +663,19 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-6">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Narrative & Technicals</Label>
-              <Textarea value={productFormData.description} placeholder="Describe the energy and performance of this artifact..." onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-[2rem] bg-gray-50 min-h-[160px] p-8 text-lg leading-relaxed border-gray-200" />
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Description & Details</Label>
+              <Textarea value={productFormData.description} placeholder="Write a clear description for this product..." onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-[2rem] bg-gray-50 min-h-[160px] p-8 text-lg leading-relaxed border-gray-200" />
               
               <div className="space-y-4 pt-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Technical Specifications</p>
-                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 font-bold" onClick={addSpecification}><ListPlus className="w-4 h-4" /> Add Logic</Button>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Extra Details (Features)</p>
+                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 font-bold" onClick={addSpecification}><ListPlus className="w-4 h-4" /> Add Detail</Button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {productFormData.specifications.map((spec, idx) => (
                     <div key={idx} className="flex gap-2 items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                      <Input placeholder="Key (e.g. Material)" value={spec.key} onChange={(e) => updateSpecification(idx, 'key', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
-                      <Input placeholder="Value" value={spec.value} onChange={(e) => updateSpecification(idx, 'value', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
+                      <Input placeholder="Feature (e.g. Material)" value={spec.key} onChange={(e) => updateSpecification(idx, 'key', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
+                      <Input placeholder="Value (e.g. 100% Cotton)" value={spec.value} onChange={(e) => updateSpecification(idx, 'value', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
                       <Button variant="ghost" size="icon" onClick={() => removeSpecification(idx)} className="text-destructive h-10 w-10 shrink-0"><X className="w-4 h-4" /></Button>
                     </div>
                   ))}
@@ -683,8 +684,8 @@ export default function AdminDashboard() {
             </div>
 
             <div className="pt-10 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-              <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200">ABORT</Button>
-              <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] text-white shadow-xl shadow-primary/20">{editingProduct ? 'SYNC REVISIONS' : 'RELEASE ARTIFACT'}</Button>
+              <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200">CANCEL</Button>
+              <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] text-white shadow-xl shadow-primary/20">{editingProduct ? 'UPDATE PRODUCT' : 'SAVE PRODUCT'}</Button>
             </div>
           </div>
         </DialogContent>
