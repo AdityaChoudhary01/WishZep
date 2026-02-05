@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -150,7 +149,6 @@ export default function AdminDashboard() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
-    // Removed server-side orderBy to prevent index errors in dev
     return collection(db, 'orders');
   }, [db, isConfirmedAdmin, activeTab]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
@@ -476,9 +474,14 @@ export default function AdminDashboard() {
                             <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary"><Info className="w-5 h-5" /></Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
-                            <div className="bg-primary p-8 text-white flex justify-between items-center">
-                              <div><h2 className="text-3xl font-black tracking-tighter">FULFILLMENT LOG</h2><p className="text-xs font-bold opacity-80 uppercase tracking-widest mt-1">ID: {order.id}</p></div>
-                              <div className="text-right"><p className="text-xs font-bold uppercase opacity-80 mb-1">Status</p><Badge className="bg-white text-primary font-black uppercase px-4 py-1.5 rounded-full border-none">{order.status?.toUpperCase() || 'PENDING'}</Badge></div>
+                            <div className="bg-primary p-8 text-white">
+                              <DialogHeader>
+                                <DialogTitle className="text-3xl font-black tracking-tighter uppercase">FULFILLMENT LOG</DialogTitle>
+                              </DialogHeader>
+                              <div className="flex justify-between items-center mt-2">
+                                <div><p className="text-xs font-bold opacity-80 uppercase tracking-widest">ID: {order.id}</p></div>
+                                <div className="text-right"><p className="text-xs font-bold uppercase opacity-80 mb-1">Status</p><Badge className="bg-white text-primary font-black uppercase px-4 py-1.5 rounded-full border-none">{order.status?.toUpperCase() || 'PENDING'}</Badge></div>
+                              </div>
                             </div>
                             <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
                               <div className="grid md:grid-cols-2 gap-10">
@@ -539,8 +542,10 @@ export default function AdminDashboard() {
 
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
         <DialogContent className="max-w-4xl rounded-[2rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-2xl">
-          <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8 flex justify-between items-center">
-            <h2 className="text-3xl font-black text-gray-900">{editingProduct ? 'EDIT ARTIFACT' : 'NEW ARTIFACT'}</h2>
+          <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-black text-gray-900 uppercase">{editingProduct ? 'EDIT ARTIFACT' : 'NEW ARTIFACT'}</DialogTitle>
+            </DialogHeader>
           </div>
           <div className="p-8 space-y-10">
             <div className="grid lg:grid-cols-2 gap-10">
