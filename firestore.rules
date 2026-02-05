@@ -62,6 +62,10 @@ service cloud.firestore {
         allow create: if isOwner(userId);
         allow update, delete: if isOwner(userId) || isAdmin();
       }
+
+      match /payment_methods/{methodId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     /**

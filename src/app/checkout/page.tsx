@@ -2,7 +2,7 @@
 "use client";
 
 import { useCartStore } from '@/lib/store';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useState, useEffect } from 'react';
 import { 
   CreditCard, 
@@ -15,19 +15,25 @@ import {
   Hash, 
   ShieldCheck, 
   Phone, 
-  PhoneCall 
+  PhoneCall,
+  Plus,
+  Zap,
+  CheckCircle2,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
@@ -39,6 +45,9 @@ export default function CheckoutPage() {
   const total = getTotal();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentType, setPaymentType] = useState<'saved' | 'card' | 'upi'>('card');
+  const [selectedSavedMethod, setSelectedSavedMethod] = useState<string>('');
+  
   const [shipping, setShipping] = useState({
     fullName: '',
     contactNumber: '',
@@ -48,9 +57,28 @@ export default function CheckoutPage() {
     zip: ''
   });
 
+  const [paymentDetails, setPaymentDetails] = useState({
+    cardNumber: '',
+    expiry: '',
+    cvv: '',
+    upiId: ''
+  });
+
+  // Fetch saved payment methods
+  const savedMethodsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'payment_methods'));
+  }, [db, user]);
+
+  const { data: savedMethods, isLoading: loadingMethods } = useCollection(savedMethodsQuery);
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (savedMethods && savedMethods.length > 0) {
+      setPaymentType('saved');
+      setSelectedSavedMethod(savedMethods[0].id);
+    }
+  }, [savedMethods]);
 
   const handlePlaceOrder = () => {
     if (!user || !db) {
@@ -64,30 +92,41 @@ export default function CheckoutPage() {
       return;
     }
 
+    let finalPaymentMethod = '';
+    if (paymentType === 'saved') {
+      const method = savedMethods?.find(m => m.id === selectedSavedMethod);
+      finalPaymentMethod = method ? `${method.type.toUpperCase()}: ${method.label}` : 'Saved Method';
+    } else if (paymentType === 'card') {
+      if (!paymentDetails.cardNumber || !paymentDetails.expiry) {
+        toast({ title: "Payment Info Required", variant: "destructive" });
+        return;
+      }
+      finalPaymentMethod = `CARD: •••• ${paymentDetails.cardNumber.slice(-4)}`;
+    } else {
+      if (!paymentDetails.upiId) {
+        toast({ title: "UPI ID Required", variant: "destructive" });
+        return;
+      }
+      finalPaymentMethod = `UPI: ${paymentDetails.upiId}`;
+    }
+
     setIsProcessing(true);
 
     const orderRef = doc(collection(db, 'orders'));
     
-    // Save order root details
+    // Save order
     setDocumentNonBlocking(orderRef, {
       userId: user.uid,
       orderDate: new Date().toISOString(),
       totalAmount: total,
       status: 'pending',
-      shippingDetails: {
-        fullName: shipping.fullName,
-        contactNumber: shipping.contactNumber,
-        secondaryContact: shipping.secondaryContact,
-        address: shipping.address,
-        city: shipping.city,
-        zip: shipping.zip
-      },
+      shippingDetails: { ...shipping },
       shippingAddress: `${shipping.address}, ${shipping.city} - ${shipping.zip}`,
-      paymentMethod: 'Credit Card',
+      paymentMethod: finalPaymentMethod,
       createdAt: serverTimestamp()
     }, { merge: true });
 
-    // Save individual items into subcollection
+    // Save items
     items.forEach(item => {
       const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
       setDocumentNonBlocking(itemRef, {
@@ -99,6 +138,18 @@ export default function CheckoutPage() {
         image: item.image
       }, { merge: true });
     });
+
+    // Save payment method for future use if it's new
+    if (paymentType !== 'saved') {
+      const methodId = paymentType === 'card' ? `card-${paymentDetails.cardNumber.slice(-4)}` : `upi-${paymentDetails.upiId.replace(/[^a-zA-Z0-9]/g, '')}`;
+      const methodRef = doc(db, 'users', user.uid, 'payment_methods', methodId);
+      setDocumentNonBlocking(methodRef, {
+        id: methodId,
+        type: paymentType,
+        label: paymentType === 'card' ? `•••• ${paymentDetails.cardNumber.slice(-4)}` : paymentDetails.upiId,
+        lastUsed: serverTimestamp()
+      }, { merge: true });
+    }
     
     toast({ title: "Order Placed! ✨", description: "Your artifacts are being prepared for dispatch." });
     clearCart();
@@ -110,17 +161,6 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return <div className="p-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest">Preparing checkout...</div>;
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="p-20 text-center space-y-6">
-        <h2 className="text-3xl font-black">Your bag is empty.</h2>
-        <Button asChild className="rounded-full">
-          <Link href="/products">Go Shopping</Link>
-        </Button>
-      </div>
-    );
   }
 
   return (
@@ -222,7 +262,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <section className="space-y-6 bg-white p-8 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-2xl">
+          <section className="space-y-8 bg-white p-8 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-2xl">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary shadow-lg">
                 <CreditCard className="w-6 h-6" />
@@ -232,17 +272,112 @@ export default function CheckoutPage() {
                 <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Financial Interface</p>
               </div>
             </div>
-            
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 flex justify-between items-center group cursor-pointer hover:bg-white hover:border-primary/30 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-8 bg-black rounded flex items-center justify-center text-white text-[10px] font-black shadow-lg">VISA</div>
-                <div className="space-y-0.5">
-                  <span className="font-black text-sm block text-gray-900">•••• •••• •••• 4242</span>
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase">Exp: 12/26</span>
+
+            <RadioGroup value={paymentType} onValueChange={(v: any) => setPaymentType(v)} className="space-y-4">
+              {savedMethods && savedMethods.length > 0 && (
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Saved Methods</Label>
+                  {savedMethods.map((method) => (
+                    <div 
+                      key={method.id} 
+                      onClick={() => { setPaymentType('saved'); setSelectedSavedMethod(method.id); }}
+                      className={cn(
+                        "flex items-center justify-between p-6 rounded-2xl border transition-all cursor-pointer",
+                        paymentType === 'saved' && selectedSavedMethod === method.id ? "bg-primary/5 border-primary shadow-lg" : "bg-gray-50 border-gray-100 hover:bg-white"
+                      )}
+                    >
+                      <div className="flex items-center gap-4">
+                        <RadioGroupItem value="saved" id={method.id} checked={paymentType === 'saved' && selectedSavedMethod === method.id} className="hidden" />
+                        <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                          {method.type === 'card' ? <CreditCard className="w-6 h-6 text-primary" /> : <Wallet className="w-6 h-6 text-secondary" />}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-black text-sm text-gray-900">{method.label}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{method.type}</p>
+                        </div>
+                      </div>
+                      {paymentType === 'saved' && selectedSavedMethod === method.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                    </div>
+                  ))}
                 </div>
+              )}
+
+              <div className="space-y-4 pt-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">New Payment Method</Label>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setPaymentType('card')}
+                    className={cn(
+                      "p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all",
+                      paymentType === 'card' ? "bg-primary text-white border-primary shadow-xl shadow-primary/20" : "bg-white border-gray-100 text-gray-400 hover:border-primary/30"
+                    )}
+                  >
+                    <CreditCard className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Card Details</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentType('upi')}
+                    className={cn(
+                      "p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all",
+                      paymentType === 'upi' ? "bg-secondary text-white border-secondary shadow-xl shadow-secondary/20" : "bg-white border-gray-100 text-gray-400 hover:border-secondary/30"
+                    )}
+                  >
+                    <Zap className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">UPI ID</span>
+                  </button>
+                </div>
+
+                {paymentType === 'card' && (
+                  <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest">Card Number</Label>
+                      <Input 
+                        placeholder="0000 0000 0000 0000" 
+                        value={paymentDetails.cardNumber}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})}
+                        className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest">Expiry</Label>
+                        <Input 
+                          placeholder="MM/YY" 
+                          value={paymentDetails.expiry}
+                          onChange={(e) => setPaymentDetails({...paymentDetails, expiry: e.target.value})}
+                          className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest">CVV</Label>
+                        <Input 
+                          type="password" 
+                          placeholder="•••" 
+                          value={paymentDetails.cvv}
+                          onChange={(e) => setPaymentDetails({...paymentDetails, cvv: e.target.value})}
+                          className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {paymentType === 'upi' && (
+                  <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest">UPI Virtual Address</Label>
+                      <Input 
+                        placeholder="yourname@bank" 
+                        value={paymentDetails.upiId}
+                        onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})}
+                        className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <Badge variant="secondary" className="bg-primary/20 text-primary border-none text-[9px] font-black uppercase tracking-widest">Active</Badge>
-            </div>
+            </RadioGroup>
 
             <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-4">
               <ShieldCheck className="w-4 h-4 text-green-500" /> Fully Encrypted Transmission
@@ -306,3 +441,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
