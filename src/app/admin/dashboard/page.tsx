@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Package, 
   Plus, 
@@ -28,7 +29,8 @@ import {
   CreditCard,
   ChevronRight,
   ChevronLeft,
-  Table as TableIcon
+  Table as TableIcon,
+  ShieldAlert
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +44,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,15 +51,8 @@ import Image from 'next/image';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
@@ -96,10 +90,9 @@ function AdminOrderItemsList({ orderId }: { orderId: string }) {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('products');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isConfirmedAdmin, setIsConfirmedAdmin] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -131,28 +124,31 @@ export default function AdminDashboard() {
   }, [db, user]);
 
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
-  const isUserAdmin = !!adminRole && !adminLoading;
+  const isUserAdmin = !!adminRole;
 
+  // Protect the route
   useEffect(() => {
-    if (isUserAdmin) setIsConfirmedAdmin(true);
-  }, [isUserAdmin]);
+    if (!isUserLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const productsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !isUserAdmin) return null;
     return query(collection(db, 'products'), orderBy('name', 'asc'));
-  }, [db]);
+  }, [db, isUserAdmin]);
   const { data: products } = useCollection(productsQuery);
 
   const categoriesQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !isUserAdmin) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
-  }, [db]);
+  }, [db, isUserAdmin]);
   const { data: categories } = useCollection(categoriesQuery);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
+    if (!db || !isUserAdmin || activeTab !== 'orders') return null;
     return collection(db, 'orders');
-  }, [db, isConfirmedAdmin, activeTab]);
+  }, [db, isUserAdmin, activeTab]);
   const { data: rawOrders } = useCollection(ordersQuery);
 
   const sortedOrders = useMemo(() => {
@@ -232,7 +228,7 @@ export default function AdminDashboard() {
       if (s.key.trim()) specsObject[s.key.trim()] = s.value;
     });
 
-    const isApparel = ['apparel', 'clothing', 'clothes', 'shirt', 'hoodie', 'bottoms', 'wear', 't-shirt', 'jacket'].some(k => productFormData.category.toLowerCase().includes(k));
+    const isApparel = ['clothes', 'clothing', 'apparel', 'shirt', 'hoodie', 'bottoms', 'wear', 't-shirt', 'jacket'].some(k => productFormData.category.toLowerCase().includes(k));
 
     const productData = {
       name: productFormData.name,
@@ -355,21 +351,33 @@ export default function AdminDashboard() {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-12 h-12 text-primary animate-spin" /></div>;
   }
 
+  if (!isUserAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center space-y-6">
+        <div className="w-24 h-24 bg-destructive/10 rounded-full flex items-center justify-center text-destructive">
+          <ShieldAlert className="w-12 h-12" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black uppercase">Access Denied</h1>
+          <p className="text-muted-foreground max-w-md">This area is reserved for authenticated administrators. Your current credentials do not have the required permissions.</p>
+        </div>
+        <Button onClick={() => router.push('/')} variant="outline" className="rounded-full px-8 h-12">Return Home</Button>
+      </div>
+    );
+  }
+
   const SidebarContent = () => (
     <nav className="space-y-4">
       <div className="space-y-1">
         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 mb-2">Management</p>
         {[
           { id: 'products', label: 'All Items', icon: Package },
-          { id: 'categories', label: 'Categories', icon: Tags },
+          { id: 'categories', label: 'Product Groups', icon: Tags },
           { id: 'orders', label: 'Customer Orders', icon: ShoppingBag },
         ].map((link) => (
           <button 
             key={link.id}
-            onClick={() => {
-              setActiveTab(link.id);
-              setIsMobileMenuOpen(false);
-            }}
+            onClick={() => setActiveTab(link.id)}
             className={cn(
               "w-full flex items-center gap-3 rounded-xl h-12 px-4 transition-all text-sm font-bold",
               activeTab === link.id ? "bg-primary text-white shadow-lg" : "hover:bg-primary/5 text-gray-600"
@@ -393,14 +401,6 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden bg-background">
-        {!isUserAdmin && !adminLoading && (
-          <Alert variant="destructive" className="rounded-[2rem] border-destructive/20 bg-destructive/5">
-            <AlertCircle className="h-5 w-5" />
-            <AlertTitle>No Access</AlertTitle>
-            <AlertDescription>You do not have permission to view this page.</AlertDescription>
-          </Alert>
-        )}
-
         {activeTab === 'products' && (
           <div className="space-y-6 animate-fade-in">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -418,7 +418,7 @@ export default function AdminDashboard() {
                 <TableHeader className="bg-gray-50/50">
                   <TableRow>
                     <TableHead className="font-black px-6">Item Name</TableHead>
-                    <TableHead className="font-black">Category</TableHead>
+                    <TableHead className="font-black">Group</TableHead>
                     <TableHead className="font-black">In Stock</TableHead>
                     <TableHead className="font-black">Price</TableHead>
                     <TableHead className="text-right font-black px-6">Options</TableHead>
@@ -517,7 +517,7 @@ export default function AdminDashboard() {
                           <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
                             <div className="bg-primary p-8 text-white">
                               <DialogHeader>
-                                <DialogTitle className="text-3xl font-black uppercase">Order Full Details</DialogTitle>
+                                <DialogTitle className="text-3xl font-black uppercase">Fulfillment Log</DialogTitle>
                               </DialogHeader>
                               <div className="flex justify-between items-center mt-2">
                                 <div><p className="text-xs font-bold opacity-80 uppercase">ID: {order.id}</p></div>
@@ -528,12 +528,12 @@ export default function AdminDashboard() {
                               <div className="grid md:grid-cols-2 gap-10">
                                 <div className="space-y-6">
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase text-primary">Customer Contact Info</h4>
+                                    <h4 className="text-[10px] font-black uppercase text-primary">Contact Info</h4>
                                     <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-3">
                                       <div><p className="text-[9px] font-bold text-muted-foreground">Full Name</p><p className="font-black">{order.shippingDetails?.fullName}</p></div>
                                       <div className="grid grid-cols-2 gap-4">
-                                        <div><p className="text-[9px] font-bold text-muted-foreground">Phone Number</p><p className="font-bold text-sm text-primary">{order.shippingDetails?.contactNumber}</p></div>
-                                        <div><p className="text-[9px] font-bold text-muted-foreground">Backup Phone</p><p className="font-bold text-sm">{order.shippingDetails?.secondaryContact || 'N/A'}</p></div>
+                                        <div><p className="text-[9px] font-bold text-muted-foreground">Primary Contact</p><p className="font-bold text-sm text-primary">{order.shippingDetails?.contactNumber}</p></div>
+                                        <div><p className="text-[9px] font-bold text-muted-foreground">Backup Contact</p><p className="font-bold text-sm">{order.shippingDetails?.secondaryContact || 'None'}</p></div>
                                       </div>
                                     </div>
                                   </div>
@@ -547,7 +547,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="space-y-6">
                                   <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase text-primary">Items in Order</h4>
+                                    <h4 className="text-[10px] font-black uppercase text-primary">Ordered Items</h4>
                                     <AdminOrderItemsList orderId={order.id} />
                                   </div>
                                   <div className="space-y-4">
@@ -561,7 +561,7 @@ export default function AdminDashboard() {
                               </div>
                               <Separator className="bg-gray-100" />
                               <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase text-primary">Change Progress Status</h4>
+                                <h4 className="text-[10px] font-black uppercase text-primary">Update Status</h4>
                                 <div className="flex flex-wrap gap-4">
                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'pending')} variant="outline" className="flex-1 h-14 rounded-xl font-bold">SET PENDING</Button>
                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} variant="outline" className="flex-1 h-14 rounded-xl font-bold">SET SHIPPED</Button>
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
           <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
             <DialogHeader>
               <DialogTitle className="text-3xl font-black text-gray-900 uppercase">
-                {editingProduct ? 'Edit Product' : 'Add New Product'}
+                {editingProduct ? 'Edit Item' : 'New Product Drop'}
               </DialogTitle>
             </DialogHeader>
           </div>
@@ -595,7 +595,7 @@ export default function AdminDashboard() {
               <div className="space-y-8">
                 <div className="space-y-4">
                   <Label className="text-[10px] font-black uppercase text-primary">Basic Info</Label>
-                  <Input placeholder="Item Name (e.g. Blue Jacket)" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-14 rounded-2xl bg-gray-50 text-lg font-bold border-gray-200" />
+                  <Input placeholder="Item Name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-14 rounded-2xl bg-gray-50 text-lg font-bold border-gray-200" />
                   <Select value={productFormData.category} onValueChange={(val) => setProductFormData({...productFormData, category: val})}>
                     <SelectTrigger className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200"><SelectValue placeholder="Select Group" /></SelectTrigger>
                     <SelectContent className="bg-white">{categories?.map(cat => <SelectItem key={cat.id} value={cat.name} className="font-bold">{cat.name}</SelectItem>)}</SelectContent>
@@ -604,26 +604,25 @@ export default function AdminDashboard() {
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">Normal Price</Label><Input type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-primary">Sale Price (Optional)</Label><Input type="number" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-primary/20" /></div>
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-primary">Sale Price</Label><Input type="number" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-primary/20" /></div>
                 </div>
 
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">In Stock Count</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
+                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">In Stock</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
 
-                {/* Clothing Specific Details */}
                 {['clothes', 'clothing', 'apparel', 'shirt', 'hoodie', 'bottoms', 'wear', 't-shirt', 'jacket'].some(k => productFormData.category.toLowerCase().includes(k)) && (
                   <div className="space-y-6 p-6 rounded-[2rem] bg-primary/5 border border-primary/10 animate-fade-in">
                     <h4 className="text-xs font-black uppercase text-primary">Clothing Details</h4>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Available Sizes (e.g. S, M, L, XL)</Label>
+                      <Label className="text-[10px] font-black uppercase text-gray-500">Sizes (e.g. S, M, L)</Label>
                       <Input placeholder="S, M, L, XL" value={productFormData.sizes} onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})} className="h-12 rounded-xl bg-white font-bold" />
                     </div>
                     <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Size Guide Photo</Label>
+                      <Label className="text-[10px] font-black uppercase text-gray-500">Size Chart Photo</Label>
                       <div className="flex gap-4 items-center">
                         <div className="relative w-16 h-16 rounded-xl bg-white overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                           {productFormData.sizeChartUrl ? <Image src={productFormData.sizeChartUrl} alt="Chart" fill className="object-cover" /> : <TableIcon className="w-6 h-6 text-gray-300" />}
                         </div>
-                        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => sizeChartInputRef.current?.click()}>{productFormData.sizeChartUrl ? 'Change Photo' : 'Upload Photo'}</Button>
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => sizeChartInputRef.current?.click()}>Upload Chart</Button>
                         <input type="file" ref={sizeChartInputRef} className="hidden" accept="image/*" onChange={handleSizeChartUpload} />
                       </div>
                     </div>
@@ -633,9 +632,9 @@ export default function AdminDashboard() {
 
               <div className="space-y-8">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase text-primary">Product Photos</Label>
+                  <Label className="text-[10px] font-black uppercase text-primary">Item Photos</Label>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-muted-foreground">Main Photo</p>
+                    <p className="text-[10px] font-bold text-muted-foreground">Display Photo</p>
                     <div className="relative aspect-video rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary flex flex-col items-center justify-center text-gray-400" onClick={() => fileInputRef.current?.click()}>
                       {productFormData.imageUrl ? <Image src={productFormData.imageUrl} alt="Main" fill className="object-cover" /> : isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10" />}
                     </div>
@@ -644,8 +643,8 @@ export default function AdminDashboard() {
 
                   <div className="space-y-4 pt-4">
                     <div className="flex justify-between items-center">
-                      <p className="text-[10px] font-bold text-muted-foreground">More Photos ({productFormData.images.length})</p>
-                      <Button variant="ghost" size="sm" className="text-[10px] font-black" onClick={() => secondaryImagesInputRef.current?.click()}>Add More</Button>
+                      <p className="text-[10px] font-bold text-muted-foreground">Gallery ({productFormData.images.length})</p>
+                      <Button variant="ghost" size="sm" className="text-[10px] font-black" onClick={() => secondaryImagesInputRef.current?.click()}>Add Photos</Button>
                       <input type="file" ref={secondaryImagesInputRef} className="hidden" accept="image/*" multiple onChange={handleSecondaryImageUpload} />
                     </div>
                     <div className="grid grid-cols-4 gap-3">
@@ -664,18 +663,18 @@ export default function AdminDashboard() {
 
             <div className="space-y-6">
               <Label className="text-[10px] font-black uppercase text-primary">Item Description</Label>
-              <Textarea value={productFormData.description} placeholder="Write something about this product..." onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-[2rem] bg-gray-50 min-h-[160px] p-8 text-lg border-gray-200" />
+              <Textarea value={productFormData.description} placeholder="Describe the drop details..." onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-[2rem] bg-gray-50 min-h-[160px] p-8 text-lg border-gray-200" />
               
               <div className="space-y-4 pt-4">
                 <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-black uppercase text-gray-500">Special Features</p>
+                  <p className="text-[10px] font-black uppercase text-gray-500">Extra Features</p>
                   <Button variant="ghost" size="sm" className="rounded-xl gap-2 font-bold" onClick={addSpecification}><ListPlus className="w-4 h-4" /> Add Feature</Button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {productFormData.specifications.map((spec, idx) => (
                     <div key={idx} className="flex gap-2 items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                      <Input placeholder="e.g. Material" value={spec.key} onChange={(e) => updateSpecification(idx, 'key', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
-                      <Input placeholder="e.g. 100% Cotton" value={spec.value} onChange={(e) => updateSpecification(idx, 'value', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
+                      <Input placeholder="Feature Name" value={spec.key} onChange={(e) => updateSpecification(idx, 'key', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
+                      <Input placeholder="Detail" value={spec.value} onChange={(e) => updateSpecification(idx, 'value', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
                       <Button variant="ghost" size="icon" onClick={() => removeSpecification(idx)} className="text-destructive h-10 w-10 shrink-0"><X className="w-4 h-4" /></Button>
                     </div>
                   ))}
@@ -685,7 +684,7 @@ export default function AdminDashboard() {
 
             <div className="pt-10 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
               <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200">CANCEL</Button>
-              <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] text-white shadow-xl shadow-primary/20">{editingProduct ? 'UPDATE ITEM' : 'SAVE ITEM'}</Button>
+              <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] text-white shadow-xl shadow-primary/20">{editingProduct ? 'UPDATE DROP' : 'RELEASE DROP'}</Button>
             </div>
           </div>
         </DialogContent>
