@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
-import { collection, orderBy, query, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
 import { 
   Package, 
   History, 
@@ -28,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -43,7 +44,7 @@ function OrderItemsList({ orderId }: { orderId: string }) {
     return query(collection(db, 'orders', orderId, 'order_items'));
   }, [db, orderId]);
 
-  const { data: items, isLoading } = useCollection(itemsQuery, true);
+  const { data: items, isLoading } = useCollection(itemsQuery);
 
   if (isLoading) return <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
@@ -106,14 +107,24 @@ export default function ProfilePage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // Removed server-side orderBy to prevent index errors in dev/test
     return query(
       collection(db, 'orders'), 
-      where('userId', '==', user.uid),
-      orderBy('orderDate', 'desc')
+      where('userId', '==', user.uid)
     );
   }, [db, user]);
 
-  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery, true);
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
+
+  // Client-side sorting for robust development experience
+  const sortedOrders = useMemo(() => {
+    if (!orders) return [];
+    return [...orders].sort((a, b) => {
+      const dateA = new Date(a.orderDate).getTime();
+      const dateB = new Date(b.orderDate).getTime();
+      return dateB - dateA;
+    });
+  }, [orders]);
 
   const handleSignOut = async () => {
     try {
@@ -219,6 +230,13 @@ export default function ProfilePage() {
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
             <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing Registry...</div>
+          ) : ordersError ? (
+            <div className="bg-white border border-gray-100 rounded-[2rem] p-12 text-center space-y-4">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+              <h3 className="text-xl font-bold">Registry Sync Error</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">We encountered an issue while fetching your history. Please ensure your signal is strong and try again.</p>
+              <Button variant="outline" onClick={() => window.location.reload()}>Retry Sync</Button>
+            </div>
           ) : !orders || orders.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
               <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -232,7 +250,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="grid gap-6">
-              {orders.map((order) => (
+              {sortedOrders.map((order) => (
                 <div key={order.id} className="bg-white border border-gray-100 rounded-3xl p-8 flex flex-col md:flex-row justify-between items-center gap-8 shadow-sm transition-all hover:shadow-md group">
                   <div className="flex items-center gap-8 w-full md:w-auto">
                     <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:rotate-6 transition-transform flex-shrink-0">
@@ -295,7 +313,7 @@ export default function ProfilePage() {
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Summary</h4>
                                 <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><CreditCard className="w-3.5 h-3.5" /> Gateway</div>
-                                  <p className="text-sm font-bold">{order.paymentMethod || 'Credit Card Interface'}</p>
+                                  <p className="text-sm font-bold">{order.paymentMethod || 'Razorpay Interface'}</p>
                                   <div className="flex justify-between items-center pt-2">
                                     <span className="text-xs font-bold text-muted-foreground uppercase">Logistics</span>
                                     <span className="text-xs font-bold text-green-600">FREE</span>
@@ -325,7 +343,7 @@ export default function ProfilePage() {
                             <div className="absolute left-[27px] top-4 bottom-4 w-1 bg-gray-100" />
                             
                             <div className="flex gap-6 relative z-10">
-                              <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", order.status ? "bg-primary text-white" : "bg-gray-100 text-gray-300")}>
+                              <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", "bg-primary text-white")}>
                                 <CheckCircle2 className="w-7 h-7" />
                               </div>
                               <div className="flex-1 pt-1">
@@ -340,7 +358,7 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-lg">In Transit</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'pending' ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
+                                <p className="text-sm text-muted-foreground">{order.status === 'pending' || !order.status ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
                               </div>
                             </div>
 

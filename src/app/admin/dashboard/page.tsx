@@ -119,8 +119,6 @@ export default function AdminDashboard() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const secondaryFileInputRef = useRef<HTMLInputElement>(null);
-  const chartFileInputRef = useRef<HTMLInputElement>(null);
 
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -131,34 +129,36 @@ export default function AdminDashboard() {
   const isUserAdmin = !!adminRole && !adminLoading;
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isUserAdmin) {
-      timer = setTimeout(() => {
-        setIsConfirmedAdmin(true);
-      }, 1500);
+      setIsConfirmedAdmin(true);
     } else {
       setIsConfirmedAdmin(false);
     }
-    return () => clearTimeout(timer);
   }, [isUserAdmin]);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    return query(collection(db, 'products'), orderBy('name', 'asc'));
   }, [db]);
-  const { data: products, isLoading: productsLoading } = useCollection(productsQuery);
+  const { data: products } = useCollection(productsQuery);
 
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
   }, [db]);
-  const { data: categories, isLoading: categoriesLoading } = useCollection(categoriesQuery);
+  const { data: categories } = useCollection(categoriesQuery);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !isConfirmedAdmin || activeTab !== 'orders') return null;
-    return query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
+    // Removed server-side orderBy to prevent index errors in dev
+    return collection(db, 'orders');
   }, [db, isConfirmedAdmin, activeTab]);
-  const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery, true);
+  const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
+
+  const sortedOrders = useMemo(() => {
+    if (!rawOrders) return [];
+    return [...rawOrders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+  }, [rawOrders]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     if (!db || !isUserAdmin) return;
@@ -261,15 +261,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'main' | 'secondary' | 'chart') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
     try {
       const url = await uploadToCloudinary(file);
-      if (target === 'main') setProductFormData(prev => ({ ...prev, imageUrl: url }));
-      else if (target === 'secondary') setProductFormData(prev => ({ ...prev, images: [...prev.images, url] }));
-      else if (target === 'chart') setProductFormData(prev => ({ ...prev, sizeChartUrl: url }));
+      setProductFormData(prev => ({ ...prev, imageUrl: url }));
       toast({ title: "Image Uploaded!" });
     } catch (error) {
       toast({ variant: "destructive", title: "Upload Failed" });
@@ -456,7 +454,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders?.map((order) => (
+                  {sortedOrders.map((order) => (
                     <TableRow key={order.id} className="h-24 hover:bg-gray-50/50">
                       <TableCell className="px-8 font-black font-mono text-[11px]">{order.id.slice(0, 10)}</TableCell>
                       <TableCell className="font-bold text-sm">{order.shippingDetails?.fullName}</TableCell>
@@ -466,7 +464,7 @@ export default function AdminDashboard() {
                           "px-4 py-1.5 rounded-full text-[9px] uppercase font-black border-none",
                           order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
                           order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                        )}>{order.status || 'PENDING'}</Badge>
+                        )}>{order.status?.toUpperCase() || 'PENDING'}</Badge>
                       </TableCell>
                       <TableCell className="text-right px-8">
                         <Dialog>
@@ -476,7 +474,7 @@ export default function AdminDashboard() {
                           <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
                             <div className="bg-primary p-8 text-white flex justify-between items-center">
                               <div><h2 className="text-3xl font-black tracking-tighter">FULFILLMENT LOG</h2><p className="text-xs font-bold opacity-80 uppercase tracking-widest mt-1">ID: {order.id}</p></div>
-                              <div className="text-right"><p className="text-xs font-bold uppercase opacity-80 mb-1">Status</p><Badge className="bg-white text-primary font-black uppercase px-4 py-1.5 rounded-full border-none">{order.status || 'PENDING'}</Badge></div>
+                              <div className="text-right"><p className="text-xs font-bold uppercase opacity-80 mb-1">Status</p><Badge className="bg-white text-primary font-black uppercase px-4 py-1.5 rounded-full border-none">{order.status?.toUpperCase() || 'PENDING'}</Badge></div>
                             </div>
                             <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
                               <div className="grid md:grid-cols-2 gap-10">
@@ -563,7 +561,7 @@ export default function AdminDashboard() {
                   <div className="relative aspect-[4/3] rounded-3xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary/50 transition-all bg-gray-50 flex flex-col items-center justify-center text-gray-400" onClick={() => fileInputRef.current?.click()}>
                     {productFormData.imageUrl ? <Image src={productFormData.imageUrl} alt="Preview" fill className="object-cover" /> : isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <ImagePlus className="w-10 h-10" />}
                   </div>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'main')} />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
               </div>
             </div>
@@ -581,4 +579,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

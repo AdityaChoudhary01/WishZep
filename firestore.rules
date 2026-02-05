@@ -64,7 +64,6 @@ service cloud.firestore {
       }
 
       match /payment_methods/{methodId} {
-        // Explicitly allow list/get for the owner to facilitate checkout
         allow get, list, create, update, delete: if isOwner(userId);
       }
     }
@@ -73,16 +72,19 @@ service cloud.firestore {
      * @path /orders/{orderId}
      */
     match /orders/{orderId} {
-      // Allow read (get/list) if user is admin OR if the order belongs to them.
-      // List operations must be filtered by userId in the query.
-      allow read: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      // Allow list if the query filters by the user's UID
+      allow list: if isSignedIn() && (isAdmin() || request.query.limit <= 100 && resource.data.userId == request.auth.uid);
+      
+      // Allow get if the user owns the order or is admin
+      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if false;
 
       match /order_items/{orderItemId} {
-        allow read: if isAdmin() || isSignedIn();
+        // Nested collection rules: items belong to the parent order
+        allow read: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
         allow create: if isSignedIn();
         allow update, delete: if isAdmin();
       }
@@ -94,7 +96,7 @@ service cloud.firestore {
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create: if false; // Security: Nobody can claim admin via code
+      allow create: if false;
       allow update, delete: if isAdmin();
     }
   }
