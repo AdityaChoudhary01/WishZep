@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCartStore } from '@/lib/store';
@@ -65,7 +66,6 @@ export default function CheckoutPage() {
       return false;
     }
 
-    // Indian Mobile Number Validation (10 digits)
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(shipping.contactNumber)) {
       toast({ 
@@ -76,7 +76,6 @@ export default function CheckoutPage() {
       return false;
     }
 
-    // Indian PIN Code Validation (6 digits)
     const pinRegex = /^\d{6}$/;
     if (!pinRegex.test(shipping.zip)) {
       toast({ 
@@ -113,7 +112,7 @@ export default function CheckoutPage() {
         amount: orderDataResult.amount,
         currency: 'INR',
         name: 'WishZep',
-        description: 'Testing Drop Payment',
+        description: 'Order Fulfillment',
         order_id: orderDataResult.orderId,
         handler: function (response: any) {
           const orderRef = doc(collection(db, 'orders'));
@@ -144,9 +143,9 @@ export default function CheckoutPage() {
             }, { merge: true });
           });
 
-          toast({ title: "Order Synchronized! ✨", description: "Payment successful. Your artifacts are being prepared." });
+          toast({ title: "Order Placed Successfully! ✨", description: "Your artifacts are being prepared for dispatch." });
           clearCart();
-          setTimeout(() => router.push('/profile'), 1500);
+          router.push('/profile');
         },
         prefill: {
           name: shipping.fullName,
@@ -200,7 +199,7 @@ export default function CheckoutPage() {
             <div className="grid gap-8 relative z-10">
               <div className="space-y-3">
                 <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                  <User className="w-3.5 h-3.5" /> Full Recipient Name
+                  <User className="w-3.5 h-3.5" /> Full Name
                 </Label>
                 <Input 
                   className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
@@ -213,7 +212,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5" /> 10-digit Mobile Number
+                    <Phone className="w-3.5 h-3.5" /> 10-digit Contact
                   </Label>
                   <Input 
                     type="tel"
@@ -265,7 +264,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" /> 6-digit PIN Code
+                    <Hash className="w-3.5 h-3.5" /> 6-digit PIN
                   </Label>
                   <Input 
                     type="text"
@@ -286,12 +285,12 @@ export default function CheckoutPage() {
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-black">Razorpay Gateway</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Instant Payment Protocol</p>
+                <h3 className="text-xl font-black">Razorpay Interface</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">Instant Secure Payment</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Upon clicking "Initiate Drop", the secure Razorpay interface will launch. You can complete the transaction using UPI, Cards, or Netbanking.
+              Complete your transaction via UPI, Cards, or Netbanking. All transmissions are encrypted under Global Security Protocols.
             </p>
           </section>
         </div>
@@ -305,14 +304,14 @@ export default function CheckoutPage() {
             <div className="space-y-6 relative z-10">
               <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4 scrollbar-hide">
                 {items.map(item => (
-                  <div key={`${item.id}-${item.selectedSize}`} className="flex justify-between items-center gap-4 group">
+                  <div key={item.id} className="flex justify-between items-center gap-4 group">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden relative border border-gray-100">
                         <Image src={item.image} alt={item.name} fill className="object-cover" />
                       </div>
                       <div className="space-y-0.5">
                         <p className="font-black text-sm group-hover:text-primary transition-colors text-gray-900">{item.name}</p>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{item.quantity}x • {item.selectedSize || 'Standard'}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{item.quantity}x • Rs.{item.price.toLocaleString()}</p>
                       </div>
                     </div>
                     <span className="font-black text-sm text-gray-900">Rs.{(item.price * item.quantity).toLocaleString()}</span>
@@ -341,7 +340,7 @@ export default function CheckoutPage() {
 
             <Button 
               onClick={handlePlaceOrder}
-              disabled={isProcessing || !shipping.address || !shipping.fullName || !shipping.contactNumber}
+              disabled={isProcessing}
               className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10"
             >
               {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Transmitting...</> : <>Initiate Drop <ArrowRight className="w-8 h-8" /></>}
@@ -356,3 +355,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
