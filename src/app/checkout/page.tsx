@@ -1,11 +1,9 @@
-
 "use client";
 
 import { useCartStore } from '@/lib/store';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useState, useEffect } from 'react';
 import { 
-  CreditCard, 
   Truck, 
   ArrowRight, 
   Loader2, 
@@ -16,10 +14,8 @@ import {
   ShieldCheck, 
   Phone, 
   PhoneCall,
-  Zap,
-  CheckCircle2,
-  Wallet,
-  IndianRupee
+  IndianRupee,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,14 +74,12 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // 1. Create Order on Server
       const orderDataResult = await createRazorpayOrder(total);
 
       if (!orderDataResult.success || !orderDataResult.orderId) {
         throw new Error(orderDataResult.error || 'Failed to initiate payment.');
       }
 
-      // 2. Configure Razorpay Options
       const options = {
         key: 'rzp_test_SCOa15nvOPerXF',
         amount: orderDataResult.amount,
@@ -94,7 +88,6 @@ export default function CheckoutPage() {
         description: 'Testing Drop Payment',
         order_id: orderDataResult.orderId,
         handler: function (response: any) {
-          // 3. Payment Success Callback
           const orderRef = doc(collection(db, 'orders'));
           const orderPayload = {
             userId: user.uid,
@@ -111,7 +104,6 @@ export default function CheckoutPage() {
 
           setDocumentNonBlocking(orderRef, orderPayload, { merge: true });
 
-          // Save items with images
           items.forEach(item => {
             const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
             setDocumentNonBlocking(itemRef, {

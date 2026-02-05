@@ -1,4 +1,3 @@
-
 'use server';
 
 import Razorpay from 'razorpay';
@@ -8,6 +7,7 @@ import Razorpay from 'razorpay';
  * Using provided test keys for the testing version.
  */
 export async function createRazorpayOrder(amount: number) {
+  // CRITICAL: Ensure these keys match the provided testing credentials
   const instance = new Razorpay({
     key_id: 'rzp_test_SCOa15nvOPerXF',
     key_secret: 'FA6S0DPc3ZbOM6PxE700puj5',

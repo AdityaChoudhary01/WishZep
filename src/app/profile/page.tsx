@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
@@ -7,7 +6,6 @@ import {
   Package, 
   History, 
   LogOut, 
-  ChevronRight, 
   Camera, 
   Loader2, 
   Edit3, 
@@ -16,7 +14,6 @@ import {
   Truck, 
   MapPin, 
   Calendar, 
-  Clock,
   ShoppingBag,
   CreditCard,
   Info,
@@ -224,13 +221,13 @@ export default function ProfilePage() {
             <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing Registry...</div>
           ) : !orders || orders.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
-              <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-10 h-10 text-primary/40" />
+              <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShoppingBag className="w-12 h-12 text-primary/30" />
               </div>
-              <h3 className="text-2xl font-black">No artifacts secured yet.</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">Your collection is waiting to be built. Explore our latest frequencies.</p>
-              <Link href="/products" className="inline-block">
-                <Button className="rounded-full bg-primary h-14 px-10 text-lg font-bold shadow-xl shadow-primary/20">Start Shopping</Button>
+              <h3 className="text-3xl font-black">Your vault is empty.</h3>
+              <p className="text-muted-foreground text-lg max-w-sm mx-auto">It's time to secure your first artifact. Explore the latest drops now.</p>
+              <Link href="/products" className="inline-block pt-4">
+                <Button className="rounded-full bg-primary h-16 px-12 text-xl font-bold shadow-2xl shadow-primary/30 hover:scale-105 transition-transform">Explore Catalogue</Button>
               </Link>
             </div>
           ) : (
