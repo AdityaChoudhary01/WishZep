@@ -2,7 +2,7 @@
 "use client";
 
 import { useCartStore } from '@/lib/store';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useState, useEffect } from 'react';
 import { 
   CreditCard, 
@@ -18,19 +18,26 @@ import {
   PhoneCall,
   Zap,
   CheckCircle2,
-  Wallet
+  Wallet,
+  IndianRupee
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, doc, serverTimestamp, query } from 'firebase/firestore';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { createRazorpayOrder } from '@/app/actions/payments';
+import Script from 'next/script';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
@@ -42,8 +49,6 @@ export default function CheckoutPage() {
   const total = getTotal();
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentType, setPaymentType] = useState<'saved' | 'card' | 'upi'>('card');
-  const [selectedSavedMethod, setSelectedSavedMethod] = useState<string>('');
   
   const [shipping, setShipping] = useState({
     fullName: '',
@@ -54,33 +59,11 @@ export default function CheckoutPage() {
     zip: ''
   });
 
-  const [paymentDetails, setPaymentDetails] = useState({
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
-    upiId: ''
-  });
-
-  // Fetch saved payment methods
-  const savedMethodsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'payment_methods'));
-  }, [db, user]);
-
-  const { data: savedMethods, isLoading: loadingMethods } = useCollection(savedMethodsQuery, true);
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (savedMethods && savedMethods.length > 0) {
-      setPaymentType('saved');
-      setSelectedSavedMethod(savedMethods[0].id);
-    }
-  }, [savedMethods]);
-
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!user || !db) {
       toast({ title: "Authentication Required", description: "Please sign in to place your order.", variant: "destructive" });
       router.push('/auth/login');
@@ -92,73 +75,81 @@ export default function CheckoutPage() {
       return;
     }
 
-    let finalPaymentMethod = '';
-    if (paymentType === 'saved') {
-      const method = savedMethods?.find(m => m.id === selectedSavedMethod);
-      finalPaymentMethod = method ? `${method.type.toUpperCase()}: ${method.label}` : 'Saved Method';
-    } else if (paymentType === 'card') {
-      if (!paymentDetails.cardNumber || !paymentDetails.expiry) {
-        toast({ title: "Payment Details Missing", variant: "destructive" });
-        return;
-      }
-      finalPaymentMethod = `CARD: •••• ${paymentDetails.cardNumber.slice(-4)}`;
-    } else {
-      if (!paymentDetails.upiId) {
-        toast({ title: "UPI Identification Required", variant: "destructive" });
-        return;
-      }
-      finalPaymentMethod = `UPI: ${paymentDetails.upiId}`;
-    }
-
     setIsProcessing(true);
 
-    const orderRef = doc(collection(db, 'orders'));
-    
-    // Construct order
-    const orderData = {
-      userId: user.uid,
-      orderDate: new Date().toISOString(),
-      totalAmount: total,
-      status: 'pending',
-      shippingDetails: { ...shipping },
-      shippingAddress: `${shipping.address}, ${shipping.city} - ${shipping.zip}`,
-      paymentMethod: finalPaymentMethod,
-      createdAt: serverTimestamp()
-    };
+    try {
+      // 1. Create Order on Server
+      const orderDataResult = await createRazorpayOrder(total);
 
-    setDocumentNonBlocking(orderRef, orderData, { merge: true });
+      if (!orderDataResult.success || !orderDataResult.orderId) {
+        throw new Error(orderDataResult.error || 'Failed to initiate payment.');
+      }
 
-    // Save items with images for history
-    items.forEach(item => {
-      const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
-      setDocumentNonBlocking(itemRef, {
-        orderId: orderRef.id,
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.price,
-        name: item.name,
-        image: item.image
-      }, { merge: true });
-    });
+      // 2. Configure Razorpay Options
+      const options = {
+        key: 'rzp_test_SCOa15nvOPerXF',
+        amount: orderDataResult.amount,
+        currency: 'INR',
+        name: 'WishZep',
+        description: 'Testing Drop Payment',
+        order_id: orderDataResult.orderId,
+        handler: function (response: any) {
+          // 3. Payment Success Callback
+          const orderRef = doc(collection(db, 'orders'));
+          const orderPayload = {
+            userId: user.uid,
+            orderDate: new Date().toISOString(),
+            totalAmount: total,
+            status: 'pending',
+            shippingDetails: { ...shipping },
+            shippingAddress: `${shipping.address}, ${shipping.city} - ${shipping.zip}`,
+            paymentMethod: 'Razorpay',
+            paymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            createdAt: serverTimestamp()
+          };
 
-    // Save payment method for future use
-    if (paymentType !== 'saved') {
-      const methodId = paymentType === 'card' ? `card-${paymentDetails.cardNumber.slice(-4)}` : `upi-${paymentDetails.upiId.replace(/[^a-zA-Z0-9]/g, '')}`;
-      const methodRef = doc(db, 'users', user.uid, 'payment_methods', methodId);
-      setDocumentNonBlocking(methodRef, {
-        id: methodId,
-        type: paymentType,
-        label: paymentType === 'card' ? `•••• ${paymentDetails.cardNumber.slice(-4)}` : paymentDetails.upiId,
-        lastUsed: serverTimestamp()
-      }, { merge: true });
+          setDocumentNonBlocking(orderRef, orderPayload, { merge: true });
+
+          // Save items with images
+          items.forEach(item => {
+            const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
+            setDocumentNonBlocking(itemRef, {
+              orderId: orderRef.id,
+              productId: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              name: item.name,
+              image: item.image
+            }, { merge: true });
+          });
+
+          toast({ title: "Order Synchronized! ✨", description: "Payment successful. Your artifacts are being prepared." });
+          clearCart();
+          setTimeout(() => router.push('/profile'), 1500);
+        },
+        prefill: {
+          name: shipping.fullName,
+          email: user.email,
+          contact: shipping.contactNumber,
+        },
+        theme: {
+          color: "#BE29EC",
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error: any) {
+      toast({ title: "Payment Error", description: error.message, variant: "destructive" });
+      setIsProcessing(false);
     }
-    
-    toast({ title: "Order Synchronized! ✨", description: "Your artifacts are being prepared for dispatch." });
-    clearCart();
-    
-    setTimeout(() => {
-      router.push('/profile');
-    }, 1500);
   };
 
   if (!mounted) {
@@ -167,7 +158,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-6 py-12">
-      <h1 className="text-5xl font-black mb-12">FINAL <span className="wishzep-text">CHECKOUT</span></h1>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      
+      <h1 className="text-5xl font-black mb-12">SECURE <span className="wishzep-text">CHECKOUT</span></h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div className="space-y-10">
@@ -264,126 +257,19 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <section className="space-y-8 bg-white p-8 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-2xl">
+          <section className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary shadow-lg">
-                <CreditCard className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+                <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-gray-900">Payment Gateway</h2>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Financial Interface</p>
+                <h3 className="text-xl font-black">Razorpay Gateway</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">Instant Payment Protocol</p>
               </div>
             </div>
-
-            <RadioGroup value={paymentType} onValueChange={(v: any) => setPaymentType(v)} className="space-y-4">
-              {savedMethods && savedMethods.length > 0 && (
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Previously Used Artifacts</Label>
-                  {savedMethods.map((method) => (
-                    <div 
-                      key={method.id} 
-                      onClick={() => { setPaymentType('saved'); setSelectedSavedMethod(method.id); }}
-                      className={cn(
-                        "flex items-center justify-between p-6 rounded-2xl border transition-all cursor-pointer",
-                        paymentType === 'saved' && selectedSavedMethod === method.id ? "bg-primary/5 border-primary shadow-lg" : "bg-gray-50 border-gray-100 hover:bg-white"
-                      )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <RadioGroupItem value="saved" id={method.id} checked={paymentType === 'saved' && selectedSavedMethod === method.id} className="hidden" />
-                        <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                          {method.type === 'card' ? <CreditCard className="w-6 h-6 text-primary" /> : <Wallet className="w-6 h-6 text-secondary" />}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="font-black text-sm text-gray-900">{method.label}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{method.type}</p>
-                        </div>
-                      </div>
-                      {paymentType === 'saved' && selectedSavedMethod === method.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-4 pt-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Initiate New Frequency</Label>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => setPaymentType('card')}
-                    className={cn(
-                      "p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all",
-                      paymentType === 'card' ? "bg-primary text-white border-primary shadow-xl shadow-primary/20" : "bg-white border-gray-100 text-gray-400 hover:border-primary/30"
-                    )}
-                  >
-                    <CreditCard className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Card Interface</span>
-                  </button>
-                  <button 
-                    onClick={() => setPaymentType('upi')}
-                    className={cn(
-                      "p-6 rounded-2xl border flex flex-col items-center gap-3 transition-all",
-                      paymentType === 'upi' ? "bg-secondary text-white border-secondary shadow-xl shadow-secondary/20" : "bg-white border-gray-100 text-gray-400 hover:border-secondary/30"
-                    )}
-                  >
-                    <Zap className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">UPI Portal</span>
-                  </button>
-                </div>
-
-                {paymentType === 'card' && (
-                  <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest">Card Signature</Label>
-                      <Input 
-                        placeholder="0000 0000 0000 0000" 
-                        value={paymentDetails.cardNumber}
-                        onChange={(e) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})}
-                        className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest">Validity</Label>
-                        <Input 
-                          placeholder="MM/YY" 
-                          value={paymentDetails.expiry}
-                          onChange={(e) => setPaymentDetails({...paymentDetails, expiry: e.target.value})}
-                          className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest">Security Code</Label>
-                        <Input 
-                          type="password" 
-                          placeholder="•••" 
-                          value={paymentDetails.cvv}
-                          onChange={(e) => setPaymentDetails({...paymentDetails, cvv: e.target.value})}
-                          className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentType === 'upi' && (
-                  <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest">UPI VPA Address</Label>
-                      <Input 
-                        placeholder="username@bank" 
-                        value={paymentDetails.upiId}
-                        onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})}
-                        className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </RadioGroup>
-
-            <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-4">
-              <ShieldCheck className="w-4 h-4 text-green-500" /> Fully Encrypted Financial Tunnel
-            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Upon clicking "Initiate Drop", the secure Razorpay interface will launch. You can complete the transaction using UPI, Cards, or Netbanking.
+            </p>
           </section>
         </div>
 
@@ -435,8 +321,12 @@ export default function CheckoutPage() {
               disabled={isProcessing || !shipping.address || !shipping.fullName || !shipping.contactNumber}
               className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10"
             >
-              {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Processing...</> : <>Initiate Drop <ArrowRight className="w-8 h-8" /></>}
+              {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Transmitting...</> : <>Initiate Drop <ArrowRight className="w-8 h-8" /></>}
             </Button>
+            
+            <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-4 relative z-10">
+              <IndianRupee className="w-3 h-3" /> Secure Transaction Verified
+            </div>
           </div>
         </div>
       </div>
