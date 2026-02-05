@@ -39,9 +39,6 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 
-/**
- * Sub-component to fetch and display individual order item details within the dialog.
- */
 function OrderItemsList({ orderId }: { orderId: string }) {
   const db = useFirestore();
   const itemsQuery = useMemoFirebase(() => {
@@ -141,7 +138,7 @@ export default function ProfilePage() {
         profileImageUrl: imageUrl,
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Profile image updated! ✨" });
+      toast({ title: "Profile image updated!" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Upload failed", description: error.message });
     } finally {
@@ -157,7 +154,7 @@ export default function ProfilePage() {
         updatedAt: serverTimestamp()
       });
       setIsEditingName(false);
-      toast({ title: "Name updated! ✨" });
+      toast({ title: "Name updated!" });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to update name", description: error.message });
     }
@@ -200,12 +197,12 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <h1 className="text-4xl font-black">{profileData?.displayName || 'WishZep Member'}</h1>
+              <h1 className="text-4xl font-black">{profileData?.displayName || 'Member'}</h1>
               <p className="text-muted-foreground font-medium">{user.email}</p>
             </div>
           )}
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">Status: Verified Member</Badge>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">Verified Member</Badge>
           </div>
         </div>
         
@@ -224,14 +221,14 @@ export default function ProfilePage() {
 
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
-            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Scanning your history...</div>
+            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Scanning registry...</div>
           ) : !orders || orders.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
               <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-10 h-10 text-primary/40" />
               </div>
               <h3 className="text-2xl font-black">No orders found.</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">Start your collection by exploring our latest drops and premium gear.</p>
+              <p className="text-muted-foreground max-w-sm mx-auto">Start your collection by exploring our latest drops.</p>
               <Link href="/products" className="inline-block">
                 <Button className="rounded-full bg-primary h-14 px-10 text-lg font-bold shadow-xl shadow-primary/20">Start Shopping</Button>
               </Link>
@@ -262,7 +259,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                     <div className="text-center md:text-right mr-0 md:mr-8">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Order Value</p>
-                      <p className="text-2xl font-black wishzep-text">Rs.{order.totalAmount?.toLocaleString()}</p>
+                      <p className="text-2xl font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</p>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -283,7 +280,7 @@ export default function ProfilePage() {
                           
                           <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
                             <div className="space-y-4">
-                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Items in Package</h4>
+                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Items</h4>
                               <OrderItemsList orderId={order.id} />
                             </div>
 
@@ -291,14 +288,14 @@ export default function ProfilePage() {
 
                             <div className="grid md:grid-cols-2 gap-8">
                               <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Shipping Protocols</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Shipping</h4>
                                 <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><MapPin className="w-3.5 h-3.5" /> Destination</div>
                                   <p className="text-sm font-bold leading-relaxed">{order.shippingAddress}</p>
                                 </div>
                               </div>
                               <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Financial Signal</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Summary</h4>
                                 <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><CreditCard className="w-3.5 h-3.5" /> Gateway</div>
                                   <p className="text-sm font-bold">{order.paymentMethod || 'Credit Card'}</p>
@@ -346,7 +343,7 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-lg">In Transit</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'pending' ? 'Preparing for departure...' : 'Artifact is moving via Global Express'}</p>
+                                <p className="text-sm text-muted-foreground">{order.status === 'pending' ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
                               </div>
                             </div>
 
@@ -356,14 +353,8 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-lg">Delivered</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'delivered' ? 'Artifact received at destination' : 'Pending final arrival'}</p>
+                                <p className="text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination' : 'Pending final arrival'}</p>
                               </div>
-                            </div>
-
-                            <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/20 text-center space-y-4">
-                              <Clock className="w-8 h-8 text-primary mx-auto" />
-                              <h5 className="font-bold text-lg">Arrival Forecast</h5>
-                              <p className="text-muted-foreground text-sm">Estimated within 2-4 business days. Frequency calibration in progress.</p>
                             </div>
                           </div>
                         </DialogContent>
