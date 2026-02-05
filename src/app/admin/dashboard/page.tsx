@@ -428,7 +428,6 @@ export default function AdminDashboard() {
                       {editingProduct ? 'EDIT PRODUCT' : 'ADD NEW PRODUCT'}
                     </DialogTitle>
                   </DialogHeader>
-                  {/* Close button is automatically handled by DialogContent's X icon from shadcn */}
                 </div>
 
                 <div className="p-8 space-y-10">
@@ -613,7 +612,7 @@ export default function AdminDashboard() {
 
                   <div className="pt-8 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
                     <Button variant="outline" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1 border-gray-200 hover:bg-gray-50">DISCARD</Button>
-                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-xl">
+                    <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] gap-3 shadow-xl text-white">
                       <Save className="w-6 h-6" /> {editingProduct ? 'UPDATE PRODUCT' : 'CREATE PRODUCT'}
                     </Button>
                   </div>
@@ -646,7 +645,7 @@ export default function AdminDashboard() {
                       className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200 focus:bg-white transition-all text-gray-900"
                     />
                   </div>
-                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl">ADD CATEGORY</Button>
+                  <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black shadow-xl text-white">ADD CATEGORY</Button>
                 </div>
               </div>
 

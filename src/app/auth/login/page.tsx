@@ -84,13 +84,11 @@ export default function LoginPage() {
   }, [auth, router, toast]);
 
   const handleGoogleLogin = async () => {
-    // Avoid state changes that trigger re-renders before popup
     try {
       const provider = new GoogleAuthProvider();
-      // Ensure popup is triggered directly by user interaction
+      // Directly call signInWithPopup without state changes beforehand to avoid re-renders
       const result = await signInWithPopup(auth, provider);
       
-      // Clear error only after successful result
       setAuthError(null);
       await syncUserProfile(result.user);
       
@@ -105,11 +103,11 @@ export default function LoginPage() {
       let errorMessage = "An unexpected error occurred.";
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = `The sign-in window was closed before completion. This often happens if the domain ("${window.location.hostname}") is not authorized in your Firebase Console (Auth > Settings > Authorized Domains) or if a popup blocker is active.`;
+        errorMessage = `Sign-in Interrupted: This domain ("${window.location.hostname}") must be added to 'Authorized Domains' in your Firebase Console (Auth > Settings). Ensure your browser is not blocking popups.`;
       } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = `Domain Not Authorized: Please add "${window.location.hostname}" to 'Authorized Domains' in your Firebase Console.`;
+        errorMessage = `Domain Not Authorized: Add "${window.location.hostname}" to 'Authorized Domains' in Firebase.`;
       } else if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-        errorMessage = "Sign-in was blocked by a browser extension (like an AdBlocker). Please disable extensions for this site and try again.";
+        errorMessage = "Sign-in was blocked by a browser extension (like an AdBlocker). Please disable extensions for this site.";
       } else {
         errorMessage = error.message;
       }
@@ -118,7 +116,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Sign-in Notice",
-        description: "Check the diagnostics below.",
+        description: "Check the diagnostic log below.",
       });
     }
   };
@@ -237,7 +235,7 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <p className="text-2xl font-black">Link Sent</p>
-                <p className="text-sm text-muted-foreground font-medium">Check your terminal for the magic signal.</p>
+                <p className="text-sm text-muted-foreground font-medium">Check your inbox for the magic signal.</p>
               </div>
               <Button variant="ghost" className="text-primary font-black uppercase tracking-widest text-[10px]" onClick={() => setIsLinkSent(false)}>
                 Try another frequency
