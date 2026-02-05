@@ -64,24 +64,24 @@ service cloud.firestore {
       }
 
       match /payment_methods/{methodId} {
-        allow read, write: if isOwner(userId);
+        allow get, list, create, update, delete: if isOwner(userId);
       }
     }
 
     /**
      * @path /orders/{orderId}
-     * Robust owner and administrator listing rules.
      */
     match /orders/{orderId} {
-      // Allow list and get if user is admin OR if the order belongs to them
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Allow read (get/list) if user is admin OR if the order belongs to them.
+      // For list, the query must be filtered by userId.
+      allow read: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
       
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if false;
 
       match /order_items/{orderItemId} {
-        allow read: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
+        allow read: if isAdmin() || isSignedIn();
         allow create: if isSignedIn();
         allow update, delete: if isAdmin();
       }
@@ -89,12 +89,11 @@ service cloud.firestore {
 
     /**
      * @path /roles_admin/{userId}
-     * Administrative role verification.
      */
     match /roles_admin/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create: if false; // Self-claiming is strictly forbidden
+      allow create: if false; 
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

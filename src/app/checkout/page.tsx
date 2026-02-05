@@ -16,7 +16,6 @@ import {
   ShieldCheck, 
   Phone, 
   PhoneCall,
-  Plus,
   Zap,
   CheckCircle2,
   Wallet
@@ -25,13 +24,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, doc, serverTimestamp, query } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -70,10 +67,13 @@ export default function CheckoutPage() {
     return query(collection(db, 'users', user.uid, 'payment_methods'));
   }, [db, user]);
 
-  const { data: savedMethods, isLoading: loadingMethods } = useCollection(savedMethodsQuery);
+  const { data: savedMethods, isLoading: loadingMethods } = useCollection(savedMethodsQuery, true);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (savedMethods && savedMethods.length > 0) {
       setPaymentType('saved');
       setSelectedSavedMethod(savedMethods[0].id);
@@ -82,13 +82,13 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = () => {
     if (!user || !db) {
-      toast({ title: "Please sign in to place order", variant: "destructive" });
+      toast({ title: "Authentication Required", description: "Please sign in to place your order.", variant: "destructive" });
       router.push('/auth/login');
       return;
     }
 
     if (!shipping.fullName || !shipping.contactNumber || !shipping.address || !shipping.city || !shipping.zip) {
-      toast({ title: "Missing Protocols", description: "Please complete all mandatory shipping fields.", variant: "destructive" });
+      toast({ title: "Incomplete Protocol", description: "All mandatory shipping fields must be completed.", variant: "destructive" });
       return;
     }
 
@@ -98,13 +98,13 @@ export default function CheckoutPage() {
       finalPaymentMethod = method ? `${method.type.toUpperCase()}: ${method.label}` : 'Saved Method';
     } else if (paymentType === 'card') {
       if (!paymentDetails.cardNumber || !paymentDetails.expiry) {
-        toast({ title: "Payment Info Required", variant: "destructive" });
+        toast({ title: "Payment Details Missing", variant: "destructive" });
         return;
       }
       finalPaymentMethod = `CARD: •••• ${paymentDetails.cardNumber.slice(-4)}`;
     } else {
       if (!paymentDetails.upiId) {
-        toast({ title: "UPI ID Required", variant: "destructive" });
+        toast({ title: "UPI Identification Required", variant: "destructive" });
         return;
       }
       finalPaymentMethod = `UPI: ${paymentDetails.upiId}`;
@@ -114,8 +114,8 @@ export default function CheckoutPage() {
 
     const orderRef = doc(collection(db, 'orders'));
     
-    // Save order
-    setDocumentNonBlocking(orderRef, {
+    // Construct order
+    const orderData = {
       userId: user.uid,
       orderDate: new Date().toISOString(),
       totalAmount: total,
@@ -124,9 +124,11 @@ export default function CheckoutPage() {
       shippingAddress: `${shipping.address}, ${shipping.city} - ${shipping.zip}`,
       paymentMethod: finalPaymentMethod,
       createdAt: serverTimestamp()
-    }, { merge: true });
+    };
 
-    // Save items
+    setDocumentNonBlocking(orderRef, orderData, { merge: true });
+
+    // Save items with images for history
     items.forEach(item => {
       const itemRef = doc(collection(db, 'orders', orderRef.id, 'order_items'));
       setDocumentNonBlocking(itemRef, {
@@ -139,7 +141,7 @@ export default function CheckoutPage() {
       }, { merge: true });
     });
 
-    // Save payment method for future use if it's new
+    // Save payment method for future use
     if (paymentType !== 'saved') {
       const methodId = paymentType === 'card' ? `card-${paymentDetails.cardNumber.slice(-4)}` : `upi-${paymentDetails.upiId.replace(/[^a-zA-Z0-9]/g, '')}`;
       const methodRef = doc(db, 'users', user.uid, 'payment_methods', methodId);
@@ -151,7 +153,7 @@ export default function CheckoutPage() {
       }, { merge: true });
     }
     
-    toast({ title: "Order Placed! ✨", description: "Your artifacts are being prepared for dispatch." });
+    toast({ title: "Order Synchronized! ✨", description: "Your artifacts are being prepared for dispatch." });
     clearCart();
     
     setTimeout(() => {
@@ -160,7 +162,7 @@ export default function CheckoutPage() {
   };
 
   if (!mounted) {
-    return <div className="p-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest">Preparing checkout...</div>;
+    return <div className="p-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest">Initialising Secure Checkout...</div>;
   }
 
   return (
@@ -185,7 +187,7 @@ export default function CheckoutPage() {
             <div className="grid gap-8 relative z-10">
               <div className="space-y-3">
                 <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                  <User className="w-3.5 h-3.5" /> Recipient Name
+                  <User className="w-3.5 h-3.5" /> Full Recipient Name
                 </Label>
                 <Input 
                   className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
@@ -217,7 +219,7 @@ export default function CheckoutPage() {
                     className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                     value={shipping.secondaryContact} 
                     onChange={(e) => setShipping({...shipping, secondaryContact: e.target.value})} 
-                    placeholder="Emergency Backup" 
+                    placeholder="Backup Phone Number" 
                   />
                 </div>
               </div>
@@ -230,7 +232,7 @@ export default function CheckoutPage() {
                   className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                   value={shipping.address} 
                   onChange={(e) => setShipping({...shipping, address: e.target.value})} 
-                  placeholder="House No, Street, Landmark" 
+                  placeholder="House No, Street, Area" 
                 />
               </div>
 
@@ -276,7 +278,7 @@ export default function CheckoutPage() {
             <RadioGroup value={paymentType} onValueChange={(v: any) => setPaymentType(v)} className="space-y-4">
               {savedMethods && savedMethods.length > 0 && (
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Saved Methods</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Previously Used Artifacts</Label>
                   {savedMethods.map((method) => (
                     <div 
                       key={method.id} 
@@ -303,7 +305,7 @@ export default function CheckoutPage() {
               )}
 
               <div className="space-y-4 pt-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">New Payment Method</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Initiate New Frequency</Label>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <button 
@@ -314,7 +316,7 @@ export default function CheckoutPage() {
                     )}
                   >
                     <CreditCard className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Card Details</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Card Interface</span>
                   </button>
                   <button 
                     onClick={() => setPaymentType('upi')}
@@ -324,14 +326,14 @@ export default function CheckoutPage() {
                     )}
                   >
                     <Zap className="w-6 h-6" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">UPI ID</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">UPI Portal</span>
                   </button>
                 </div>
 
                 {paymentType === 'card' && (
                   <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest">Card Number</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest">Card Signature</Label>
                       <Input 
                         placeholder="0000 0000 0000 0000" 
                         value={paymentDetails.cardNumber}
@@ -341,7 +343,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest">Expiry</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest">Validity</Label>
                         <Input 
                           placeholder="MM/YY" 
                           value={paymentDetails.expiry}
@@ -350,7 +352,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest">CVV</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest">Security Code</Label>
                         <Input 
                           type="password" 
                           placeholder="•••" 
@@ -366,9 +368,9 @@ export default function CheckoutPage() {
                 {paymentType === 'upi' && (
                   <div className="space-y-4 p-8 bg-gray-50 rounded-[2rem] border border-gray-100 animate-in fade-in slide-in-from-top-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest">UPI Virtual Address</Label>
+                      <Label className="text-[10px] font-black uppercase tracking-widest">UPI VPA Address</Label>
                       <Input 
-                        placeholder="yourname@bank" 
+                        placeholder="username@bank" 
                         value={paymentDetails.upiId}
                         onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})}
                         className="h-14 rounded-xl bg-white border-gray-200 font-bold" 
@@ -380,7 +382,7 @@ export default function CheckoutPage() {
             </RadioGroup>
 
             <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-4">
-              <ShieldCheck className="w-4 h-4 text-green-500" /> Fully Encrypted Transmission
+              <ShieldCheck className="w-4 h-4 text-green-500" /> Fully Encrypted Financial Tunnel
             </div>
           </section>
         </div>
@@ -433,7 +435,7 @@ export default function CheckoutPage() {
               disabled={isProcessing || !shipping.address || !shipping.fullName || !shipping.contactNumber}
               className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10"
             >
-              {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Processing...</> : <>Place Order <ArrowRight className="w-8 h-8" /></>}
+              {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Processing...</> : <>Initiate Drop <ArrowRight className="w-8 h-8" /></>}
             </Button>
           </div>
         </div>
@@ -441,4 +443,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

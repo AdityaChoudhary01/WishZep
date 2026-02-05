@@ -46,7 +46,7 @@ function OrderItemsList({ orderId }: { orderId: string }) {
     return query(collection(db, 'orders', orderId, 'order_items'));
   }, [db, orderId]);
 
-  const { data: items, isLoading } = useCollection(itemsQuery);
+  const { data: items, isLoading } = useCollection(itemsQuery, true);
 
   if (isLoading) return <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
@@ -121,10 +121,10 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      toast({ title: "Signed out successfully." });
+      toast({ title: "Signal Disconnected", description: "You have been signed out successfully." });
       router.push('/');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error signing out", description: error.message });
+      toast({ variant: "destructive", title: "Disconnection Error", description: error.message });
     }
   };
 
@@ -138,9 +138,9 @@ export default function ProfilePage() {
         profileImageUrl: imageUrl,
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Profile image updated!" });
+      toast({ title: "Visual Artifact Updated!" });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Upload failed", description: error.message });
+      toast({ variant: "destructive", title: "Upload Protocol Failed", description: error.message });
     } finally {
       setIsUploading(false);
     }
@@ -154,9 +154,9 @@ export default function ProfilePage() {
         updatedAt: serverTimestamp()
       });
       setIsEditingName(false);
-      toast({ title: "Name updated!" });
+      toast({ title: "Identity Log Updated" });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Failed to update name", description: error.message });
+      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
     }
   };
 
@@ -197,12 +197,12 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <h1 className="text-4xl font-black">{profileData?.displayName || 'Member'}</h1>
+              <h1 className="text-4xl font-black">{profileData?.displayName || 'WishZep Member'}</h1>
               <p className="text-muted-foreground font-medium">{user.email}</p>
             </div>
           )}
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">Verified Member</Badge>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">Verified Visionary</Badge>
           </div>
         </div>
         
@@ -215,20 +215,20 @@ export default function ProfilePage() {
       <Tabs defaultValue="orders" className="w-full">
         <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl h-14 mb-8">
           <TabsTrigger value="orders" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
-            <History className="w-4 h-4 mr-2" /> My Orders
+            <History className="w-4 h-4 mr-2" /> Artifact History
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
-            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Scanning registry...</div>
+            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing Registry...</div>
           ) : !orders || orders.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
               <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-10 h-10 text-primary/40" />
               </div>
-              <h3 className="text-2xl font-black">No orders found.</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">Start your collection by exploring our latest drops.</p>
+              <h3 className="text-2xl font-black">No artifacts secured yet.</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">Your collection is waiting to be built. Explore our latest frequencies.</p>
               <Link href="/products" className="inline-block">
                 <Button className="rounded-full bg-primary h-14 px-10 text-lg font-bold shadow-xl shadow-primary/20">Start Shopping</Button>
               </Link>
@@ -273,14 +273,14 @@ export default function ProfilePage() {
                           <div className="bg-primary p-8 text-white relative">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <DialogHeader>
-                              <DialogTitle className="text-3xl font-black">ORDER DETAILS</DialogTitle>
+                              <DialogTitle className="text-3xl font-black">DROP LOGISTICS</DialogTitle>
                             </DialogHeader>
-                            <p className="text-sm font-bold opacity-80 uppercase tracking-widest mt-2">ID: {order.id}</p>
+                            <p className="text-sm font-bold opacity-80 uppercase tracking-widest mt-2">Protocol ID: {order.id}</p>
                           </div>
                           
                           <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
                             <div className="space-y-4">
-                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Items</h4>
+                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Included Artifacts</h4>
                               <OrderItemsList orderId={order.id} />
                             </div>
 
@@ -288,9 +288,9 @@ export default function ProfilePage() {
 
                             <div className="grid md:grid-cols-2 gap-8">
                               <div className="space-y-4">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Shipping</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Shipping Destination</h4>
                                 <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
-                                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><MapPin className="w-3.5 h-3.5" /> Destination</div>
+                                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><MapPin className="w-3.5 h-3.5" /> Coordinates</div>
                                   <p className="text-sm font-bold leading-relaxed">{order.shippingAddress}</p>
                                 </div>
                               </div>
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Summary</h4>
                                 <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><CreditCard className="w-3.5 h-3.5" /> Gateway</div>
-                                  <p className="text-sm font-bold">{order.paymentMethod || 'Credit Card'}</p>
+                                  <p className="text-sm font-bold">{order.paymentMethod || 'Credit Card Interface'}</p>
                                   <div className="flex justify-between items-center pt-2">
                                     <span className="text-xs font-bold text-muted-foreground uppercase">Logistics</span>
                                     <span className="text-xs font-bold text-green-600">FREE</span>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="rounded-2xl h-12 px-6 font-black bg-primary gap-2 shadow-lg shadow-primary/20">
-                            <Truck className="w-4 h-4" /> Track Order
+                            <Truck className="w-4 h-4" /> Track Drop
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl bg-white rounded-[3rem] border-none p-10 shadow-3xl">
@@ -332,8 +332,8 @@ export default function ProfilePage() {
                                 <CheckCircle2 className="w-7 h-7" />
                               </div>
                               <div className="flex-1 pt-1">
-                                <h4 className="font-black text-lg">Order Confirmed</h4>
-                                <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} • System Synced</p>
+                                <h4 className="font-black text-lg">Drop Confirmed</h4>
+                                <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} • System Synchronized</p>
                               </div>
                             </div>
 
@@ -353,7 +353,7 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-lg">Delivered</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination' : 'Pending final arrival'}</p>
+                                <p className="text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination coordinates' : 'Pending final arrival'}</p>
                               </div>
                             </div>
                           </div>
