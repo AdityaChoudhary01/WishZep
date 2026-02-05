@@ -107,7 +107,8 @@ export default function ProfilePage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // Removed server-side orderBy to prevent index errors in dev/test
+    // Client-side filtering is handled by firestore security rules
+    // and manual sorting is done in useMemo to avoid index errors.
     return query(
       collection(db, 'orders'), 
       where('userId', '==', user.uid)
@@ -116,12 +117,11 @@ export default function ProfilePage() {
 
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useCollection(ordersQuery);
 
-  // Client-side sorting for robust development experience
   const sortedOrders = useMemo(() => {
     if (!orders) return [];
     return [...orders].sort((a, b) => {
-      const dateA = new Date(a.orderDate).getTime();
-      const dateB = new Date(b.orderDate).getTime();
+      const dateA = a.orderDate ? new Date(a.orderDate).getTime() : 0;
+      const dateB = b.orderDate ? new Date(b.orderDate).getTime() : 0;
       return dateB - dateA;
     });
   }, [orders]);
@@ -237,7 +237,7 @@ export default function ProfilePage() {
               <p className="text-muted-foreground max-w-md mx-auto">We encountered an issue while fetching your history. Please ensure your signal is strong and try again.</p>
               <Button variant="outline" onClick={() => window.location.reload()}>Retry Sync</Button>
             </div>
-          ) : !orders || orders.length === 0 ? (
+          ) : sortedOrders.length === 0 ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
               <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShoppingBag className="w-12 h-12 text-primary/30" />
@@ -259,7 +259,7 @@ export default function ProfilePage() {
                     <div className="space-y-1">
                       <p className="font-black text-xl">Order #{order.id.slice(0, 8)}</p>
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Calendar className="w-3 h-3" /> {new Date(order.orderDate).toLocaleDateString()}
+                        <Calendar className="w-3 h-3" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
                       </p>
                       <Badge className={cn(
                         "mt-2 px-4 py-1.5 rounded-full text-[10px] uppercase font-black border-none",
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-lg">Drop Confirmed</h4>
-                                <p className="text-sm text-muted-foreground">{new Date(order.orderDate).toLocaleDateString()} • System Synchronized</p>
+                                <p className="text-sm text-muted-foreground">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'} • System Synchronized</p>
                               </div>
                             </div>
 

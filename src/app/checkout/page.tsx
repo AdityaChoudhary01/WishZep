@@ -15,8 +15,7 @@ import {
   ShieldCheck, 
   Phone, 
   PhoneCall,
-  IndianRupee,
-  CheckCircle2
+  IndianRupee
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -158,6 +157,11 @@ export default function CheckoutPage() {
         modal: {
           ondismiss: function() {
             setIsProcessing(false);
+            toast({
+              variant: "destructive",
+              title: "Payment Cancelled",
+              description: "The payment window was closed. Order has not been placed.",
+            });
           }
         }
       };
@@ -355,4 +359,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

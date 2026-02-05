@@ -157,7 +157,11 @@ export default function AdminDashboard() {
 
   const sortedOrders = useMemo(() => {
     if (!rawOrders) return [];
-    return [...rawOrders].sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    return [...rawOrders].sort((a, b) => {
+      const dateA = a.orderDate ? new Date(a.orderDate).getTime() : 0;
+      const dateB = b.orderDate ? new Date(b.orderDate).getTime() : 0;
+      return dateB - dateA;
+    });
   }, [rawOrders]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
