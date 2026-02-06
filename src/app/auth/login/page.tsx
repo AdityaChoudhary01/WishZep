@@ -196,12 +196,14 @@ export default function LoginPage() {
       <div className="w-full max-w-[480px] bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100 relative z-10 animate-fade-in">
         <div id="recaptcha-container"></div>
         
-        <div className="text-center space-y-2 mb-10">
-          <div className="relative w-80 h-32 mx-auto mb-8 transition-transform rotate-1">
-             <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
+        <div className="text-center space-y-4 mb-10">
+          <div className="flex items-center justify-center gap-4 transition-transform hover:scale-105">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
+              <Zap className="w-10 h-10 fill-white" />
+            </div>
+            <span className="text-5xl font-black tracking-tighter wishzep-text">WISHZEP</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 font-medium text-sm">Sign in to your account</p>
+          <p className="text-gray-500 font-medium text-sm mt-4">Sign in to your account</p>
         </div>
 
         {authError && (

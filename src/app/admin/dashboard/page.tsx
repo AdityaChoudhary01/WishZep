@@ -29,7 +29,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Table as TableIcon,
-  ShieldAlert
+  ShieldAlert,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -391,11 +393,12 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-white flex-col md:flex-row">
       <aside className="w-64 bg-white border-r border-gray-100 p-6 hidden md:block h-screen sticky top-0 z-30">
-        <div className="flex items-center mb-10 px-2">
-          <div className="relative w-56 h-20">
-            <Image src="/logo.png" alt="Admin Logo" fill className="object-contain" />
+        <Link href="/" className="flex items-center gap-3 mb-10 px-2 group">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg transition-transform group-hover:rotate-12">
+            <Zap className="w-6 h-6 fill-white" />
           </div>
-        </div>
+          <span className="text-xl font-black tracking-tighter wishzep-text">WISHZEP</span>
+        </Link>
         <SidebarContent />
       </aside>
 
