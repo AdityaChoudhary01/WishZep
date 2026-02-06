@@ -62,8 +62,6 @@ export async function sendContactEmail(formData: FormData) {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error: any) {
-    console.error('SMTP Delivery Error:', error);
-    // Returning a more helpful error for the user
     return { 
       success: false, 
       error: 'SMTP Authentication failed. Ensure 2-Step Verification is enabled and the App Password is correct.' 

@@ -23,7 +23,6 @@ export async function createRazorpayOrder(amount: number) {
     const order = await instance.orders.create(options);
     return { success: true, orderId: order.id, amount: order.amount };
   } catch (error: any) {
-    console.error('Razorpay Order Creation Error:', error);
     return { success: false, error: error.message || 'Failed to create order.' };
   }
 }

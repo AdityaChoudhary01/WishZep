@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -84,7 +83,6 @@ export function useCollection<T = any>(
       (error: FirestoreError) => {
         let path: string = 'unknown';
         try {
-          // Attempt to extract the path or collection ID for the error message
           const q = memoizedTargetRefOrQuery as any;
           if (memoizedTargetRefOrQuery.type === 'collection') {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
@@ -92,7 +90,7 @@ export function useCollection<T = any>(
             path = q._query.path.canonicalString() || q._query.collectionGroup || 'root/collectionGroup';
           }
         } catch (e) {
-          console.warn('Failed to extract path for Firestore error', e);
+          // Silent path extraction failure
         }
 
         const contextualError = new FirestorePermissionError({
@@ -104,7 +102,6 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // Only emit to global listener if not explicitly silenced
         if (!silentPermissionError) {
           errorEmitter.emit('permission-error', contextualError);
         }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, Suspense, useEffect } from 'react';
@@ -37,28 +36,24 @@ function ProductsContent() {
   
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch only categories explicitly added by admin
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
   }, [db]);
   const { data: manualCategories } = useCollection(categoriesQuery);
 
-  // Fetch products
   const productsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('name', 'asc'));
   }, [db]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  // Extract unique categories - Restricted to the admin's 'categories' collection
   const categories = useMemo(() => {
     const manualNames = manualCategories?.map(c => c.name) || [];
     const unique = Array.from(new Set(['All', ...manualNames])).sort();
     return unique;
   }, [manualCategories]);
 
-  // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
     
@@ -111,14 +106,12 @@ function ProductsContent() {
     return result;
   }, [products, searchParam, categoryParam, collectionParam, sortParam]);
 
-  // Pagination logic
   const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredAndSortedProducts.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredAndSortedProducts, currentPage]);
 
-  // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchParam, collectionParam, categoryParam, sortParam]);
@@ -172,7 +165,7 @@ function ProductsContent() {
           description: "Product link copied to your clipboard.",
         });
       } catch (err) {
-        console.error('Clipboard failed:', err);
+        // Silent clipboard fail
       }
     };
 
@@ -348,7 +341,6 @@ function ProductsContent() {
             ))}
           </div>
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 md:gap-4 py-8">
               <Button

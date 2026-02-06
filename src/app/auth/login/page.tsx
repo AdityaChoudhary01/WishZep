@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -69,7 +68,6 @@ export default function LoginPage() {
             router.push('/profile');
           })
           .catch((error) => {
-            console.error(error);
             toast({
               variant: "destructive",
               title: "Sign in failed",
@@ -86,7 +84,6 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      // Directly call signInWithPopup without state changes beforehand to avoid re-renders
       const result = await signInWithPopup(auth, provider);
       
       setAuthError(null);
@@ -98,8 +95,6 @@ export default function LoginPage() {
       });
       router.push('/profile');
     } catch (error: any) {
-      console.error('Google Sign-In Error:', error);
-      
       let errorMessage = "An unexpected error occurred.";
       
       if (error.code === 'auth/popup-closed-by-user') {
@@ -141,7 +136,6 @@ export default function LoginPage() {
         description: "Check your inbox for the magic sign-in link.",
       });
     } catch (error: any) {
-      console.error('Magic Link Error:', error);
       setAuthError(error.message);
     } finally {
       setIsLoading(false);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -15,7 +14,6 @@ export default function Home() {
   const db = useFirestore();
   const { toast } = useToast();
 
-  // Optimized query to fetch the 12 most recent products
   const featuredQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(
@@ -45,7 +43,7 @@ export default function Home() {
           description: "Product link copied to your clipboard.",
         });
       } catch (err) {
-        console.error('Clipboard failed:', err);
+        // Silent clipboard fail
       }
     };
 
