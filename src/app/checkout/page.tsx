@@ -15,12 +15,15 @@ import {
   ShieldCheck, 
   Phone, 
   PhoneCall,
-  IndianRupee
+  IndianRupee,
+  WifiOff,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -37,6 +40,7 @@ declare global {
 
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const { items, getTotal, clearCart } = useCartStore();
   const { user } = useUser();
   const db = useFirestore();
@@ -45,6 +49,7 @@ export default function CheckoutPage() {
   const total = getTotal();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   
   const [shipping, setShipping] = useState({
     fullName: '',
@@ -57,7 +62,35 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Check initial online status
+    setIsOnline(navigator.onLine);
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast({
+        title: "Signal Restored! ⚡",
+        description: "Your connection is back. You can now proceed with your drop.",
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast({
+        variant: "destructive",
+        title: "Connection Lost",
+        description: "Your internet connection was interrupted. Please check your signal.",
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
 
   const validateShipping = () => {
     if (!shipping.fullName || !shipping.contactNumber || !shipping.address || !shipping.city || !shipping.zip) {
@@ -89,6 +122,15 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!isOnline) {
+      toast({
+        variant: "destructive",
+        title: "Action Denied",
+        description: "Transmission requires an active internet connection. Please restore your signal.",
+      });
+      return;
+    }
+
     if (!user || !db) {
       toast({ title: "Authentication Required", description: "Please sign in to place your order.", variant: "destructive" });
       router.push('/auth/login');
@@ -114,7 +156,9 @@ export default function CheckoutPage() {
         description: 'Order Fulfillment',
         order_id: orderDataResult.orderId,
         handler: function (response: any) {
+          setIsSuccess(true);
           const orderRef = doc(collection(db, 'orders'));
+          
           const orderPayload = {
             userId: user.uid,
             orderDate: new Date().toISOString(),
@@ -142,9 +186,15 @@ export default function CheckoutPage() {
             }, { merge: true });
           });
 
-          toast({ title: "Order Placed Successfully! ✨", description: "Your artifacts are being prepared for dispatch." });
-          clearCart();
-          router.push('/profile');
+          toast({ 
+            title: "Transmission Success! ✨", 
+            description: "Your artifacts have been secured and logged in the registry." 
+          });
+          
+          setTimeout(() => {
+            clearCart();
+            router.push('/profile');
+          }, 1500);
         },
         prefill: {
           name: shipping.fullName,
@@ -159,8 +209,8 @@ export default function CheckoutPage() {
             setIsProcessing(false);
             toast({
               variant: "destructive",
-              title: "Payment Cancelled",
-              description: "The payment window was closed. Order has not been placed.",
+              title: "Payment Protocol Terminated",
+              description: "The payment window was closed by the user. Order not placed.",
             });
           }
         }
@@ -170,7 +220,7 @@ export default function CheckoutPage() {
       rzp.open();
 
     } catch (error: any) {
-      toast({ title: "Payment Error", description: error.message, variant: "destructive" });
+      toast({ title: "Gateway Failure", description: error.message, variant: "destructive" });
       setIsProcessing(false);
     }
   };
@@ -179,10 +229,34 @@ export default function CheckoutPage() {
     return <div className="p-20 text-center animate-pulse text-muted-foreground font-black uppercase tracking-widest">Initialising Secure Checkout...</div>;
   }
 
+  if (isSuccess) {
+    return (
+      <div className="container mx-auto px-6 py-32 flex flex-col items-center justify-center space-y-8 animate-fade-in">
+        <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center text-white shadow-2xl animate-bounce">
+          <CheckCircle2 className="w-16 h-16" />
+        </div>
+        <div className="text-center space-y-4">
+          <h1 className="text-6xl font-black wishzep-text">ORDER SECURED</h1>
+          <p className="text-xl text-muted-foreground font-medium uppercase tracking-widest">Redirecting to Artifact History...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-6 py-12">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
+      {!isOnline && (
+        <Alert variant="destructive" className="mb-8 rounded-3xl border-2 border-destructive animate-pulse bg-destructive/5 py-6">
+          <WifiOff className="h-6 w-6" />
+          <AlertTitle className="text-lg font-black uppercase tracking-tighter">Network Signal Lost</AlertTitle>
+          <AlertDescription className="text-sm font-bold opacity-90">
+            The transmission is interrupted. Please restore your internet connection to finalize the payment protocol.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <h1 className="text-5xl font-black mb-12">SECURE <span className="wishzep-text">CHECKOUT</span></h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -344,10 +418,16 @@ export default function CheckoutPage() {
 
             <Button 
               onClick={handlePlaceOrder}
-              disabled={isProcessing}
-              className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10"
+              disabled={isProcessing || !isOnline}
+              className="w-full h-20 rounded-[2rem] bg-primary hover:bg-primary/90 text-2xl font-black gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all relative z-10 disabled:opacity-50 disabled:grayscale"
             >
-              {isProcessing ? <><Loader2 className="w-8 h-8 animate-spin" /> Transmitting...</> : <>Initiate Drop <ArrowRight className="w-8 h-8" /></>}
+              {isProcessing ? (
+                <><Loader2 className="w-8 h-8 animate-spin" /> Transmitting...</>
+              ) : !isOnline ? (
+                <><WifiOff className="w-8 h-8" /> Offline Mode</>
+              ) : (
+                <>Initiate Drop <ArrowRight className="w-8 h-8" /></>
+              )}
             </Button>
             
             <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-4 relative z-10">
