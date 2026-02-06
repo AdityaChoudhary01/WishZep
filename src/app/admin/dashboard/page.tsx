@@ -29,7 +29,8 @@ import {
   MoreVertical,
   Check,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -794,6 +795,7 @@ export default function AdminDashboard() {
 function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
   const [partner, setPartner] = useState(order.deliveryPartner || '');
   const [trackingId, setTrackingId] = useState(order.trackingId || '');
+  const [expectedDate, setExpectedDate] = useState(order.expectedDeliveryDate || '');
 
   return (
     <Dialog>
@@ -805,7 +807,10 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
          )}
       </DialogTrigger>
       <DialogContent className="w-[95vw] md:max-w-3xl rounded-[2rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
-          <div className="bg-primary p-4 md:p-6 text-white"><DialogHeader><DialogTitle className="text-xl md:text-2xl font-black uppercase tracking-tight">ORDER DETAILS</DialogTitle></DialogHeader></div>
+          <div className="bg-primary p-4 md:p-6 text-white relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
+            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-black uppercase tracking-tight">ORDER DETAILS</DialogTitle></DialogHeader>
+          </div>
           <div className="p-5 md:p-8 space-y-6 md:space-y-8 max-h-[75vh] overflow-y-auto">
             <div className="grid md:grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-6">
@@ -851,11 +856,11 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
             <Separator className="bg-gray-100" />
             
             <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Delivery Partner</Label>
                   <Input 
-                    placeholder="e.g. BlueDart, Delhivery" 
+                    placeholder="e.g. BlueDart" 
                     value={partner} 
                     onChange={(e) => setPartner(e.target.value)}
                     className="h-11 rounded-xl"
@@ -864,31 +869,46 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Tracking ID</Label>
                   <Input 
-                    placeholder="Courier Tracking #" 
+                    placeholder="Tracking #" 
                     value={trackingId} 
                     onChange={(e) => setTrackingId(e.target.value)}
                     className="h-11 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Expected Delivery</Label>
+                  <Input 
+                    type="date"
+                    value={expectedDate} 
+                    onChange={(e) => setExpectedDate(e.target.value)}
+                    className="h-11 rounded-xl font-bold"
                   />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Order Status</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 md:gap-4">
                   <Button 
-                    onClick={() => handleUpdateOrderStatus(order.id, 'shipped', { deliveryPartner: partner, trackingId })} 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'confirmed', { expectedDeliveryDate: expectedDate })} 
+                    className="rounded-xl h-12 font-bold gap-2 bg-gray-900 hover:bg-black"
+                  >
+                    <Check className="w-4 h-4" /> CONFIRM
+                  </Button>
+                  <Button 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'shipped', { deliveryPartner: partner, trackingId, expectedDeliveryDate: expectedDate })} 
                     className="rounded-xl h-12 font-bold gap-2 bg-blue-600 hover:bg-blue-700"
                   >
                     <Truck className="w-4 h-4" /> MARK SHIPPED
                   </Button>
                   <Button 
-                    onClick={() => handleUpdateOrderStatus(order.id, 'arriving-today')} 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'arriving-today', { deliveryPartner: partner, trackingId })} 
                     className="rounded-xl h-12 font-bold gap-2 bg-purple-600 hover:bg-purple-700"
                   >
                     <Search className="w-4 h-4" /> ARRIVING TODAY
                   </Button>
                   <Button 
-                    onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'delivered', { deliveryDate: new Date().toISOString() })} 
                     variant="outline" 
                     className="rounded-xl h-12 font-bold border-green-600 text-green-600 hover:bg-green-50"
                   >
