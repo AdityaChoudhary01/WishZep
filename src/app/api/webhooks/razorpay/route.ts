@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     // Filter for order.paid (Primary) or payment.captured (Fallback)
     if (event.event === 'order.paid' || event.event === 'payment.captured') {
       const entity = event.payload.payment ? event.payload.payment.entity : event.payload.order.entity;
-      const rzpOrderId = entity.order_id || entity.id;
+      const rzpOrderId = entity.order_id || entity.id; 
       
       console.log(`[Webhook] Processing Order: ${rzpOrderId}`);
 
@@ -59,7 +59,6 @@ export async function POST(req: Request) {
           }
 
           const itemsSnap = await orderDoc.ref.collection('order_items').get();
-          // Explicitly map ID to ensure it exists
           orderItems = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           break;
         }
@@ -107,67 +106,111 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
   const generateItemsHtml = (isAdmin = false) => items.map(item => `
     <tr>
       <td style="padding: 15px 0; border-bottom: 1px solid #1a1a1a;">
-        <table width="100%">
+        <table width="100%" cellspacing="0" cellpadding="0">
           <tr>
-            <td width="60"><img src="${item.image}" width="50" height="50" style="border-radius: 8px; object-fit: cover;" /></td>
-            <td style="padding-left: 15px;">
-              <p style="margin:0; font-size:13px; font-weight:800; color:#fff;">${item.name}</p>
-              <p style="margin:2px 0 0; font-size:10px; color:#888;">QTY: ${item.quantity} ${isAdmin ? `| ID: ${(item.id || 'N/A').toString().slice(0,5)}` : ''}</p>
+            <td width="70" valign="top"><img src="${item.image}" width="60" height="60" style="border-radius: 10px; object-fit: cover; display:block;" /></td>
+            <td style="padding-left: 15px; vertical-align: middle;">
+              <p style="margin:0; font-size:14px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.5px;">${item.name}</p>
+              <p style="margin:4px 0 0; font-size:11px; color:#888;">QTY: ${item.quantity} ${isAdmin ? `| ID: ${(item.id || 'N/A').toString().slice(0,5)}` : ''}</p>
             </td>
-            <td align="right"><p style="margin:0; font-size:13px; font-weight:800; color:${isAdmin ? '#00ff88' : '#BE29EC'};">₹${(item.price * item.quantity).toLocaleString()}</p></td>
+            <td align="right" style="vertical-align: middle;">
+              <p style="margin:0; font-size:14px; font-weight:700; color:${isAdmin ? '#00ff88' : '#BE29EC'};">₹${(item.price * item.quantity).toLocaleString()}</p>
+            </td>
           </tr>
         </table>
       </td>
     </tr>`).join('');
 
-  // --- 1. CUSTOMER EMAIL (Now Includes ALL Details) ---
+  // --- 1. CUSTOMER EMAIL (ENHANCED UI) ---
   const customerHtml = `
-    <!DOCTYPE html><html><body style="background:#050505; font-family:sans-serif; color:#fff; padding:40px 10px;">
-    <div style="max-width:600px; margin:auto; background:#0a0a0a; border:1px solid #222; border-radius:30px; overflow:hidden;">
-      <div style="height:6px; background:linear-gradient(90deg, #BE29EC, #29A6EC);"></div>
-      <div style="padding:40px;">
-        <img src="${brandLogoUrl}" width="50" style="margin-bottom:30px; border-radius:12px;" />
-        <h1 style="font-size:36px; margin:0 0 10px; text-transform:uppercase;">Order <br/><span style="color:#BE29EC;">Confirmed.</span></h1>
-        <p style="color:#888; font-size:14px; margin-bottom:40px;">Hi ${orderData.shippingDetails?.fullName}, your artifacts have been secured. The fulfillment engine is active.</p>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="background:#000000; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#ffffff; padding:0; margin:0;">
+      <div style="max-width:600px; margin:0 auto; background:#0a0a0a; overflow:hidden;">
         
-        <div style="background:#111; padding:20px; border-radius:20px; margin-bottom:30px;">
-          <table width="100%">${generateItemsHtml(false)}</table>
-          <div style="border-top:1px solid #222; margin-top:15px; padding-top:15px; text-align:right;">
-            <span style="color:#888; font-size:12px; margin-right:10px;">TOTAL PAID</span>
-            <span style="font-size:20px; font-weight:900;">${formattedAmount}</span>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:15px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:200px; background:#111; padding:20px; border-radius:20px; border:1px solid #222;">
-            <p style="margin:0 0 10px; font-size:10px; color:#BE29EC; text-transform:uppercase; font-weight:900;">Shipping To</p>
-            <p style="margin:0 0 5px; font-size:13px; font-weight:bold; color:#fff;">${orderData.shippingDetails?.fullName}</p>
-            <p style="margin:0 0 10px; font-size:12px; color:#aaa; line-height:1.4;">${orderData.shippingAddress}</p>
-            <p style="margin:0; font-size:12px; color:#fff;">📞 ${orderData.shippingDetails?.contactNumber}</p>
+        <div style="height:4px; background:linear-gradient(90deg, #BE29EC, #29A6EC);"></div>
+        
+        <div style="padding:40px 30px;">
+          
+          <div style="text-align:center; margin-bottom:40px;">
+            <img src="${brandLogoUrl}" width="120" style="display:block; margin:0 auto;" alt="WishZep" />
           </div>
 
-          <div style="flex:1; min-width:200px; background:#111; padding:20px; border-radius:20px; border:1px solid #222;">
-            <p style="margin:0 0 10px; font-size:10px; color:#BE29EC; text-transform:uppercase; font-weight:900;">Payment Info</p>
-            <p style="margin:0 0 5px; font-size:12px; color:#aaa;">Date: <span style="color:#fff;">${orderDate}</span></p>
-            <p style="margin:0 0 5px; font-size:12px; color:#aaa;">Method: <span style="color:#fff;">${orderData.paymentMethod || 'Online'}</span></p>
-            <p style="margin:0; font-size:12px; color:#aaa;">Txn ID: <span style="color:#fff; font-family:monospace;">${orderData.razorpayOrderId?.slice(-8).toUpperCase()}</span></p>
+          <div style="text-align:center; margin-bottom:40px;">
+            <h1 style="font-size:32px; font-weight:900; letter-spacing:-1px; margin:0 0 10px 0; color:#ffffff; text-transform:uppercase;">Order <span style="color:#BE29EC;">Confirmed</span></h1>
+            <p style="font-size:14px; color:#888888; line-height:1.6; margin:0; max-width:400px; margin-left:auto; margin-right:auto;">
+              Hi ${orderData.shippingDetails?.fullName}, your artifacts have been secured. The global fulfillment engine is now active.
+            </p>
           </div>
+          
+          <div style="background:#111111; border-radius:24px; border:1px solid #222222; overflow:hidden; margin-bottom:30px;">
+            <div style="padding:25px;">
+              <p style="margin:0 0 15px; font-size:10px; font-weight:bold; letter-spacing:2px; color:#666; text-transform:uppercase;">Manifest</p>
+              <table width="100%" cellspacing="0" cellpadding="0">
+                ${generateItemsHtml(false)}
+              </table>
+              <div style="margin-top:20px; padding-top:20px; border-top:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#888; font-size:12px; letter-spacing:1px; text-transform:uppercase;">Total Authorized</span>
+                <span style="font-size:24px; font-weight:900; color:#ffffff;">${formattedAmount}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#111111; border-radius:24px; border:1px solid #222222; padding:25px; margin-bottom:15px;">
+            <table width="100%" cellspacing="0" cellpadding="0">
+              <tr>
+                <td width="30" valign="top" style="padding-right:15px;">
+                  <span style="display:block; font-size:18px;">📍</span>
+                </td>
+                <td>
+                  <p style="margin:0 0 5px; font-size:11px; font-weight:bold; letter-spacing:1px; color:#BE29EC; text-transform:uppercase;">Shipping Destination</p>
+                  <p style="margin:0 0 5px; font-size:14px; font-weight:bold; color:#fff;">${orderData.shippingDetails?.fullName}</p>
+                  <p style="margin:0 0 8px; font-size:13px; color:#bbb; line-height:1.5;">${orderData.shippingAddress}</p>
+                  <p style="margin:0; font-size:13px; color:#fff; font-weight:bold;">📞 ${orderData.shippingDetails?.contactNumber}</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background:#111111; border-radius:24px; border:1px solid #222222; padding:25px; margin-bottom:40px;">
+            <table width="100%" cellspacing="0" cellpadding="0">
+              <tr>
+                <td width="30" valign="top" style="padding-right:15px;">
+                  <span style="display:block; font-size:18px;">💳</span>
+                </td>
+                <td>
+                  <p style="margin:0 0 5px; font-size:11px; font-weight:bold; letter-spacing:1px; color:#BE29EC; text-transform:uppercase;">Transaction Info</p>
+                  <p style="margin:0 0 5px; font-size:13px; color:#bbb;">Date: <span style="color:#fff;">${orderDate}</span></p>
+                  <p style="margin:0 0 5px; font-size:13px; color:#bbb;">Method: <span style="color:#fff;">${orderData.paymentMethod || 'Online Payment'}</span></p>
+                  <p style="margin:0; font-size:13px; color:#bbb;">Ref ID: <span style="color:#fff; font-family:monospace;">${orderData.razorpayOrderId?.slice(-8).toUpperCase()}</span></p>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align:center;">
+            <a href="https://wishzep.shop/profile" style="background:#BE29EC; color:#fff; padding:18px 40px; text-decoration:none; border-radius:100px; font-weight:bold; font-size:13px; letter-spacing:1px; display:inline-block; box-shadow: 0 10px 40px rgba(190, 41, 236, 0.4);">TRACK STATUS</a>
+          </div>
+          
+          <div style="text-align:center; margin-top:40px; padding-top:20px; border-top:1px solid #1a1a1a;">
+            <p style="margin:0; color:#444; font-size:10px;">Order Reference: #${safeOrderId}</p>
+            <p style="margin:5px 0 0; color:#333; font-size:10px;">© 2026 WishZep. Secure Transaction.</p>
+          </div>
+
         </div>
-        
-        <div style="text-align:center; margin-top:40px;">
-          <a href="https://wishzep.shop/profile" style="background:#BE29EC; color:#fff; padding:15px 30px; text-decoration:none; border-radius:50px; font-weight:bold; font-size:12px; display:inline-block;">TRACK ORDER</a>
-        </div>
-        
-        <p style="text-align:center; margin-top:30px; color:#444; font-size:10px;">Order ID: ${orderId}</p>
       </div>
-    </div></body></html>`;
+    </body>
+    </html>`;
 
   // --- 2. ADMIN EMAIL ---
   const adminHtml = `
     <!DOCTYPE html><html><body style="background:#000; font-family:monospace; color:#fff; padding:40px 10px;">
     <div style="max-width:600px; margin:auto; background:#050505; border:1px solid #333; border-radius:16px;">
       <div style="background:#111; padding:20px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
-        <span style="color:#00ff88; font-weight:900; font-size:16px;">★ NEW ORDER RECEIVED</span>
+        <span style="color:#00ff88; font-weight:900; font-size:16px;">★ NEW ORDER</span>
         <span style="background:#00ff88; color:#000; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px;">PAID</span>
       </div>
       
