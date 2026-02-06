@@ -192,7 +192,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
           </div>
           
           <div style="text-align:center;">
-            <a href="https://wishzep.shop/profile" style="background:#BE29EC; color:#fff; padding:18px 40px; text-decoration:none; border-radius:100px; font-weight:bold; font-size:13px; letter-spacing:1px; display:inline-block; box-shadow: 0 10px 40px rgba(190, 41, 236, 0.4);">TRACK STATUS</a>
+            <a href="https://wishzep.vercel.app/profile" style="background:#BE29EC; color:#fff; padding:18px 40px; text-decoration:none; border-radius:100px; font-weight:bold; font-size:13px; letter-spacing:1px; display:inline-block; box-shadow: 0 10px 40px rgba(190, 41, 236, 0.4);">TRACK STATUS</a>
           </div>
           
           <div style="text-align:center; margin-top:40px; padding-top:20px; border-top:1px solid #1a1a1a;">
@@ -237,7 +237,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
           </table>
         </div>
 
-        <a href="https://wishzep.shop/admin/dashboard" style="display:block; width:100%; background:#00ff88; color:#000; text-align:center; padding:18px 0; text-decoration:none; font-weight:900; border-radius:8px; font-size:14px;">OPEN DISPATCH CONSOLE</a>
+        <a href="https://wishzep.vercel.app/admin/dashboard" style="display:block; width:100%; background:#00ff88; color:#000; text-align:center; padding:18px 0; text-decoration:none; font-weight:900; border-radius:8px; font-size:14px;">OPEN DISPATCH CONSOLE</a>
         
         <p style="margin-top:20px; text-align:center; color:#444; font-size:10px;">Razorpay ID: ${orderData.razorpayOrderId}</p>
       </div>
