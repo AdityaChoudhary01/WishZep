@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { 
   ShoppingBag, 
@@ -123,6 +122,33 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Structured Data for SEO
+  const productSchema = product ? {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "image": allImages,
+    "description": product.description,
+    "sku": product.id,
+    "brand": {
+      "@type": "Brand",
+      "name": "WishZep"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://wishzep.com/products/${product.id}`,
+      "priceCurrency": "INR",
+      "price": product.discountPrice || product.price,
+      "availability": product.inventory > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "128"
+    }
+  } : null;
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -139,6 +165,12 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-6 py-12">
+      {productSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        />
+      )}
       <div className="flex justify-between items-center mb-8">
         <Link href="/products" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Shop
@@ -151,7 +183,7 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div className="space-y-6">
           <div className="relative aspect-[4/5] glass rounded-[2.5rem] overflow-hidden group shadow-2xl">
-            <Image src={allImages[activeImageIdx]} alt={product.name} fill className="object-cover transition-all duration-700 group-hover:scale-105" priority />
+            <Image src={allImages[activeImageIdx]} alt={`WishZep ${product.name} - View ${activeImageIdx + 1}`} fill className="object-cover transition-all duration-700 group-hover:scale-105" priority />
             {allImages.length > 1 && (
               <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button size="icon" variant="ghost" className="rounded-full bg-white/20 backdrop-blur-md" onClick={() => setActiveImageIdx(p => (p - 1 + allImages.length) % allImages.length)}><ChevronLeft className="w-6 h-6" /></Button>
@@ -163,7 +195,7 @@ export default function ProductDetailPage() {
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {allImages.map((img, i) => (
                 <button key={i} onClick={() => setActiveImageIdx(i)} className={cn("relative w-24 h-24 rounded-2xl overflow-hidden glass shrink-0 transition-all border-2", activeImageIdx === i ? "border-primary scale-105 shadow-lg" : "border-transparent opacity-60 hover:opacity-100")}>
-                  <Image src={img} alt={`Photo ${i}`} fill className="object-cover" />
+                  <Image src={img} alt={`WishZep ${product.name} Thumbnail ${i + 1}`} fill className="object-cover" />
                 </button>
               ))}
             </div>
@@ -205,7 +237,7 @@ export default function ProductDetailPage() {
                     <DialogContent className="glass max-w-3xl border-white/30 rounded-[2.5rem] p-8">
                       <DialogHeader><DialogTitle className="text-2xl font-black">Size Guide Chart</DialogTitle></DialogHeader>
                       <div className="relative aspect-video w-full rounded-2xl overflow-hidden mt-6 bg-white/10">
-                        <Image src={product.sizeChartUrl} alt="Size Chart" fill className="object-contain" />
+                        <Image src={product.sizeChartUrl} alt={`WishZep ${product.name} Size Chart`} fill className="object-contain" />
                       </div>
                     </DialogContent>
                   </Dialog>

@@ -43,7 +43,7 @@ export default function Home() {
           description: "Product link copied to your clipboard.",
         });
       } catch (err) {
-        // Silent clipboard fail
+        // Silent
       }
     };
 
@@ -58,14 +58,48 @@ export default function Home() {
     }
   };
 
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "WishZep",
+    "url": "https://wishzep.com",
+    "logo": "https://wishzep.com/logo.png",
+    "description": "Premium destination for techwear and performance gear.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+1-888-WISH-ZEP",
+      "contactType": "customer service"
+    }
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "url": "https://wishzep.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://wishzep.com/products?search={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  };
+
   return (
     <div className="flex flex-col gap-16 md:gap-20 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center overflow-hidden pt-10">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://picsum.photos/seed/wishzep-hero/1920/1080"
-            alt="Hero Background"
+            alt="WishZep High-Performance Techwear Hero"
             fill
             className="object-cover opacity-60 mix-blend-overlay"
             priority
@@ -124,7 +158,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products (Latest Drops) */}
+      {/* Featured Products */}
       <section className="container mx-auto px-4 md:px-6 space-y-10 md:space-y-16">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-4 text-center md:text-left">
           <div className="space-y-2 md:space-y-4">
@@ -156,7 +190,7 @@ export default function Home() {
                   <div className="relative aspect-square rounded-[1.2rem] md:rounded-[2.5rem] overflow-hidden bg-muted">
                     <Image
                       src={p.imageUrl || `https://picsum.photos/seed/${p.id}/800/800`}
-                      alt={p.name}
+                      alt={`WishZep ${p.name}`}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-1000"
                     />

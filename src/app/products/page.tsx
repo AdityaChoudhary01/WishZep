@@ -165,7 +165,7 @@ function ProductsContent() {
           description: "Product link copied to your clipboard.",
         });
       } catch (err) {
-        // Silent clipboard fail
+        // Silent
       }
     };
 
@@ -189,8 +189,23 @@ function ProductsContent() {
     }
   };
 
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": paginatedProducts.map((p, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "url": `https://wishzep.com/products/${p.id}`,
+      "name": p.name
+    }))
+  };
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8 md:space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
       <div className="space-y-4">
         <h1 className="text-4xl md:text-5xl font-black tracking-tighter">WISHZEP <span className="wishzep-text">CATALOGUE</span></h1>
         <p className="text-muted-foreground text-sm md:text-lg max-w-2xl">
@@ -273,7 +288,7 @@ function ProductsContent() {
                   <div className="relative aspect-[4/5] rounded-[1.2rem] md:rounded-[1.5rem] overflow-hidden bg-muted">
                     <Image
                       src={p.imageUrl}
-                      alt={p.name}
+                      alt={`WishZep ${p.name}`}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-700"
                     />

@@ -1,5 +1,4 @@
-
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -7,9 +6,61 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Suspense } from 'react';
 
+export const viewport: Viewport = {
+  themeColor: '#BE29EC',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: 'WishZep | Modern Aura Shop',
-  description: 'Eye-catching design with glassmorphism and premium products.',
+  metadataBase: new URL('https://wishzep.com'),
+  title: {
+    default: 'WishZep | Premium Modern Aura Shop',
+    template: '%s | WishZep'
+  },
+  description: 'WishZep is the ultimate destination for curated high-energy techwear and performance gear. Shop the future of fashion today.',
+  keywords: ['techwear', 'fashion', 'performance gear', 'WishZep', 'modern aura', 'luxury street wear'],
+  authors: [{ name: 'Aditya Choudhary' }],
+  creator: 'Aditya Choudhary',
+  publisher: 'WishZep',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://wishzep.com',
+    title: 'WishZep | Premium Modern Aura Shop',
+    description: 'Curated high-energy techwear and performance gear for visionaries.',
+    siteName: 'WishZep',
+    images: [
+      {
+        url: 'https://picsum.photos/seed/wishzep-og/1200/630',
+        width: 1200,
+        height: 630,
+        alt: 'WishZep Experience',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'WishZep | Premium Modern Aura Shop',
+    description: 'Shop curated high-energy techwear and performance gear.',
+    images: ['https://picsum.photos/seed/wishzep-twitter/1200/630'],
+    creator: '@wishzep',
+  },
+  alternates: {
+    canonical: 'https://wishzep.com',
+  },
 };
 
 export default function RootLayout({
