@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Send, Loader2, ShieldCheck, Zap, AlertCircle, Sparkles, Fingerprint, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, ShieldCheck, Smartphone, AlertCircle, Sparkles, UserCheck, Lock } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { 
   signInWithPopup, 
@@ -21,14 +21,25 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import BrandLogo from '@/components/BrandLogo';
 
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
+}
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-   
+  
+  // State
+  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone');
+  
+  // Email State
   const [email, setEmail] = useState('');
   const [isLinkSent, setIsLinkSent] = useState(false);
   const [isCompletingSignIn, setIsCompletingSignIn] = useState(false);
-   
+  
+  // Phone State
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -38,51 +49,62 @@ export default function LoginPage() {
   const db = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+  
+  // RECAPTCHA REF (Prevents double rendering/vibration)
   const recaptchaInitialized = useRef(false);
 
-  // --- RECAPTCHA LOGIC (Unchanged) ---
+  // --- 1. INITIALIZE RECAPTCHA (STRICT SINGLE RUN) ---
   useEffect(() => {
     if (!auth || recaptchaInitialized.current) return;
-    try {
-      const container = document.getElementById('recaptcha-container');
-      if (container) {
+
+    // Ensure DOM element exists
+    const container = document.getElementById('recaptcha-container');
+    if (container) {
+      try {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           'size': 'invisible',
-          'callback': () => {},
+          'callback': () => {
+            // ReCAPTCHA solved automatically
+          },
           'expired-callback': () => {
+            // Reset if expired
             if (window.recaptchaVerifier) {
-              window.recaptchaVerifier.render().then(widgetId => window.recaptchaVerifier.reset(widgetId));
+              window.recaptchaVerifier.clear();
+              recaptchaInitialized.current = false; 
             }
           }
         });
         recaptchaInitialized.current = true;
+      } catch (error) {
+        // Silent fail to prevent console spam
       }
-    } catch (error) {}
-    return () => {
-      if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); recaptchaInitialized.current = false; } catch (e) {}
-      }
-    };
+    }
   }, [auth]);
 
+  // --- 2. USER SYNC ---
   const syncUserProfile = async (user: any) => {
     const userRef = doc(db, 'users', user.uid);
     const profileData: any = {
       id: user.uid,
       email: user.email || '',
       phoneNumber: user.phoneNumber || '',
-      profileImageUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/200`,
+      profileImageUrl: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
       role: 'customer',
       updatedAt: serverTimestamp(),
     };
+
     if (user.displayName) profileData.displayName = user.displayName;
+
     await setDoc(userRef, profileData, { merge: true });
   };
 
+  // --- 3. CHECK FOR EMAIL LINK ON LOAD ---
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let emailForSignIn = window.localStorage.getItem('emailForSignIn');
-      if (!emailForSignIn) emailForSignIn = window.prompt('Please confirm your email address:');
+      if (!emailForSignIn) {
+        emailForSignIn = window.prompt('Please confirm your email for security:');
+      }
 
       if (emailForSignIn) {
         setIsCompletingSignIn(true);
@@ -90,14 +112,20 @@ export default function LoginPage() {
           .then(async (result) => {
             window.localStorage.removeItem('emailForSignIn');
             await syncUserProfile(result.user);
-            toast({ title: "Welcome!", description: "Login successful." });
+            toast({ title: "Welcome!", description: "You are now logged in." });
             router.push('/profile');
           })
-          .catch(() => toast({ variant: "destructive", title: "Link Expired", description: "Please try logging in again." }))
-          .finally(() => setIsCompletingSignIn(false));
+          .catch(() => {
+            toast({ variant: "destructive", title: "Link Expired", description: "Please request a new login link." });
+          })
+          .finally(() => {
+            setIsCompletingSignIn(false);
+          });
       }
     }
   }, [auth, router, toast]);
+
+  // --- HANDLERS ---
 
   const handleGoogleLogin = async () => {
     try {
@@ -108,23 +136,27 @@ export default function LoginPage() {
       toast({ title: "Success", description: "Logged in with Google." });
       router.push('/profile');
     } catch (error: any) {
-      setAuthError("Login cancelled or failed.");
+      // User closed popup or network error
+      setAuthError("Login cancelled or failed. Please try again.");
     }
   };
 
-  const handleMagicLinkLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setIsLoading(true);
     setAuthError(null);
-    const actionCodeSettings = { url: window.location.origin + '/auth/login', handleCodeInApp: true };
+    const actionCodeSettings = {
+      url: window.location.origin + '/auth/login',
+      handleCodeInApp: true,
+    };
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', email);
       setIsLinkSent(true);
-      toast({ title: "Link Sent", description: "Check your email inbox." });
+      toast({ title: "Check your Email", description: "We sent you a secure login link." });
     } catch (error: any) {
-      setAuthError("Could not send email. Please try again.");
+      setAuthError("Could not send email. Please check the address.");
     } finally {
       setIsLoading(false);
     }
@@ -135,17 +167,26 @@ export default function LoginPage() {
     if (!phoneNumber) return;
     setIsLoading(true);
     setAuthError(null);
+
     try {
-      if (!window.recaptchaVerifier) throw new Error("Security check failed. Refresh page.");
+      if (!window.recaptchaVerifier) {
+        // Fallback re-init if reference lost
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible' });
+      }
+      
       const appVerifier = window.recaptchaVerifier;
       const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+      
       const confirmation = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
       setConfirmationResult(confirmation);
       setIsOtpSent(true);
-      toast({ title: "OTP Sent", description: "Please check your mobile messages." });
+      toast({ title: "OTP Sent", description: "Please check your SMS." });
     } catch (error: any) {
-      setAuthError("Could not send OTP. Try again later.");
-      if (window.recaptchaVerifier) { try { window.recaptchaVerifier.clear(); recaptchaInitialized.current = false; } catch(e) {} }
+      setAuthError("Could not send OTP. Refresh page and try again.");
+      // Reset captcha
+      if (window.recaptchaVerifier) {
+        try { window.recaptchaVerifier.clear(); recaptchaInitialized.current = false; } catch(e) {}
+      }
     } finally {
       setIsLoading(false);
     }
@@ -159,10 +200,10 @@ export default function LoginPage() {
     try {
       const result = await confirmationResult.confirm(otp);
       await syncUserProfile(result.user);
-      toast({ title: "Success", description: "Phone verified successfully." });
+      toast({ title: "Verified", description: "Login successful." });
       router.push('/profile');
     } catch {
-      setAuthError("Wrong OTP. Please check and try again.");
+      setAuthError("Incorrect OTP. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -170,180 +211,199 @@ export default function LoginPage() {
 
   if (isCompletingSignIn) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center space-y-6">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
-            <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto relative z-10" />
-          </div>
-          <h2 className="text-2xl font-black tracking-tight">Authenticating...</h2>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+        <h2 className="text-xl font-bold text-gray-900">Verifying Secure Login...</h2>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-black relative overflow-hidden selection:bg-primary/30 text-white">
-      
-      {/* --- ULTRAMODERN BACKGROUND --- */}
-      <div className="absolute inset-0 w-full h-full">
-        {/* Gradient Mesh */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse delay-1000" />
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      </div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-white relative overflow-hidden px-4">
+      {/* Background Decor (Ultramodern Glows) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+      <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-[120px] opacity-60" />
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-secondary/10 rounded-full blur-[120px] opacity-60" />
 
-      <div className="w-full max-w-[420px] relative z-10 p-4">
+      <div className="w-full max-w-[440px] relative z-10">
+        
+        {/* RECAPTCHA CONTAINER (Hidden but functional) */}
         <div id="recaptcha-container"></div>
 
-        {/* --- GLASS CARD --- */}
-        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 shadow-2xl overflow-hidden relative group">
+        {/* Card */}
+        <div className="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-[2.5rem] shadow-2xl p-8 md:p-10 animate-in fade-in zoom-in-95 duration-500">
           
-          {/* Top Highlight Line */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50"></div>
-
-          {/* Logo Section */}
-          <div className="text-center space-y-6 mb-8">
-            <div className="inline-block p-4 rounded-3xl bg-gradient-to-b from-white/10 to-transparent border border-white/5 shadow-lg relative">
-              <div className="absolute inset-0 bg-primary/20 blur-lg rounded-3xl"></div>
-              <BrandLogo size="lg" className="relative z-10" />
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-block mb-6 hover:scale-105 transition-transform duration-300">
+              <BrandLogo size="lg" />
             </div>
-            <div className="space-y-1">
-              <h1 className="text-2xl font-black tracking-tight text-white">Welcome Back</h1>
-              <p className="text-sm text-gray-400 font-medium">Access your dashboard securely</p>
-            </div>
+            <h1 className="text-3xl font-black tracking-tight text-gray-900 mb-2">Welcome Back</h1>
+            <p className="text-sm font-medium text-gray-500">Secure access to your account</p>
           </div>
 
+          {/* Error Alert */}
           {authError && (
-            <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-500/10 border-red-500/20 text-red-200">
+            <Alert variant="destructive" className="mb-6 rounded-2xl border-red-100 bg-red-50 text-red-600 animate-in slide-in-from-top-2">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>
+              <AlertDescription className="font-bold">{authError}</AlertDescription>
             </Alert>
           )}
 
-          <div className="space-y-5">
-            {/* Google Button */}
-            <Button 
-              onClick={handleGoogleLogin}
-              className="w-full h-14 rounded-2xl gap-3 font-bold bg-white text-black hover:bg-white/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-white/5"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              Sign in with Google
-            </Button>
+          {/* Google Button */}
+          <Button 
+            onClick={handleGoogleLogin}
+            variant="outline"
+            className="w-full h-16 rounded-2xl bg-white border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-base transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-3 mb-8"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </Button>
 
-            {/* Divider */}
-            <div className="relative py-2 flex items-center">
-              <div className="flex-grow border-t border-white/10"></div>
-              <span className="flex-shrink mx-4 text-[10px] uppercase tracking-widest font-black text-gray-500">Or continue with</span>
-              <div className="flex-grow border-t border-white/10"></div>
+          {/* Divider */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+            <div className="relative flex justify-center text-xs uppercase tracking-widest font-black text-gray-300">
+              <span className="bg-white px-4">Or Login With</span>
             </div>
+          </div>
 
-            {!isOtpSent ? (
-              // PHONE INPUT STATE
-              <form onSubmit={handleSendOtp} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="space-y-1">
-                  <div className="relative group/input">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within/input:text-primary transition-colors" />
+          {/* Toggle Phone/Email */}
+          <div className="flex p-1 bg-gray-50 rounded-2xl mb-6 border border-gray-100">
+            <button 
+              onClick={() => { setLoginMethod('phone'); setIsLinkSent(false); setAuthError(null); }}
+              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${loginMethod === 'phone' ? 'bg-white shadow-md text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Phone Number
+            </button>
+            <button 
+              onClick={() => { setLoginMethod('email'); setIsOtpSent(false); setAuthError(null); }}
+              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${loginMethod === 'email' ? 'bg-white shadow-md text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Email Address
+            </button>
+          </div>
+
+          {/* PHONE LOGIN FORM */}
+          {loginMethod === 'phone' && (
+            <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
+              {!isOtpSent ? (
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <div className="relative group">
+                    <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
                     <Input 
                       type="tel" 
                       placeholder="Mobile Number" 
-                      maxLength={10}
-                      className="h-14 pl-12 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:bg-white/10 focus:border-primary/50 font-medium transition-all"
+                      className="h-16 pl-14 rounded-2xl bg-gray-50 border-gray-100 focus:bg-white focus:border-primary/50 focus:ring-4 focus:ring-primary/10 font-bold text-lg transition-all"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                      maxLength={10}
                     />
                   </div>
-                </div>
-                <Button 
-                  type="submit"
-                  disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
-                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-bold shadow-lg shadow-blue-900/20 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span className="flex items-center gap-2">Get OTP <ArrowRight className="w-4 h-4" /></span>}
-                </Button>
-              </form>
-            ) : (
-              // OTP VERIFICATION STATE
-              <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in zoom-in-95 duration-300">
-                <div className="text-center space-y-2">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </span>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Verify It's You</p>
-                </div>
-                
-                <div className="relative">
-                  <Input 
-                    type="text" 
-                    placeholder="000000" 
-                    maxLength={6}
-                    className="h-16 text-center text-3xl font-black tracking-[0.5em] rounded-2xl bg-white/5 border-white/10 text-white focus:bg-white/10 focus:border-primary/50 transition-all"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-3">
                   <Button 
-                    type="submit"
-                    disabled={isLoading || otp.length < 6}
-                    className="w-full h-14 rounded-2xl bg-white text-black font-bold hover:bg-gray-200 transition-all active:scale-95"
+                    type="submit" 
+                    disabled={isLoading || phoneNumber.length < 10}
+                    className="w-full h-16 rounded-2xl bg-gray-900 hover:bg-black text-white font-bold text-lg shadow-xl shadow-gray-200 hover:shadow-gray-300 transition-all active:scale-[0.98] disabled:opacity-70"
                   >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm & Login"}
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Send OTP"}
                   </Button>
-                  <button 
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="text-center mb-2">
+                    <p className="text-sm font-medium text-gray-500">Enter code sent to +91 {phoneNumber}</p>
+                  </div>
+                  <div className="relative group">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
+                    <Input 
+                      type="text" 
+                      placeholder="• • • • • •" 
+                      maxLength={6}
+                      className="h-16 pl-14 rounded-2xl bg-white border-primary/30 focus:border-primary focus:ring-4 focus:ring-primary/20 text-center text-2xl font-black tracking-[0.5em] transition-all"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      autoFocus
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || otp.length < 6}
+                    className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]"
+                  >
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Verify & Login"}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
                     type="button"
+                    className="w-full text-xs font-bold text-gray-400 hover:text-gray-900"
                     onClick={() => setIsOtpSent(false)}
-                    className="w-full text-xs font-bold text-gray-500 hover:text-white transition-colors py-2"
                   >
                     Change Number
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Email Magic Link Toggle */}
-            <div className="pt-2 text-center">
-               {!isLinkSent ? (
-                 !isOtpSent && (
-                   <button 
-                     onClick={() => {
-                        // Toggle logic if you want to switch between phone/email views
-                        // For this layout, I'm keeping phone as primary for the "modern" feel, 
-                        // but you can add the email form toggle here easily.
-                        const newEmailState = prompt("Enter email for magic link:");
-                        if(newEmailState) { setEmail(newEmailState); handleMagicLinkLogin({preventDefault:()=>{}} as any); }
-                     }}
-                     className="text-xs font-bold text-gray-500 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto"
-                   >
-                     <Mail className="w-3 h-3" /> Prefer email login?
-                   </button>
-                 )
-               ) : (
-                 <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                    <p className="text-sm text-green-400 font-bold">Magic link sent to inbox!</p>
-                 </div>
-               )}
+                  </Button>
+                </form>
+              )}
             </div>
+          )}
 
-          </div>
+          {/* EMAIL LOGIN FORM */}
+          {loginMethod === 'email' && (
+            <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
+              {!isLinkSent ? (
+                <form onSubmit={handleEmailLogin} className="space-y-4">
+                  <div className="relative group">
+                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+                    <Input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      className="h-16 pl-14 rounded-2xl bg-gray-50 border-gray-100 focus:bg-white focus:border-primary/50 focus:ring-4 focus:ring-primary/10 font-bold text-lg transition-all"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading || !email}
+                    className="w-full h-16 rounded-2xl bg-gray-900 hover:bg-black text-white font-bold text-lg shadow-xl shadow-gray-200 hover:shadow-gray-300 transition-all active:scale-[0.98]"
+                  >
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <span className="flex items-center gap-2">Send Login Link <ArrowRight className="w-5 h-5"/></span>}
+                  </Button>
+                </form>
+              ) : (
+                <div className="bg-green-50 border border-green-100 rounded-3xl p-8 text-center animate-in zoom-in-95">
+                  <div className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
+                    <UserCheck className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Link Sent!</h3>
+                  <p className="text-sm text-gray-600 font-medium mb-6">Check your inbox for the secure login link.</p>
+                  <Button 
+                    variant="outline" 
+                    className="rounded-xl font-bold border-2"
+                    onClick={() => setIsLinkSent(false)}
+                  >
+                    Try different email
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
-        {/* Footer badges */}
-        <div className="flex items-center justify-center gap-6 pt-8 opacity-40">
-          <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-300 uppercase tracking-widest">
-            <ShieldCheck className="w-3.5 h-3.5" /> Secure
+        {/* Footer Badges */}
+        <div className="mt-8 flex justify-center items-center gap-6 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+            <ShieldCheck className="w-4 h-4 text-green-500" />
+            <span>SSL Encrypted</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-300 uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" /> Encrypted
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-200"></div>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            <span>Verified</span>
           </div>
         </div>
 
