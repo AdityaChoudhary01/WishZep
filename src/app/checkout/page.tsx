@@ -352,7 +352,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" /> 6-digit PINCODE
+                    <Hash className="w-3.5 h-3.5" />PINCODE
                   </Label>
                   <Input 
                     type="text"
