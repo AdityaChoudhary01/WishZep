@@ -78,7 +78,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center group">
-          <div className="relative w-32 h-10 transition-transform group-hover:scale-105">
+          <div className="relative w-44 h-14 transition-transform group-hover:scale-105">
             <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" priority />
           </div>
         </Link>

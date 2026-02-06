@@ -110,6 +110,13 @@ export default function LoginPage() {
     }
   };
 
+  const setupRecaptcha = () => {
+    if ((window as any).recaptchaVerifier) return;
+    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible'
+    });
+  };
+
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -129,13 +136,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const setupRecaptcha = () => {
-    if ((window as any).recaptchaVerifier) return;
-    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible'
-    });
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -195,11 +195,11 @@ export default function LoginPage() {
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-[450px] bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100 relative z-10 animate-fade-in">
+      <div className="w-full max-w-[480px] bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100 relative z-10 animate-fade-in">
         <div id="recaptcha-container"></div>
         
         <div className="text-center space-y-2 mb-10">
-          <div className="relative w-32 h-16 mx-auto mb-6 transition-transform rotate-3">
+          <div className="relative w-64 h-24 mx-auto mb-6 transition-transform rotate-1">
              <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
           </div>
           <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>

@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div className="space-y-6">
           <Link href="/" className="flex items-center">
-            <div className="relative w-32 h-10">
+            <div className="relative w-52 h-16">
               <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
             </div>
           </Link>
