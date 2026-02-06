@@ -18,6 +18,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+const WishZepLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="24" fill="url(#logo_gradient)" />
+    <path d="M25 30L40 70L50 45L60 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+    <defs>
+      <linearGradient id="logo_gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#BE29EC" />
+        <stop offset="1" stopColor="#29A6EC" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -32,7 +45,6 @@ export default function Navbar() {
   const db = useFirestore();
   const { user } = useUser();
   
-  // Admin Check
   const adminRoleRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'roles_admin', user.uid);
@@ -41,7 +53,6 @@ export default function Navbar() {
   const { data: adminRole, isLoading: adminLoading } = useDoc(adminRoleRef);
   const isUserAdmin = !!adminRole && !adminLoading;
 
-  // Categories Fetching - Restricted to explicitly created categories only
   const categoriesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'categories'), orderBy('name', 'asc'));
@@ -79,13 +90,10 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center rotate-12 group-hover:rotate-0 transition-transform shadow-lg">
-            <span className="text-white font-bold text-2xl">W</span>
-          </div>
+          <WishZepLogo className="w-10 h-10 transition-transform group-hover:scale-110" />
           <span className="text-2xl font-bold font-headline wishzep-text tracking-tighter">WishZep</span>
         </Link>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           <Link
             href="/products"
@@ -178,7 +186,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden glass absolute top-full left-0 right-0 p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
           <Link

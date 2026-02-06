@@ -21,6 +21,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const WishZepLogo = ({ className = "w-16 h-16" }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="24" fill="url(#login_logo_gradient)" />
+    <path d="M25 30L40 70L50 45L60 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+    <defs>
+      <linearGradient id="login_logo_gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#BE29EC" />
+        <stop offset="1" stopColor="#29A6EC" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -191,7 +204,6 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[85vh] px-4 py-10 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -199,9 +211,7 @@ export default function LoginPage() {
         <div id="recaptcha-container"></div>
         
         <div className="text-center space-y-2 mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 rotate-3">
-            <span className="text-white font-black text-3xl">W</span>
-          </div>
+          <WishZepLogo className="w-16 h-16 mx-auto mb-6 shadow-xl shadow-primary/20 rotate-3" />
           <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>
           <p className="text-gray-500 font-medium text-sm">Sign in to your account</p>
         </div>
@@ -216,7 +226,6 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-6">
-          {/* Google Login */}
           <Button 
             onClick={handleGoogleLogin}
             variant="outline"
@@ -237,7 +246,6 @@ export default function LoginPage() {
             <div className="flex-grow border-t border-gray-100"></div>
           </div>
 
-          {/* Email Login */}
           {!isLinkSent ? (
             <form onSubmit={handleMagicLinkLogin} className="space-y-3">
               <div className="relative">
@@ -281,7 +289,6 @@ export default function LoginPage() {
             <div className="flex-grow border-t border-gray-100"></div>
           </div>
 
-          {/* Phone Login */}
           {!isOtpSent ? (
             <form onSubmit={handleSendOtp} className="space-y-3">
               <div className="relative">
