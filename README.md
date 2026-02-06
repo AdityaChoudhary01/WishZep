@@ -75,7 +75,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🤝 Contact
 
-**Aditya Choudhary** - Founder & Lead Developer
+**Aditya Choudhary** - Founder & Lead Developer  
 **Sahdev Rathi** - Manage Admin
 
 Official Support: [support@wishzep.shop](mailto:support@wishzep.shop)
