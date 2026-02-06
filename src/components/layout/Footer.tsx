@@ -1,27 +1,16 @@
 
 import Link from 'next/link';
-
-const WishZepLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="24" fill="url(#footer_logo_gradient)" />
-    <path d="M25 30L40 70L50 45L60 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    <defs>
-      <linearGradient id="footer_logo_gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#BE29EC" />
-        <stop offset="1" stopColor="#29A6EC" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
+import Image from 'next/image';
 
 export default function Footer() {
   return (
     <footer className="bg-white/50 border-t border-white/20 pt-20 pb-10 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div className="space-y-6">
-          <Link href="/" className="flex items-center gap-2">
-            <WishZepLogo className="w-8 h-8" />
-            <span className="text-xl font-bold font-headline wishzep-text">WishZep</span>
+          <Link href="/" className="flex items-center">
+            <div className="relative w-32 h-10">
+              <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
+            </div>
           </Link>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Charging your lifestyle with WishZep. Premium curated gear for the modern visionary. Experience the future of e-commerce.

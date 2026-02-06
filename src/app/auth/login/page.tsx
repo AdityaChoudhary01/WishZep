@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Send, Loader2, ShieldCheck, Zap, AlertCircle, Sparkles, Fingerprint, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, Send, Loader2, ShieldCheck, Zap, AlertCircle, Sparkles, Fingerprint, Phone, CheckCircle2 } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { 
   signInWithPopup, 
@@ -19,20 +19,8 @@ import {
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-const WishZepLogo = ({ className = "w-16 h-16" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="24" fill="url(#login_logo_gradient)" />
-    <path d="M25 30L40 70L50 45L60 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    <defs>
-      <linearGradient id="login_logo_gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#BE29EC" />
-        <stop offset="1" stopColor="#29A6EC" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -211,7 +199,9 @@ export default function LoginPage() {
         <div id="recaptcha-container"></div>
         
         <div className="text-center space-y-2 mb-10">
-          <WishZepLogo className="w-16 h-16 mx-auto mb-6 shadow-xl shadow-primary/20 rotate-3" />
+          <div className="relative w-32 h-16 mx-auto mb-6 transition-transform rotate-3">
+             <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
+          </div>
           <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>
           <p className="text-gray-500 font-medium text-sm">Sign in to your account</p>
         </div>

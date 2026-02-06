@@ -2,13 +2,14 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingBag, User, Search, Menu, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import {
@@ -17,19 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const WishZepLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="24" fill="url(#logo_gradient)" />
-    <path d="M25 30L40 70L50 45L60 70L75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    <defs>
-      <linearGradient id="logo_gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#BE29EC" />
-        <stop offset="1" stopColor="#29A6EC" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -89,9 +77,10 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <WishZepLogo className="w-10 h-10 transition-transform group-hover:scale-110" />
-          <span className="text-2xl font-bold font-headline wishzep-text tracking-tighter">WishZep</span>
+        <Link href="/" className="flex items-center group">
+          <div className="relative w-32 h-10 transition-transform group-hover:scale-105">
+            <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" priority />
+          </div>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
