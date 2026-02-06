@@ -18,7 +18,8 @@ import {
   Zap,
   Images,
   Ruler,
-  Settings2
+  Settings2,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -213,6 +213,11 @@ export default function AdminDashboard() {
   const handleSaveProduct = async () => {
     if (!db || !isUserAdmin) return;
     
+    if (!productFormData.name || !productFormData.category || !productFormData.price) {
+      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all basic product details." });
+      return;
+    }
+
     const specsObject: Record<string, string> = {};
     productFormData.specifications.forEach(s => {
       if (s.key.trim()) specsObject[s.key.trim()] = s.value;
@@ -237,11 +242,11 @@ export default function AdminDashboard() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), productData);
-        toast({ title: "Product updated!" });
+        toast({ title: "Product updated successfully!" });
       } else {
         const newDocRef = doc(collection(db, 'products'));
         await setDoc(newDocRef, { ...productData, id: newDocRef.id });
-        toast({ title: "Product added!" });
+        toast({ title: "Product added to shop!" });
       }
       setIsProductDialogOpen(false);
     } catch (error) {
@@ -256,7 +261,7 @@ export default function AdminDashboard() {
     try {
       const url = await uploadToCloudinary(file);
       setProductFormData(prev => ({ ...prev, imageUrl: url }));
-      toast({ title: "Primary Photo Updated" });
+      toast({ title: "Main Image Uploaded" });
     } catch (error) {
       toast({ variant: "destructive", title: "Upload failed." });
     } finally {
@@ -275,7 +280,7 @@ export default function AdminDashboard() {
         newUrls.push(url);
       }
       setProductFormData(prev => ({ ...prev, images: [...prev.images, ...newUrls] }));
-      toast({ title: `${files.length} Gallery Photos Added` });
+      toast({ title: `${files.length} Gallery images added` });
     } catch (error) {
       toast({ variant: "destructive", title: "Gallery upload failed." });
     } finally {
@@ -290,7 +295,7 @@ export default function AdminDashboard() {
     try {
       const url = await uploadToCloudinary(file);
       setProductFormData(prev => ({ ...prev, sizeChartUrl: url }));
-      toast({ title: "Size Chart Updated" });
+      toast({ title: "Size Chart Uploaded" });
     } catch (error) {
       toast({ variant: "destructive", title: "Upload failed." });
     } finally {
@@ -326,10 +331,10 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!db || !isUserAdmin || !window.confirm("Permanent Delete?")) return;
+    if (!db || !isUserAdmin || !window.confirm("Are you sure you want to delete this product?")) return;
     try {
       await deleteDoc(doc(db, 'products', id));
-      toast({ title: "Deleted." });
+      toast({ title: "Product Deleted." });
     } catch (error) {
       toast({ variant: "destructive", title: "Delete failed." });
     }
@@ -343,21 +348,22 @@ export default function AdminDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center space-y-6">
         <ShieldAlert className="w-20 h-20 text-destructive" />
-        <h1 className="text-3xl font-black uppercase">Admin Required</h1>
-        <Button onClick={() => router.push('/')} variant="outline" className="rounded-full">Back Home</Button>
+        <h1 className="text-3xl font-black uppercase">Admin Access Required</h1>
+        <Button onClick={() => router.push('/')} variant="outline" className="rounded-full">Back to Home</Button>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen bg-white">
+      {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-100 p-8 hidden md:block h-screen sticky top-0">
-        <div className="mb-12"><BrandLogo size="md" /></div>
+        <div className="mb-12 flex justify-center"><BrandLogo size="md" showText={false} /></div>
         <nav className="space-y-2">
           {[
-            { id: 'products', label: 'Items', icon: Package },
-            { id: 'categories', label: 'Groups', icon: Tags },
-            { id: 'orders', label: 'Orders', icon: ShoppingBag },
+            { id: 'products', label: 'All Products', icon: Package },
+            { id: 'categories', label: 'Categories', icon: Tags },
+            { id: 'orders', label: 'Customer Orders', icon: ShoppingBag },
           ].map((link) => (
             <button 
               key={link.id}
@@ -373,52 +379,58 @@ export default function AdminDashboard() {
         </nav>
       </aside>
 
+      {/* Main Content */}
       <main className="flex-1 p-8 space-y-12">
         {activeTab === 'products' && (
           <div className="space-y-8 animate-fade-in">
             <header className="flex justify-between items-center">
               <div>
-                <h1 className="text-4xl font-black uppercase">Product <span className="wishzep-text">Drop</span></h1>
-                <p className="text-muted-foreground font-medium">Calibrate your shop inventory.</p>
+                <h1 className="text-3xl font-black uppercase tracking-tight">Product <span className="wishzep-text">Inventory</span></h1>
+                <p className="text-muted-foreground text-sm font-medium">Manage and list your products.</p>
               </div>
-              <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-14 px-8 font-black gap-2 shadow-xl shadow-primary/20">
-                <Plus className="w-6 h-6" /> NEW DROP
+              <Button onClick={() => handleOpenProductDialog()} className="rounded-xl h-12 px-6 font-bold gap-2 shadow-lg shadow-primary/20">
+                <Plus className="w-5 h-5" /> ADD NEW PRODUCT
               </Button>
             </header>
 
-            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
               <Table>
                 <TableHeader className="bg-gray-50/50">
                   <TableRow>
-                    <TableHead className="font-black px-6">Artifact</TableHead>
-                    <TableHead className="font-black">Group</TableHead>
-                    <TableHead className="font-black">Stock</TableHead>
-                    <TableHead className="font-black">Price</TableHead>
-                    <TableHead className="text-right font-black px-6">Options</TableHead>
+                    <TableHead className="font-bold px-6">Product Details</TableHead>
+                    <TableHead className="font-bold">Category</TableHead>
+                    <TableHead className="font-bold">Stock</TableHead>
+                    <TableHead className="font-bold">Price</TableHead>
+                    <TableHead className="text-right font-bold px-6">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {products?.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-gray-50/50 h-24">
+                    <TableRow key={p.id} className="hover:bg-gray-50/50 h-20">
                       <TableCell className="font-bold px-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden relative border border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-gray-100 shrink-0">
                             <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
                           </div>
-                          <span className="text-sm font-black">{p.name}</span>
+                          <span className="text-sm font-bold line-clamp-1">{p.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase">{p.category}</Badge></TableCell>
-                      <TableCell className="font-bold text-muted-foreground text-sm">{p.inventory} Units</TableCell>
-                      <TableCell className="font-black text-primary">Rs.{p.discountPrice || p.price}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px] font-bold uppercase">{p.category}</Badge></TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-sm">{p.inventory} Units</TableCell>
+                      <TableCell className="font-bold text-primary">Rs.{p.discountPrice || p.price}</TableCell>
                       <TableCell className="text-right px-6">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => handleOpenProductDialog(p)}><Edit2 className="w-5 h-5" /></Button>
-                          <Button variant="ghost" size="icon" className="text-destructive rounded-xl" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-5 h-5" /></Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="rounded-lg h-9 w-9" onClick={() => handleOpenProductDialog(p)}><Edit2 className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" className="text-destructive rounded-lg h-9 w-9" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {products?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">No products found. Add your first product to get started.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -428,21 +440,24 @@ export default function AdminDashboard() {
         {activeTab === 'categories' && (
           <div className="space-y-8 animate-fade-in">
              <header>
-              <h1 className="text-4xl font-black uppercase">Category <span className="wishzep-text">Vault</span></h1>
-              <p className="text-muted-foreground font-medium">Organize artifacts into logical groupings.</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight">Category <span className="wishzep-text">Management</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Organize products into groups.</p>
             </header>
             <div className="grid md:grid-cols-3 gap-10">
-              <div className="bg-white p-8 rounded-[2rem] space-y-6 border border-gray-100 shadow-sm h-fit">
-                <h3 className="text-2xl font-black">Add Group</h3>
-                <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Outerwear" className="h-14 rounded-2xl" />
-                <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-2xl h-14 bg-primary font-black">SYNC GROUP</Button>
+              <div className="bg-white p-6 rounded-2xl space-y-6 border border-gray-100 shadow-sm h-fit">
+                <h3 className="text-xl font-bold">Add Category</h3>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Category Name</Label>
+                  <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Shoes, T-Shirts" className="h-12 rounded-xl" />
+                </div>
+                <Button onClick={handleAddCategory} disabled={!newCategory} className="w-full rounded-xl h-12 bg-primary font-bold">ADD CATEGORY</Button>
               </div>
-              <div className="md:col-span-2 bg-white rounded-[2rem] overflow-hidden border border-gray-100">
+              <div className="md:col-span-2 bg-white rounded-2xl overflow-hidden border border-gray-100">
                 <Table>
-                  <TableHeader className="bg-gray-50"><TableRow><TableHead className="px-8 font-black">Group Name</TableHead><TableHead className="text-right px-8 font-black">Action</TableHead></TableRow></TableHeader>
+                  <TableHeader className="bg-gray-50"><TableRow><TableHead className="px-6 font-bold">Category Name</TableHead><TableHead className="text-right px-6 font-bold">Action</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {categories?.map((cat) => (
-                      <TableRow key={cat.id} className="h-20"><TableCell className="px-8 font-black text-lg">{cat.name}</TableCell><TableCell className="text-right px-8"><Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteDoc(doc(db!, 'categories', cat.id))}><Trash2 className="w-5 h-5" /></Button></TableCell></TableRow>
+                      <TableRow key={cat.id} className="h-16"><TableCell className="px-6 font-bold">{cat.name}</TableCell><TableCell className="text-right px-6"><Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteDoc(doc(db!, 'categories', cat.id))}><Trash2 className="w-4 h-4" /></Button></TableCell></TableRow>
                     ))}
                   </TableBody>
                 </Table>
@@ -454,59 +469,57 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="space-y-8 animate-fade-in">
              <header>
-              <h1 className="text-4xl font-black uppercase">Fulfillment <span className="wishzep-text">Log</span></h1>
-              <p className="text-muted-foreground font-medium">Manage customer order transmissions.</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight">Order <span className="wishzep-text">History</span></h1>
+              <p className="text-muted-foreground text-sm font-medium">Track and update customer orders.</p>
             </header>
-            <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm">
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
               <Table>
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="font-black px-8">Order ID</TableHead>
-                    <TableHead className="font-black">Client</TableHead>
-                    <TableHead className="font-black">Value</TableHead>
-                    <TableHead className="font-black">Status</TableHead>
-                    <TableHead className="text-right font-black px-8">Detail</TableHead>
+                    <TableHead className="font-bold px-6">Order ID</TableHead>
+                    <TableHead className="font-bold">Customer</TableHead>
+                    <TableHead className="font-bold">Amount</TableHead>
+                    <TableHead className="font-bold">Status</TableHead>
+                    <TableHead className="text-right font-bold px-6">Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedOrders.map((order) => (
-                    <TableRow key={order.id} className="h-24">
-                      <TableCell className="px-8 font-mono text-[11px] font-black">{order.id.slice(0, 8)}</TableCell>
-                      <TableCell className="font-bold">{order.shippingDetails?.fullName}</TableCell>
-                      <TableCell className="font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
+                    <TableRow key={order.id} className="h-20">
+                      <TableCell className="px-6 font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
+                      <TableCell className="font-bold text-sm">{order.shippingDetails?.fullName}</TableCell>
+                      <TableCell className="font-bold text-primary">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Badge className={cn("px-4 py-1.5 rounded-full font-black text-[9px]", order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700')}>
+                        <Badge className={cn("px-3 py-1 rounded-full text-[9px] font-bold", order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700')}>
                           {order.status?.toUpperCase() || 'PENDING'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right px-8">
+                      <TableCell className="text-right px-6">
                         <Dialog>
-                          <DialogTrigger asChild><Button variant="ghost" size="icon" className="rounded-xl"><Info className="w-6 h-6" /></Button></DialogTrigger>
-                          <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white border-none p-0 overflow-hidden shadow-2xl">
-                             <div className="bg-primary p-8 text-white"><DialogHeader><DialogTitle className="text-3xl font-black">ORDER LOGISTICS</DialogTitle></DialogHeader></div>
+                          <DialogTrigger asChild><Button variant="ghost" size="icon" className="rounded-lg"><Info className="w-5 h-5" /></Button></DialogTrigger>
+                          <DialogContent className="max-w-3xl rounded-3xl bg-white border-none p-0 overflow-hidden shadow-2xl">
+                             <div className="bg-primary p-6 text-white"><DialogHeader><DialogTitle className="text-2xl font-black uppercase">ORDER DETAILS</DialogTitle></DialogHeader></div>
                              <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
-                               <div className="grid md:grid-cols-2 gap-10">
+                               <div className="grid md:grid-cols-2 gap-8">
                                  <div className="space-y-6">
-                                   <div className="space-y-4">
-                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Client Identity</h4>
-                                     <div className="p-5 rounded-2xl bg-gray-50 space-y-2">
-                                       <p className="font-black">{order.shippingDetails?.fullName}</p>
-                                       <p className="text-xs font-bold text-primary">{order.shippingDetails?.contactNumber}</p>
-                                       <p className="text-xs text-muted-foreground">{order.shippingDetails?.address}, {order.shippingDetails?.city}</p>
+                                   <div className="space-y-3">
+                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Shipping Address</h4>
+                                     <div className="p-4 rounded-xl bg-gray-50 space-y-1">
+                                       <p className="font-bold text-sm">{order.shippingDetails?.fullName}</p>
+                                       <p className="text-xs font-medium text-primary">{order.shippingDetails?.contactNumber}</p>
+                                       <p className="text-xs text-muted-foreground">{order.shippingDetails?.address}, {order.shippingDetails?.city} - {order.shippingDetails?.zip}</p>
                                      </div>
                                    </div>
                                  </div>
-                                 <div className="space-y-6">
-                                   <div className="space-y-4">
-                                      <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Artifacts</h4>
-                                      <AdminOrderItemsList orderId={order.id} />
-                                   </div>
+                                 <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Ordered Items</h4>
+                                    <AdminOrderItemsList orderId={order.id} />
                                  </div>
                                </div>
                                <Separator />
                                <div className="flex gap-4">
-                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-14 font-black">MARK SHIPPED</Button>
-                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} variant="outline" className="flex-1 rounded-xl h-14 font-black">MARK DELIVERED</Button>
+                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-12 font-bold">MARK AS SHIPPED</Button>
+                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} variant="outline" className="flex-1 rounded-xl h-12 font-bold">MARK AS DELIVERED</Button>
                                </div>
                              </div>
                           </DialogContent>
@@ -514,6 +527,11 @@ export default function AdminDashboard() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {sortedOrders.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">No orders placed yet.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -523,55 +541,98 @@ export default function AdminDashboard() {
 
       {/* Product Management Dialog */}
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="max-w-5xl rounded-[3rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-3xl">
-          <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 p-8">
+        <DialogContent className="max-w-4xl rounded-3xl border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-3xl">
+          <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-6">
             <DialogHeader>
-              <DialogTitle className="text-3xl font-black uppercase tracking-tight">
-                {editingProduct ? 'Recalibrate Item' : 'New Artifact Drop'}
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                {editingProduct ? <Edit2 className="w-6 h-6 text-primary" /> : <Plus className="w-6 h-6 text-primary" />}
+                {editingProduct ? 'Update Product Details' : 'Add New Product'}
               </DialogTitle>
             </DialogHeader>
           </div>
-          <div className="p-10 space-y-12">
-            <div className="grid lg:grid-cols-2 gap-12">
-              <div className="space-y-8">
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase text-primary tracking-widest">Core Information</Label>
-                  <Input placeholder="Item Name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-16 rounded-2xl text-lg font-black" />
+          
+          <div className="p-8 space-y-10">
+            {/* Section 1: Basic Details */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Basic Details
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Product Name*</Label>
+                  <Input placeholder="Enter product name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="h-12 rounded-xl font-medium" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Category*</Label>
                   <Select value={productFormData.category} onValueChange={(val) => setProductFormData({...productFormData, category: val})}>
-                    <SelectTrigger className="h-16 rounded-2xl font-bold"><SelectValue placeholder="Assign Group" /></SelectTrigger>
-                    <SelectContent className="bg-white">{categories?.map(cat => <SelectItem key={cat.id} value={cat.name} className="font-bold">{cat.name}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-12 rounded-xl font-medium"><SelectValue placeholder="Select Category" /></SelectTrigger>
+                    <SelectContent className="bg-white">{categories?.map(cat => <SelectItem key={cat.id} value={cat.name} className="font-medium">{cat.name}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Textarea placeholder="Artifact Narrative/Description" value={productFormData.description} onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="min-h-[150px] rounded-3xl p-6 text-sm font-medium leading-relaxed" />
                 </div>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Base Price</Label><Input type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-16 rounded-2xl font-black" /></div>
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-primary tracking-widest">Drop Price</Label><Input type="number" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-16 rounded-2xl font-black border-primary/20 bg-primary/5" /></div>
+                <div className="md:col-span-2 space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Product Description</Label>
+                  <Textarea placeholder="Tell customers about this product..." value={productFormData.description} onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="min-h-[120px] rounded-xl p-4 text-sm font-medium" />
                 </div>
-
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Stock Level</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-16 rounded-2xl font-black" /></div>
               </div>
+            </div>
 
-              <div className="space-y-10">
-                <div className="space-y-6">
-                  <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><Zap className="w-4 h-4" /> Primary Asset</Label>
-                  <div className="relative aspect-video rounded-[2.5rem] overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary transition-all flex flex-col items-center justify-center text-gray-400 bg-gray-50" onClick={() => fileInputRef.current?.click()}>
-                    {productFormData.imageUrl ? <Image src={productFormData.imageUrl} alt="Main" fill className="object-cover" /> : isUploading ? <Loader2 className="w-12 h-12 animate-spin text-primary" /> : <ImagePlus className="w-12 h-12" />}
+            <Separator />
+
+            {/* Section 2: Pricing and Stock */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Pricing & Inventory
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Original Price (MRP)*</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
+                    <Input type="number" placeholder="0.00" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-12 pl-8 rounded-xl font-bold" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-primary uppercase">Selling Price</Label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold">₹</span>
+                    <Input type="number" placeholder="0.00" value={productFormData.discountPrice} onChange={(e) => setProductFormData({...productFormData, discountPrice: e.target.value})} className="h-12 pl-8 rounded-xl font-bold border-primary/20 bg-primary/5 text-primary" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">Total Stock (Units)</Label>
+                  <Input type="number" placeholder="0" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-12 rounded-xl font-bold" />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Section 3: Photos */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Product Images
+              </h3>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Main Product Image</Label>
+                  <div className="relative aspect-video rounded-2xl overflow-hidden group cursor-pointer border-2 border-dashed border-gray-200 hover:border-primary transition-all flex flex-col items-center justify-center text-gray-400 bg-gray-50" onClick={() => fileInputRef.current?.click()}>
+                    {productFormData.imageUrl ? <Image src={productFormData.imageUrl} alt="Main" fill className="object-cover" /> : isUploading ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <div className="text-center"><ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" /><p className="text-[10px] font-bold">Click to Upload</p></div>}
                   </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleMainImageUpload} />
                 </div>
 
-                <div className="space-y-6">
-                  <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><Images className="w-4 h-4" /> Artifact Gallery</Label>
-                  <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase text-gray-500 tracking-wider">More Images (Gallery)</Label>
+                  <div className="grid grid-cols-3 gap-3">
                     {productFormData.images.map((img, i) => (
-                      <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group">
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
                         <Image src={img} alt="Gallery" fill className="object-cover" />
-                        <button onClick={() => removeGalleryImage(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-4 h-4" /></button>
+                        <button onClick={() => removeGalleryImage(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
                       </div>
                     ))}
-                    <button onClick={() => galleryInputRef.current?.click()} className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center hover:bg-primary/5 hover:border-primary transition-all text-gray-400">
-                      <Plus className="w-6 h-6" />
+                    <button onClick={() => galleryInputRef.current?.click()} className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center hover:bg-primary/5 hover:border-primary transition-all text-gray-400">
+                      <Plus className="w-5 h-5 mb-1" />
+                      <span className="text-[8px] font-bold">ADD</span>
                     </button>
                     <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" multiple onChange={handleGalleryUpload} />
                   </div>
@@ -579,45 +640,62 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Section 4: Apparel Specifics (Size Chart) */}
+            {isApparel && (
+              <>
+                <Separator />
+                <div className="space-y-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Ruler className="w-4 h-4" /> Clothing Sizes
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-muted-foreground uppercase">Available Sizes (e.g., S, M, L, XL)</Label>
+                      <Input placeholder="Separate with commas" value={productFormData.sizes} onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})} className="h-12 rounded-xl font-bold bg-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-muted-foreground uppercase">Size Chart Image</Label>
+                      <div className="relative h-24 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-white cursor-pointer group hover:border-primary transition-colors" onClick={() => sizeChartInputRef.current?.click()}>
+                        {productFormData.sizeChartUrl ? <Image src={productFormData.sizeChartUrl} alt="Size Chart" fill className="object-contain" /> : <div className="text-center"><ImagePlus className="w-5 h-5 mx-auto mb-1 opacity-40" /><p className="text-[8px] font-bold text-muted-foreground">Upload Chart</p></div>}
+                      </div>
+                      <input type="file" ref={sizeChartInputRef} className="hidden" accept="image/*" onChange={handleSizeChartUpload} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
             <Separator />
 
-            <div className="grid md:grid-cols-2 gap-12">
-              {isApparel && (
-                <div className="space-y-8 p-8 bg-primary/5 rounded-[2.5rem] animate-in slide-in-from-left-4">
-                  <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2"><Ruler className="w-5 h-5 text-primary" /> Apparel Config</h3>
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Available Sizes (Comma Separated)</Label>
-                    <Input placeholder="S, M, L, XL" value={productFormData.sizes} onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})} className="h-16 rounded-2xl font-bold bg-white" />
+            {/* Section 5: Technical Details */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Settings2 className="w-4 h-4" /> Product Specifications
+                </h3>
+                <Button variant="outline" size="sm" onClick={addSpecification} className="h-8 rounded-lg border-dashed text-xs font-bold">
+                  + Add Detail
+                </Button>
+              </div>
+              <div className="grid gap-3">
+                {productFormData.specifications.length === 0 && (
+                  <p className="text-[10px] text-center text-muted-foreground py-4 border border-dashed rounded-xl">No extra details added. Add specs like Weight, Material, or Warranty.</p>
+                )}
+                {productFormData.specifications.map((spec, i) => (
+                  <div key={i} className="flex gap-3 items-center animate-in slide-in-from-top-1">
+                    <Input placeholder="Detail Name (e.g. Color)" value={spec.key} onChange={(e) => updateSpecification(i, 'key', e.target.value)} className="h-10 rounded-lg text-sm" />
+                    <Input placeholder="Value (e.g. Midnight Black)" value={spec.value} onChange={(e) => updateSpecification(i, 'value', e.target.value)} className="h-10 rounded-lg text-sm" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:bg-destructive/10 shrink-0" onClick={() => removeSpecification(i)}><X className="w-4 h-4" /></Button>
                   </div>
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Size Chart Artifact</Label>
-                    <div className="relative h-40 rounded-2xl border-2 border-dashed border-primary/20 flex items-center justify-center bg-white cursor-pointer group" onClick={() => sizeChartInputRef.current?.click()}>
-                      {productFormData.sizeChartUrl ? <Image src={productFormData.sizeChartUrl} alt="Size Chart" fill className="object-contain" /> : <ImagePlus className="w-8 h-8 text-primary/30 group-hover:text-primary transition-colors" />}
-                    </div>
-                    <input type="file" ref={sizeChartInputRef} className="hidden" accept="image/*" onChange={handleSizeChartUpload} />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-8 p-8 bg-secondary/5 rounded-[2.5rem]">
-                <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2"><Settings2 className="w-5 h-5 text-secondary" /> Artifact Specs</h3>
-                <div className="space-y-4">
-                  {productFormData.specifications.map((spec, i) => (
-                    <div key={i} className="flex gap-2">
-                      <Input placeholder="Key (e.g. Weight)" value={spec.key} onChange={(e) => updateSpecification(i, 'key', e.target.value)} className="h-12 rounded-xl bg-white" />
-                      <Input placeholder="Value (e.g. 200g)" value={spec.value} onChange={(e) => updateSpecification(i, 'value', e.target.value)} className="h-12 rounded-xl bg-white" />
-                      <Button variant="ghost" size="icon" onClick={() => removeSpecification(i)}><X className="w-4 h-4" /></Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" onClick={addSpecification} className="w-full h-12 rounded-xl border-dashed border-secondary/40 text-secondary font-black">ADD TECHNICAL SPEC</Button>
-                </div>
+                ))}
               </div>
             </div>
 
-            <div className="pt-10 border-t border-gray-100 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white p-4">
-              <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-2xl h-16 px-10 font-bold flex-1">CANCEL</Button>
-              <Button onClick={handleSaveProduct} className="rounded-2xl h-16 px-20 font-black bg-primary flex-[2] text-white shadow-2xl shadow-primary/20">
-                {editingProduct ? 'RECALIBRATE DROP' : 'INITIATE DROP'}
+            {/* Footer Actions */}
+            <div className="pt-8 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white/80 backdrop-blur-md pb-4">
+              <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-xl h-12 px-8 font-bold flex-1">CANCEL</Button>
+              <Button onClick={handleSaveProduct} className="rounded-xl h-12 px-12 font-bold bg-primary flex-[2] text-white shadow-xl shadow-primary/20 transition-all active:scale-95">
+                {editingProduct ? 'UPDATE PRODUCT' : 'ADD PRODUCT TO SHOP'}
               </Button>
             </div>
           </div>
