@@ -62,8 +62,8 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "WishZep",
-    "url": "https://wishzep.com",
-    "logo": "https://wishzep.com/logo.png",
+    "url": "https://wishzep.shop",
+    "logo": "https://wishzep.shop/logo.png",
     "description": "Premium destination for techwear and performance gear.",
     "contactPoint": {
       "@type": "ContactPoint",
@@ -75,10 +75,10 @@ export default function Home() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "url": "https://wishzep.com",
+    "url": "https://wishzep.shop",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://wishzep.com/products?search={search_term_string}",
+      "target": "https://wishzep.shop/products?search={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   };

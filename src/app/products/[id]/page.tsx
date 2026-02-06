@@ -136,7 +136,7 @@ export default function ProductDetailPage() {
     },
     "offers": {
       "@type": "Offer",
-      "url": `https://wishzep.com/products/${product.id}`,
+      "url": `https://wishzep.shop/products/${product.id}`,
       "priceCurrency": "INR",
       "price": product.discountPrice || product.price,
       "availability": product.inventory > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",

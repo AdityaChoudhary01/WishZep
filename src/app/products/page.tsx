@@ -195,7 +195,7 @@ function ProductsContent() {
     "itemListElement": paginatedProducts.map((p, i) => ({
       "@type": "ListItem",
       "position": i + 1,
-      "url": `https://wishzep.com/products/${p.id}`,
+      "url": `https://wishzep.shop/products/${p.id}`,
       "name": p.name
     }))
   };

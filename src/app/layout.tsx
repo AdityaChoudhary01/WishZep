@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://wishzep.com'),
+  metadataBase: new URL('https://wishzep.shop'),
   title: {
     default: 'WishZep | Premium Modern Aura Shop',
     template: '%s | WishZep'
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://wishzep.com',
+    url: 'https://wishzep.shop',
     title: 'WishZep | Premium Modern Aura Shop',
     description: 'Curated high-energy techwear and performance gear for visionaries.',
     siteName: 'WishZep',
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     creator: '@wishzep',
   },
   alternates: {
-    canonical: 'https://wishzep.com',
+    canonical: 'https://wishzep.shop',
   },
 };
 

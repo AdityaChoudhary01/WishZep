@@ -3,7 +3,7 @@ import { initializeFirebase } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://wishzep.com';
+  const baseUrl = 'https://wishzep.shop';
   
   // Static Routes
   const routes = [

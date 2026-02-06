@@ -14,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://wishzep.com/sitemap.xml',
+    sitemap: 'https://wishzep.shop/sitemap.xml',
   };
 }
