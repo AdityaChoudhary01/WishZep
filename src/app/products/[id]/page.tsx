@@ -84,16 +84,19 @@ export default function ProductDetailPage() {
       return false;
     }
     
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      discountPrice: product.discountPrice,
-      image: product.imageUrl,
-      category: product.category,
-      description: product.description,
-      rating: 4.9 
-    }, selectedSize);
+    // Pass quantity as well - update store if needed or call multiple times
+    for(let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        discountPrice: product.discountPrice,
+        image: product.imageUrl,
+        category: product.category,
+        description: product.description,
+        rating: 4.9 
+      }, selectedSize);
+    }
     
     if (!silent) {
       toast({
@@ -107,6 +110,27 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     const success = handleAddToCart(true);
     if (success) router.push('/cart');
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    
+    const shareData = {
+      title: product.name,
+      text: `Check out the ${product.name} on WishZep!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({ title: "Link Copied!", description: "Product link copied to clipboard." });
+      }
+    } catch (err) {
+      // User cancelled or share failed
+    }
   };
 
   if (isLoading) {
@@ -125,9 +149,14 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-6 py-12">
-      <Link href="/products" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-all mb-10">
-        <ArrowLeft className="w-4 h-4" /> BACK TO ALL PRODUCTS
-      </Link>
+      <div className="flex justify-between items-center mb-10">
+        <Link href="/products" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-all">
+          <ArrowLeft className="w-4 h-4" /> BACK TO ALL PRODUCTS
+        </Link>
+        <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-full glass h-12 w-12 hover:text-primary">
+          <Share2 className="w-5 h-5" />
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* Artifact Imagery */}
