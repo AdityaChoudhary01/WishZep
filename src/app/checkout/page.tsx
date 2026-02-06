@@ -13,9 +13,9 @@ import {
   Hash, 
   ShieldCheck, 
   Phone, 
-  PhoneCall,
-  IndianRupee,
-  WifiOff,
+  PhoneCall, 
+  IndianRupee, 
+  WifiOff, 
   CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  
+   
   const [shipping, setShipping] = useState({
     fullName: '',
     contactNumber: '',
@@ -161,17 +161,18 @@ export default function CheckoutPage() {
         handler: function (response: any) {
           setIsSuccess(true);
           const orderRef = doc(collection(db, 'orders'));
-          
+           
           const orderPayload = {
             userId: user.uid,
             orderDate: new Date().toISOString(),
             totalAmount: total,
             status: 'pending',
-            shippingDetails: { ...shipping },
+            shippingDetails: { ...shipping, email: user.email }, // Explicitly store email here too
             shippingAddress: `${shipping.address}, ${shipping.city} - ${shipping.zip}`,
             paymentMethod: 'Razorpay',
             paymentId: response.razorpay_payment_id,
             razorpayOrderId: response.razorpay_order_id,
+            emailSent: false, // Flag for webhook idempotency
             createdAt: serverTimestamp()
           };
 
@@ -193,7 +194,7 @@ export default function CheckoutPage() {
             title: "Transmission Success! ✨", 
             description: "Your artifacts have been secured and logged in the registry." 
           });
-          
+           
           setTimeout(() => {
             clearCart();
             router.push('/profile');
@@ -201,8 +202,14 @@ export default function CheckoutPage() {
         },
         prefill: {
           name: shipping.fullName,
-          email: user.email,
+          email: user.email, // Prefill user email
           contact: shipping.contactNumber,
+        },
+        // CRITICAL FIX: Pass email in notes so Webhook can always find it
+        notes: {
+          email: user.email, 
+          userId: user.uid,
+          orderRef: "web_checkout"
         },
         theme: {
           color: "#BE29EC",
@@ -249,7 +256,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-6 py-12">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      
+       
       {!isOnline && (
         <Alert variant="destructive" className="mb-8 rounded-3xl border-2 border-destructive animate-pulse bg-destructive/5 py-6">
           <WifiOff className="h-6 w-6" />
