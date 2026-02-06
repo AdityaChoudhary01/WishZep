@@ -2,6 +2,12 @@
   "name": "wishzep",
   "version": "0.1.0",
   "private": true,
+  "author": "Aditya Choudhary",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdityaChoudhary01/WishZep.git"
+  },
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
