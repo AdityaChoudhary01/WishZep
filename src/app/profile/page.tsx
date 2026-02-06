@@ -50,8 +50,8 @@ function OrderItemsList({ orderId }: { orderId: string }) {
   return (
     <div className="space-y-4">
       {items?.map((item) => (
-        <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 items-center">
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+        <div key={item.id} className="flex gap-3 md:gap-4 p-3 md:p-4 rounded-2xl bg-gray-50 border border-gray-100 items-center">
+          <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
             {item.image ? (
               <Image src={item.image} alt={item.name} fill className="object-cover" />
             ) : (
@@ -60,9 +60,9 @@ function OrderItemsList({ orderId }: { orderId: string }) {
           </div>
           <div className="flex-1 min-w-0">
             <h5 className="font-bold text-sm truncate">{item.name}</h5>
-            <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">{item.quantity} Unit{item.quantity > 1 ? 's' : ''}</p>
+            <p className="text-[10px] md:text-xs text-muted-foreground uppercase font-black tracking-widest">{item.quantity} Unit{item.quantity > 1 ? 's' : ''}</p>
           </div>
-          <p className="font-black text-primary">Rs.{item.price?.toLocaleString()}</p>
+          <p className="font-black text-primary text-sm md:text-base">Rs.{item.price?.toLocaleString()}</p>
         </div>
       ))}
     </div>
@@ -178,10 +178,11 @@ export default function ProfilePage() {
   const profileImage = profileData?.profileImageUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/200`;
 
   return (
-    <div className="container mx-auto px-6 py-12 space-y-12 max-w-6xl">
-      <header className="flex flex-col md:flex-row items-center gap-8 bg-white border border-gray-100 p-10 rounded-[3rem] shadow-xl">
-        <div className="relative group">
-          <Avatar className="w-32 h-32 border-4 border-primary/20 shadow-2xl transition-transform group-hover:rotate-6">
+    <div className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8 md:space-y-12 max-w-6xl">
+      {/* Header Section */}
+      <header className="flex flex-col md:flex-row items-center gap-6 md:gap-8 bg-white border border-gray-100 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-xl">
+        <div className="relative group shrink-0">
+          <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20 shadow-2xl transition-transform group-hover:rotate-6">
             <AvatarImage src={profileImage} className="object-cover" />
             <AvatarFallback className="text-4xl font-black bg-primary/10">{user.email?.[0].toUpperCase()}</AvatarFallback>
           </Avatar>
@@ -191,9 +192,9 @@ export default function ProfilePage() {
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
         </div>
 
-        <div className="flex-1 text-center md:text-left space-y-4">
+        <div className="flex-1 text-center md:text-left space-y-4 w-full">
           {isEditingName ? (
-            <div className="flex flex-col md:flex-row items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
               <Input value={editedName} onChange={(e) => setEditedName(e.target.value)} className="max-w-xs h-12 rounded-xl bg-gray-50" autoFocus />
               <div className="flex gap-2">
                 <Button onClick={handleSaveName} className="rounded-xl h-12 bg-primary"><Save className="w-4 h-4 mr-2" /> Save</Button>
@@ -202,8 +203,8 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <h1 className="text-4xl font-black">{profileData?.displayName || 'WishZep Member'}</h1>
-              <p className="text-muted-foreground font-medium">{user.email}</p>
+              <h1 className="text-2xl md:text-4xl font-black break-words">{profileData?.displayName || 'WishZep Member'}</h1>
+              <p className="text-muted-foreground font-medium break-all">{user.email}</p>
             </div>
           )}
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pt-2">
@@ -211,15 +212,15 @@ export default function ProfilePage() {
           </div>
         </div>
         
-        <div className="flex flex-col gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto">
           <Button variant="outline" className="rounded-xl gap-2 w-full" onClick={() => setIsEditingName(true)}><Edit3 className="w-4 h-4" /> Edit Profile</Button>
           <Button variant="ghost" onClick={handleSignOut} className="rounded-xl text-destructive hover:bg-destructive/10 gap-2 w-full"><LogOut className="w-4 h-4" /> Sign Out</Button>
         </div>
       </header>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl h-14 mb-8">
-          <TabsTrigger value="orders" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
+        <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl h-auto min-h-[3.5rem] mb-6 md:mb-8 flex flex-wrap justify-start">
+          <TabsTrigger value="orders" className="rounded-xl px-6 md:px-8 py-2 md:py-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white flex-1 md:flex-none">
             <History className="w-4 h-4 mr-2" /> Artifact History
           </TabsTrigger>
         </TabsList>
@@ -228,69 +229,75 @@ export default function ProfilePage() {
           {ordersLoading ? (
             <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing Registry...</div>
           ) : ordersError ? (
-            <div className="bg-white border border-gray-100 rounded-[2rem] p-12 text-center space-y-4">
+            <div className="bg-white border border-gray-100 rounded-[2rem] p-8 md:p-12 text-center space-y-4">
               <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
               <h3 className="text-xl font-bold">Registry Sync Error</h3>
               <p className="text-muted-foreground max-w-md mx-auto">We encountered an issue while fetching your history. Please ensure your signal is strong and try again.</p>
               <Button variant="outline" onClick={() => window.location.reload()}>Retry Sync</Button>
             </div>
           ) : sortedOrders.length === 0 ? (
-            <div className="bg-white border border-gray-100 rounded-[2rem] p-20 text-center space-y-6">
-              <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShoppingBag className="w-12 h-12 text-primary/30" />
+            // FIX: Reduced padding from p-20 to p-8 md:p-20 to fit mobile screens
+            <div className="bg-white border border-gray-100 rounded-[2rem] p-8 md:p-20 text-center space-y-6">
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <ShoppingBag className="w-10 h-10 md:w-12 md:h-12 text-primary/30" />
               </div>
-              <h3 className="text-3xl font-black">Your vault is empty.</h3>
-              <p className="text-muted-foreground text-lg max-w-sm mx-auto">It's time to secure your first artifact. Explore the latest drops now.</p>
-              <Link href="/products" className="inline-block pt-4">
-                <Button className="rounded-full bg-primary h-16 px-12 text-xl font-bold shadow-2xl shadow-primary/30 hover:scale-105 transition-transform">Explore Catalogue</Button>
+              <h3 className="text-2xl md:text-3xl font-black">Your vault is empty.</h3>
+              <p className="text-muted-foreground text-base md:text-lg max-w-sm mx-auto">It's time to secure your first artifact. Explore the latest drops now.</p>
+              <Link href="/products" className="inline-block pt-4 w-full sm:w-auto">
+                <Button className="rounded-full bg-primary h-14 md:h-16 w-full sm:w-auto px-8 md:px-12 text-lg md:text-xl font-bold shadow-2xl shadow-primary/30 hover:scale-105 transition-transform">Explore Catalogue</Button>
               </Link>
             </div>
           ) : (
             <div className="grid gap-6">
               {sortedOrders.map((order) => (
-                <div key={order.id} className="bg-white border border-gray-100 rounded-3xl p-8 flex flex-col md:flex-row justify-between items-center gap-8 shadow-sm transition-all hover:shadow-md group">
-                  <div className="flex items-center gap-8 w-full md:w-auto">
-                    <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:rotate-6 transition-transform flex-shrink-0">
-                      <Package className="w-10 h-10 text-primary" />
+                <div key={order.id} className="bg-white border border-gray-100 rounded-3xl p-5 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8 shadow-sm transition-all hover:shadow-md group">
+                  
+                  {/* Left Side: Icon & Info */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start md:items-center gap-4 md:gap-8 w-full md:w-auto text-center sm:text-left">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:rotate-6 transition-transform flex-shrink-0">
+                      <Package className="w-8 h-8 md:w-10 md:h-10 text-primary" />
                     </div>
                     <div className="space-y-1">
-                      <p className="font-black text-xl">Order #{order.id.slice(0, 8)}</p>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                      <p className="font-black text-lg md:text-xl">Order #{order.id.slice(0, 8)}</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center sm:justify-start gap-2">
                         <Calendar className="w-3 h-3" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
                       </p>
-                      <Badge className={cn(
-                        "mt-2 px-4 py-1.5 rounded-full text-[10px] uppercase font-black border-none",
-                        order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
-                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                      )}>
-                        {order.status?.toUpperCase() || 'PENDING'}
-                      </Badge>
+                      <div className="flex justify-center sm:justify-start">
+                        <Badge className={cn(
+                          "mt-2 px-4 py-1.5 rounded-full text-[10px] uppercase font-black border-none",
+                          order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                        )}>
+                          {order.status?.toUpperCase() || 'PENDING'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-                    <div className="text-center md:text-right mr-0 md:mr-8">
+                  {/* Right Side: Price & Actions */}
+                  <div className="flex flex-col md:flex-row items-center gap-4 md:gap-4 w-full md:w-auto">
+                    <div className="text-center md:text-right mr-0 md:mr-8 mb-2 md:mb-0">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Order Value</p>
-                      <p className="text-2xl font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</p>
+                      <p className="text-xl md:text-2xl font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</p>
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold gap-2">
-                            <Info className="w-4 h-4" /> Order Details
+                          <Button variant="outline" className="rounded-2xl h-12 w-full sm:w-auto px-6 font-bold gap-2">
+                            <Info className="w-4 h-4" /> <span className="hidden sm:inline">Order</span> Details
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl bg-white rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl">
-                          <div className="bg-primary p-8 text-white relative">
+                        <DialogContent className="w-[95vw] md:max-w-2xl bg-white rounded-[2rem] md:rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl">
+                          <div className="bg-primary p-6 md:p-8 text-white relative">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <DialogHeader>
-                              <DialogTitle className="text-3xl font-black">DROP LOGISTICS</DialogTitle>
+                              <DialogTitle className="text-2xl md:text-3xl font-black">DROP LOGISTICS</DialogTitle>
                             </DialogHeader>
-                            <p className="text-sm font-bold opacity-80 uppercase tracking-widest mt-2">Protocol ID: {order.id}</p>
+                            <p className="text-xs md:text-sm font-bold opacity-80 uppercase tracking-widest mt-2 truncate">Protocol ID: {order.id}</p>
                           </div>
                           
-                          <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                          <div className="p-6 md:p-8 space-y-6 md:space-y-8 max-h-[60vh] md:max-h-[70vh] overflow-y-auto">
                             <div className="space-y-4">
                               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Included Artifacts</h4>
                               <OrderItemsList orderId={order.id} />
@@ -298,17 +305,17 @@ export default function ProfilePage() {
 
                             <Separator className="bg-gray-100" />
 
-                            <div className="grid md:grid-cols-2 gap-8">
+                            <div className="grid md:grid-cols-2 gap-6 md:gap-8">
                               <div className="space-y-4">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Shipping Destination</h4>
-                                <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
+                                <div className="p-4 md:p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><MapPin className="w-3.5 h-3.5" /> Coordinates</div>
-                                  <p className="text-sm font-bold leading-relaxed">{order.shippingAddress}</p>
+                                  <p className="text-sm font-bold leading-relaxed break-words">{order.shippingAddress}</p>
                                 </div>
                               </div>
                               <div className="space-y-4">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Summary</h4>
-                                <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
+                                <div className="p-4 md:p-5 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                                   <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"><CreditCard className="w-3.5 h-3.5" /> Gateway</div>
                                   <p className="text-sm font-bold">{order.paymentMethod || 'Razorpay Interface'}</p>
                                   <div className="flex justify-between items-center pt-2">
@@ -328,44 +335,45 @@ export default function ProfilePage() {
 
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button className="rounded-2xl h-12 px-6 font-black bg-primary gap-2 shadow-lg shadow-primary/20">
-                            <Truck className="w-4 h-4" /> Track Drop
+                          <Button className="rounded-2xl h-12 w-full sm:w-auto px-6 font-black bg-primary gap-2 shadow-lg shadow-primary/20">
+                            <Truck className="w-4 h-4" /> Track <span className="hidden sm:inline">Drop</span>
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl bg-white rounded-[3rem] border-none p-10 shadow-3xl">
+                        <DialogContent className="w-[95vw] md:max-w-2xl bg-white rounded-[2rem] md:rounded-[3rem] border-none p-6 md:p-10 shadow-3xl">
                           <DialogHeader>
-                            <DialogTitle className="text-3xl font-black text-center mb-6">TRACKING SIGNAL</DialogTitle>
+                            <DialogTitle className="text-2xl md:text-3xl font-black text-center mb-4 md:mb-6">TRACKING SIGNAL</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-10 relative">
-                            <div className="absolute left-[27px] top-4 bottom-4 w-1 bg-gray-100" />
+                          <div className="space-y-8 md:space-y-10 relative pl-2 md:pl-0">
+                            {/* Timeline Line */}
+                            <div className="absolute left-[35px] md:left-[27px] top-4 bottom-4 w-1 bg-gray-100" />
                             
-                            <div className="flex gap-6 relative z-10">
+                            <div className="flex gap-4 md:gap-6 relative z-10">
                               <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", "bg-primary text-white")}>
-                                <CheckCircle2 className="w-7 h-7" />
+                                <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" />
                               </div>
                               <div className="flex-1 pt-1">
-                                <h4 className="font-black text-lg">Drop Confirmed</h4>
-                                <p className="text-sm text-muted-foreground">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'} • System Synchronized</p>
+                                <h4 className="font-black text-base md:text-lg">Drop Confirmed</h4>
+                                <p className="text-xs md:text-sm text-muted-foreground">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'} • System Synchronized</p>
                               </div>
                             </div>
 
-                            <div className="flex gap-6 relative z-10">
+                            <div className="flex gap-4 md:gap-6 relative z-10">
                               <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", ['shipped', 'delivered'].includes(order.status) ? "bg-primary text-white" : "bg-gray-100 text-gray-300")}>
-                                <Truck className="w-7 h-7" />
+                                <Truck className="w-6 h-6 md:w-7 md:h-7" />
                               </div>
                               <div className="flex-1 pt-1">
-                                <h4 className="font-black text-lg">In Transit</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'pending' || !order.status ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
+                                <h4 className="font-black text-base md:text-lg">In Transit</h4>
+                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'pending' || !order.status ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
                               </div>
                             </div>
 
-                            <div className="flex gap-6 relative z-10">
+                            <div className="flex gap-4 md:gap-6 relative z-10">
                               <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", order.status === 'delivered' ? "bg-green-500 text-white" : "bg-gray-100 text-gray-300")}>
-                                <Package className="w-7 h-7" />
+                                <Package className="w-6 h-6 md:w-7 md:h-7" />
                               </div>
                               <div className="flex-1 pt-1">
-                                <h4 className="font-black text-lg">Delivered</h4>
-                                <p className="text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination coordinates' : 'Pending final arrival'}</p>
+                                <h4 className="font-black text-base md:text-lg">Delivered</h4>
+                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination coordinates' : 'Pending final arrival'}</p>
                               </div>
                             </div>
                           </div>
