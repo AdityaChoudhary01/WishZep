@@ -1,10 +1,11 @@
+
 'use server';
 
 import nodemailer from 'nodemailer';
 
 /**
  * Server Action to send contact emails via SMTP.
- * Uses environment variables for security.
+ * Uses simple language and the actual brand logo image.
  */
 export async function sendContactEmail(formData: FormData) {
   const name = formData.get('name') as string;
@@ -16,11 +17,11 @@ export async function sendContactEmail(formData: FormData) {
   const smtpPass = process.env.SMTP_PASS;
 
   if (!name || !email || !message) {
-    return { success: false, error: 'All fields are required.' };
+    return { success: false, error: 'Please fill in all fields.' };
   }
 
   if (!smtpUser || !smtpPass) {
-    return { success: false, error: 'Email service not configured.' };
+    return { success: false, error: 'Email service is not ready yet.' };
   }
 
   const transporter = nodemailer.createTransport({
@@ -52,22 +53,21 @@ export async function sendContactEmail(formData: FormData) {
                 
                 <tr>
                   <td style="padding: 50px 40px;">
-                    <!-- Brand Section -->
+                    <!-- Actual Brand Logo -->
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
                         <td>
-                          <div style="background: linear-gradient(135deg, #BE29EC, #29A6EC); width: 50px; height: 50px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: white;">W</div>
-                          <span style="font-size: 24px; font-weight: 900; color: #ffffff; margin-left: 10px; vertical-align: middle;">Wish<span style="color: #29A6EC;">Zep</span></span>
+                          <img src="https://res.cloudinary.com/dmtnonxtt/image/upload/v1770382083/wzhjmwclq9chpojzabgj.png" alt="WishZep" height="40" style="display: block; border: 0; outline: none;" />
                         </td>
                         <td align="right">
-                          <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Website Contact</p>
+                          <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Help Center</p>
                           <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 900; color: #BE29EC;">NEW MESSAGE</p>
                         </td>
                       </tr>
                     </table>
 
-                    <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; text-transform: uppercase; line-height: 1;">Message <br/><span style="color: #29A6EC;">Received.</span></h1>
-                    <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">You have received a new inquiry through the WishZep contact form. A customer is waiting for your response.</p>
+                    <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; line-height: 1;">We've Got <br/><span style="color: #29A6EC;">Mail.</span></h1>
+                    <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">A customer has sent a message through your website contact form. Here are the details:</p>
 
                     <!-- Sender Information Card -->
                     <div style="background: #111; border-radius: 24px; padding: 25px; margin-bottom: 30px; border: 1px solid #1a1a1a;">
@@ -93,18 +93,18 @@ export async function sendContactEmail(formData: FormData) {
                       </table>
                     </div>
 
-                    <!-- Message Content Section -->
-                    <div style="background: linear-gradient(135deg, rgba(190, 41, 236, 0.08), rgba(41, 166, 236, 0.08)); border: 1px solid rgba(190, 41, 236, 0.3); border-radius: 24px; padding: 30px; position: relative;">
-                      <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Message Details</p>
+                    <!-- Message Content -->
+                    <div style="background: linear-gradient(135deg, rgba(190, 41, 236, 0.08), rgba(41, 166, 236, 0.08)); border: 1px solid rgba(190, 41, 236, 0.3); border-radius: 24px; padding: 30px;">
+                      <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Message Content</p>
                       <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #eee; white-space: pre-wrap;">"${message}"</p>
                     </div>
 
                     <div style="margin-top: 50px; text-align: center;">
-                      <a href="mailto:${email}" style="background: #ffffff; color: #000000; padding: 20px 40px; border-radius: 100px; text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15);">REPLY TO MESSAGE →</a>
+                      <a href="mailto:${email}" style="background: #ffffff; color: #000000; padding: 20px 40px; border-radius: 100px; text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: 1px; display: inline-block;">REPLY TO CUSTOMER →</a>
                     </div>
 
                     <p style="margin-top: 60px; font-size: 10px; color: #333; text-align: center; line-height: 1.6; border-top: 1px solid #1a1a1a; padding-top: 30px;">
-                      © 2024 WishZep. This is an automated notification from your website's contact interface.
+                      © 2024 WishZep. This is an automated message from your website contact form.
                     </p>
                   </td>
                 </tr>
@@ -124,7 +124,7 @@ export async function sendContactEmail(formData: FormData) {
     console.error('SMTP Error:', error);
     return { 
       success: false, 
-      error: 'Message delivery failed. Please check SMTP configuration.' 
+      error: 'Message could not be sent. Please check your settings.' 
     };
   }
 }
