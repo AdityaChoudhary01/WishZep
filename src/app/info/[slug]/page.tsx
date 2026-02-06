@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -18,17 +17,13 @@ import {
   Send, 
   ShieldCheck, 
   Truck, 
-  RotateCcw, 
-  FileText, 
   Zap, 
   Sparkles,
   Globe,
   Clock,
   CheckCircle2,
   Lock,
-  Eye,
   Scale,
-  Code2,
   AlertCircle,
   Github,
   Linkedin,
@@ -40,7 +35,7 @@ import { Separator } from '@/components/ui/separator';
 export default function DynamicInfoPage() {
   const params = useParams();
   const slug = typeof params.slug === 'string' ? params.slug : params.slug?.[0];
-  
+   
   const db = useFirestore();
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
@@ -237,73 +232,96 @@ export default function DynamicInfoPage() {
 
       case 'contact':
         return (
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 animate-fade-in items-start">
-            <div className="space-y-10 lg:space-y-16">
-              <div className="space-y-6 md:space-y-8">
-                <Badge className="bg-secondary/20 text-secondary px-4 md:px-6 py-2 rounded-full border-secondary/20 text-[10px] md:text-sm font-bold tracking-widest uppercase">Available 24/7/365</Badge>
-                <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-none">
-                  JOIN THE <br/><span className="wishzep-text">DIALOGUE.</span>
-                </h1>
-                <p className="text-lg md:text-2xl text-muted-foreground leading-relaxed font-light">
-                  Whether you have a question about a drop, a suggestion for the platform, or need high-priority order support, our team is always on standby.
-                </p>
-              </div>
+          // Added 'overflow-hidden' to prevent horizontal scroll caused by blur effects
+          <div className="w-full max-w-7xl mx-auto overflow-hidden">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 xl:gap-24 animate-fade-in items-start">
+              
+              {/* Left Column: Information */}
+              <div className="space-y-8 lg:space-y-12">
+                <div className="space-y-4 md:space-y-6">
+                  <Badge className="bg-secondary/20 text-secondary px-4 py-2 rounded-full border-secondary/20 text-[10px] md:text-xs font-bold tracking-widest uppercase">
+                    Available 24/7/365
+                  </Badge>
+                  {/* Fluid typography with break-words to prevent overflow */}
+                  <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] break-words">
+                    JOIN THE <br/><span className="wishzep-text">DIALOGUE.</span>
+                  </h1>
+                  <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed font-light max-w-md lg:max-w-none">
+                    Whether you have a question about a drop, a suggestion for the platform, or need high-priority order support, our team is always on standby.
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10">
-                {[
-                  { icon: Mail, label: "Official Support", value: "support@wishzep.shop", desc: "Best for order inquiries." },
-                  { icon: Phone, label: "Direct Line", value: "+91 12345 67899", desc: "Mon-Fri, 9AM-6PM PT." },
-                  { icon: Globe, label: "Global HQ", value: "Innovation Dist, SF", desc: "Where the magic happens." },
-                  { icon: Clock, label: "Response Time", value: "< 2 Hours", desc: "Our average reply time." }
-                ].map((item, i) => (
-                  <div key={i} className="space-y-3 md:space-y-4 group cursor-pointer">
-                    <div className="w-14 h-14 md:w-16 md:h-16 glass rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-xl group-hover:shadow-primary/30">
-                      <item.icon className="w-6 h-6 md:w-8 md:h-8" />
+                {/* Contact Methods - Responsive Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                  {[
+                    { icon: Mail, label: "Official Support", value: "support@wishzep.shop", desc: "Best for order inquiries." },
+                    { icon: Phone, label: "Direct Line", value: "+91 12345 67899", desc: "Mon-Fri, 9AM-6PM PT." },
+                    { icon: Globe, label: "Global HQ", value: "Innovation Dist, SF", desc: "Where the magic happens." },
+                    { icon: Clock, label: "Response Time", value: "< 2 Hours", desc: "Our average reply time." }
+                  ].map((item, i) => (
+                    <div key={i} className="flex flex-row sm:flex-col items-center sm:items-start gap-4 p-4 rounded-2xl glass hover:bg-white/5 transition-colors group cursor-pointer">
+                      <div className="w-12 h-12 md:w-14 md:h-14 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-lg shrink-0">
+                        <item.icon className="w-5 h-5 md:w-6 md:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{item.label}</p>
+                        <p className="text-base md:text-lg font-black truncate">{item.value}</p>
+                        <p className="text-xs text-muted-foreground hidden sm:block mt-1">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{item.label}</p>
-                      <p className="text-lg md:text-xl font-black">{item.value}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground mt-1">{item.desc}</p>
+                  ))}
+                </div>
+
+                {/* Priority Box */}
+                <div className="p-6 md:p-8 glass rounded-3xl border-primary/20 bg-primary/5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle2 className="text-primary w-5 h-5 md:w-6 md:h-6 shrink-0" />
+                    <p className="text-sm md:text-lg font-bold">Priority Support</p>
+                  </div>
+                  <p className="text-xs md:text-base text-muted-foreground leading-relaxed">
+                    Logged-in members receive accelerated response times.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Form */}
+              <div className="relative mt-4 lg:mt-0 w-full">
+                {/* Background Blur Effect - Contained */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/20 blur-[80px] pointer-events-none rounded-full" />
+                
+                <div className="glass p-6 sm:p-8 lg:p-12 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative z-10 w-full">
+                  <form onSubmit={handleContactSubmit} className="space-y-5 md:space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Full Name</label>
+                        <Input name="name" required placeholder="John Doe" className="h-12 md:h-14 rounded-xl glass border-white/20 bg-white/5 focus:bg-white/10 transition-all text-base" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Email Address</label>
+                        <Input name="email" required type="email" placeholder="john@example.com" className="h-12 md:h-14 rounded-xl glass border-white/20 bg-white/5 focus:bg-white/10 transition-all text-base" />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Subject</label>
+                      <Input name="subject" placeholder="What's this about?" className="h-12 md:h-14 rounded-xl glass border-white/20 bg-white/5 focus:bg-white/10 transition-all text-base" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Message</label>
+                      <Textarea name="message" required placeholder="How can we help?" className="min-h-[150px] rounded-xl md:rounded-2xl glass border-white/20 bg-white/5 focus:bg-white/10 transition-all text-base p-4" />
+                    </div>
+                    
+                    <Button type="submit" disabled={isSending} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-primary hover:bg-primary/90 text-lg font-black gap-3 shadow-xl transition-all active:scale-95">
+                      {isSending ? 'Sending...' : 'Send Message'} <Send className="w-5 h-5" />
+                    </Button>
+                    
+                    <p className="text-center text-[10px] text-muted-foreground px-4 opacity-70">
+                      Protected by WishZep Secure Protocol v2.4
+                    </p>
+                  </form>
+                </div>
               </div>
-
-              <div className="p-6 md:p-8 glass rounded-[2rem] md:rounded-[2.5rem] border-primary/20 bg-primary/5">
-                <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-                  <CheckCircle2 className="text-primary w-5 h-5 md:w-6 md:h-6" />
-                  <p className="text-base md:text-lg font-bold">Priority Support for Members</p>
-                </div>
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">Logged-in members receive accelerated response times and direct access to our specialist team.</p>
-              </div>
-            </div>
-
-            <div className="glass p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl relative mt-8 lg:mt-0">
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/20 blur-[80px] pointer-events-none" />
-              <form onSubmit={handleContactSubmit} className="space-y-6 md:space-y-8 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                  <div className="space-y-2 md:space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Full Name</label>
-                    <Input name="name" required placeholder="John Doe" className="h-14 md:h-16 rounded-xl md:rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-base md:text-lg" />
-                  </div>
-                  <div className="space-y-2 md:space-y-3">
-                    <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Email Address</label>
-                    <Input name="email" required type="email" placeholder="john@example.com" className="h-14 md:h-16 rounded-xl md:rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-base md:text-lg" />
-                  </div>
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Subject</label>
-                  <Input name="subject" placeholder="What's this about?" className="h-14 md:h-16 rounded-xl md:rounded-2xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-base md:text-lg" />
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-widest ml-1 text-muted-foreground">Message</label>
-                  <Textarea name="message" required placeholder="How can we help you achieve your vision?" className="min-h-[150px] md:min-h-[200px] rounded-xl md:rounded-3xl glass border-white/20 bg-white/10 focus:bg-white/20 transition-all text-base md:text-lg p-4 md:p-6" />
-                </div>
-                <Button type="submit" disabled={isSending} className="w-full h-16 md:h-20 rounded-2xl md:rounded-[2rem] bg-primary hover:bg-primary/90 text-lg md:text-2xl font-black gap-3 md:gap-4 shadow-2xl shadow-primary/20 transition-all active:scale-95">
-                  {isSending ? 'Transmitting...' : 'Send Message'} <Send className="w-5 h-5 md:w-6 md:h-6" />
-                </Button>
-                <p className="text-center text-[10px] text-muted-foreground px-4">By submitting, you agree to our response protocol and privacy guidelines.</p>
-              </form>
             </div>
           </div>
         );
@@ -462,7 +480,7 @@ export default function DynamicInfoPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-12 md:py-24 min-h-screen">
+    <div className="container mx-auto px-4 md:px-6 py-8 md:py-24 min-h-screen">
       {renderTemplate()}
     </div>
   );
