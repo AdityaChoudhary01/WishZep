@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     // Filter for order.paid (Primary) or payment.captured (Fallback)
     if (event.event === 'order.paid' || event.event === 'payment.captured') {
       const entity = event.payload.payment ? event.payload.payment.entity : event.payload.order.entity;
-      const rzpOrderId = entity.order_id || entity.id; // Handle both payment and order entities
+      const rzpOrderId = entity.order_id || entity.id;
       
       console.log(`[Webhook] Processing Order: ${rzpOrderId}`);
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
           }
 
           const itemsSnap = await orderDoc.ref.collection('order_items').get();
-          // FIX: Explicitly include the ID in the mapped object
+          // Explicitly map ID to ensure it exists
           orderItems = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           break;
         }
@@ -100,9 +100,10 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
   });
 
   const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(orderData.totalAmount || 0);
+  const safeOrderId = (orderId || 'UNKNOWN').toString().slice(-6).toUpperCase();
+  const orderDate = orderData.createdAt ? new Date(orderData.createdAt.toDate()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString();
 
   // Helper to generate Item List HTML
-  // FIX: Added safe access (?.slice) to prevent crashes if ID is missing
   const generateItemsHtml = (isAdmin = false) => items.map(item => `
     <tr>
       <td style="padding: 15px 0; border-bottom: 1px solid #1a1a1a;">
@@ -119,9 +120,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
       </td>
     </tr>`).join('');
 
-  // --- 1. CUSTOMER EMAIL ---
-  const safeOrderId = (orderId || 'UNKNOWN').toString().slice(-6).toUpperCase();
-  
+  // --- 1. CUSTOMER EMAIL (Now Includes ALL Details) ---
   const customerHtml = `
     <!DOCTYPE html><html><body style="background:#050505; font-family:sans-serif; color:#fff; padding:40px 10px;">
     <div style="max-width:600px; margin:auto; background:#0a0a0a; border:1px solid #222; border-radius:30px; overflow:hidden;">
@@ -129,24 +128,37 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
       <div style="padding:40px;">
         <img src="${brandLogoUrl}" width="50" style="margin-bottom:30px; border-radius:12px;" />
         <h1 style="font-size:36px; margin:0 0 10px; text-transform:uppercase;">Order <br/><span style="color:#BE29EC;">Confirmed.</span></h1>
-        <p style="color:#888; font-size:14px; margin-bottom:40px;">Hi ${orderData.shippingDetails?.fullName}, your gear is secured. Dispatch protocols initiated.</p>
+        <p style="color:#888; font-size:14px; margin-bottom:40px;">Hi ${orderData.shippingDetails?.fullName}, your artifacts have been secured. The fulfillment engine is active.</p>
         
         <div style="background:#111; padding:20px; border-radius:20px; margin-bottom:30px;">
           <table width="100%">${generateItemsHtml(false)}</table>
           <div style="border-top:1px solid #222; margin-top:15px; padding-top:15px; text-align:right;">
-            <span style="color:#888; font-size:12px; margin-right:10px;">TOTAL</span>
+            <span style="color:#888; font-size:12px; margin-right:10px;">TOTAL PAID</span>
             <span style="font-size:20px; font-weight:900;">${formattedAmount}</span>
           </div>
         </div>
 
-        <div style="padding:20px; border:1px solid #222; border-radius:20px;">
-          <p style="margin:0 0 5px; font-size:10px; color:#666; text-transform:uppercase; font-weight:900;">Shipping To</p>
-          <p style="margin:0; font-size:13px; color:#fff;">${orderData.shippingAddress}</p>
+        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px; background:#111; padding:20px; border-radius:20px; border:1px solid #222;">
+            <p style="margin:0 0 10px; font-size:10px; color:#BE29EC; text-transform:uppercase; font-weight:900;">Shipping To</p>
+            <p style="margin:0 0 5px; font-size:13px; font-weight:bold; color:#fff;">${orderData.shippingDetails?.fullName}</p>
+            <p style="margin:0 0 10px; font-size:12px; color:#aaa; line-height:1.4;">${orderData.shippingAddress}</p>
+            <p style="margin:0; font-size:12px; color:#fff;">📞 ${orderData.shippingDetails?.contactNumber}</p>
+          </div>
+
+          <div style="flex:1; min-width:200px; background:#111; padding:20px; border-radius:20px; border:1px solid #222;">
+            <p style="margin:0 0 10px; font-size:10px; color:#BE29EC; text-transform:uppercase; font-weight:900;">Payment Info</p>
+            <p style="margin:0 0 5px; font-size:12px; color:#aaa;">Date: <span style="color:#fff;">${orderDate}</span></p>
+            <p style="margin:0 0 5px; font-size:12px; color:#aaa;">Method: <span style="color:#fff;">${orderData.paymentMethod || 'Online'}</span></p>
+            <p style="margin:0; font-size:12px; color:#aaa;">Txn ID: <span style="color:#fff; font-family:monospace;">${orderData.razorpayOrderId?.slice(-8).toUpperCase()}</span></p>
+          </div>
         </div>
         
         <div style="text-align:center; margin-top:40px;">
-          <a href="https://wishzep.shop/profile" style="background:#BE29EC; color:#fff; padding:15px 30px; text-decoration:none; border-radius:50px; font-weight:bold; font-size:12px;">TRACK ORDER</a>
+          <a href="https://wishzep.shop/profile" style="background:#BE29EC; color:#fff; padding:15px 30px; text-decoration:none; border-radius:50px; font-weight:bold; font-size:12px; display:inline-block;">TRACK ORDER</a>
         </div>
+        
+        <p style="text-align:center; margin-top:30px; color:#444; font-size:10px;">Order ID: ${orderId}</p>
       </div>
     </div></body></html>`;
 
