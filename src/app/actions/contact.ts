@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 
 /**
  * Server Action to send contact emails via SMTP.
- * Uses simple language and the actual brand logo image.
+ * Ultra-modern aesthetic with enhanced logo visibility.
  */
 export async function sendContactEmail(formData: FormData) {
   const name = formData.get('name') as string;
@@ -37,75 +37,80 @@ export async function sendContactEmail(formData: FormData) {
     from: `"WishZep Support" <${smtpUser}>`,
     to: smtpUser,
     replyTo: email,
-    subject: `New Message: ${subject} - ${name}`,
+    subject: `🚀 New Lead: ${subject} - ${name}`,
     text: `New message from: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     html: `
       <!DOCTYPE html>
       <html>
-      <body style="margin: 0; padding: 0; background-color: #050505; font-family: 'Inter', Helvetica, Arial, sans-serif; color: #ffffff;">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #050505; padding: 40px 10px;">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #0a0b10; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0a0b10; padding: 60px 20px;">
           <tr>
             <td align="center">
-              <table width="100%" style="max-width: 600px; background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
-                <tr><td height="8" style="background: linear-gradient(90deg, #BE29EC, #29A6EC, #BE29EC);"></td></tr>
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 650px; background-color: #111218; border: 1px solid #1f212a; border-radius: 48px; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.8);">
+                
+                <tr><td height="6" style="background: linear-gradient(90deg, #BE29EC, #29A6EC, #BE29EC);"></td></tr>
                 
                 <tr>
-                  <td style="padding: 50px 40px;">
+                  <td style="padding: 60px 50px;">
+                    
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td valign="middle">
+                        <td align="center" style="padding-bottom: 50px;">
                           <img 
                             src="https://res.cloudinary.com/dmtnonxtt/image/upload/v1770382083/wzhjmwclq9chpojzabgj.png" 
                             alt="WishZep" 
-                            height="64" 
+                            height="90" 
                             width="auto"
-                            style="display: block; border: 0; outline: none;" 
+                            style="display: block; border: 0; outline: none; filter: drop-shadow(0 0 10px rgba(41, 166, 236, 0.2));" 
                           />
                         </td>
-                        <td align="right" valign="middle">
-                          <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Help Center</p>
-                          <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 900; color: #BE29EC;">NEW MESSAGE</p>
+                      </tr>
+                      <tr>
+                        <td align="center">
+                           <p style="margin: 0; font-size: 11px; font-weight: 800; color: #44485e; letter-spacing: 4px; text-transform: uppercase;">Incoming Transmission</p>
+                           <h1 style="font-size: 52px; font-weight: 900; letter-spacing: -3px; margin: 20px 0; color: #ffffff; line-height: 0.9;">New <span style="color: #29A6EC;">Request.</span></h1>
                         </td>
                       </tr>
                     </table>
 
-                    <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; line-height: 1;">We've Got <br/><span style="color: #29A6EC;">Mail.</span></h1>
-                    <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">A customer has sent a message through your website contact form. Here are the details:</p>
-
-                    <div style="background: #111; border-radius: 24px; padding: 25px; margin-bottom: 30px; border: 1px solid #1a1a1a;">
+                    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 32px; padding: 40px; margin-top: 20px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                      
                       <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
-                          <td style="padding-bottom: 15px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Customer Name</p>
-                            <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 900; color: #ffffff;">${name}</p>
+                          <td style="padding-bottom: 25px;">
+                            <p style="margin: 0; font-size: 11px; font-weight: 700; color: #BE29EC; text-transform: uppercase; letter-spacing: 1.5px;">Sender Details</p>
+                            <p style="margin: 8px 0 0 0; font-size: 22px; font-weight: 800; color: #ffffff;">${name}</p>
+                            <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: 500; color: #29A6EC;">${email}</p>
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding-bottom: 15px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Email Address</p>
-                            <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #29A6EC;">${email}</p>
+                          <td style="padding-bottom: 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <p style="margin: 0; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1.5px;">Topic</p>
+                            <p style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600; color: #ffffff;">${subject}</p>
                           </td>
                         </tr>
                         <tr>
-                          <td>
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Subject</p>
-                            <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 700; color: #ffffff;">${subject}</p>
+                          <td style="padding-top: 30px;">
+                            <p style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1.5px;">Inquiry</p>
+                            <p style="margin: 0; font-size: 17px; line-height: 1.7; color: #cbd5e0; white-space: pre-wrap;">${message}</p>
                           </td>
                         </tr>
                       </table>
-                    </div>
 
-                    <div style="background: linear-gradient(135deg, rgba(190, 41, 236, 0.08), rgba(41, 166, 236, 0.08)); border: 1px solid rgba(190, 41, 236, 0.3); border-radius: 24px; padding: 30px;">
-                      <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Message Content</p>
-                      <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #eee; white-space: pre-wrap;">"${message}"</p>
                     </div>
 
                     <div style="margin-top: 50px; text-align: center;">
-                      <a href="mailto:${email}" style="background: #ffffff; color: #000000; padding: 20px 40px; border-radius: 100px; text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: 1px; display: inline-block;">REPLY TO CUSTOMER →</a>
+                      <a href="mailto:${email}" style="background: linear-gradient(135deg, #BE29EC 0%, #29A6EC 100%); color: #ffffff; padding: 22px 50px; border-radius: 20px; text-decoration: none; font-weight: 800; font-size: 14px; letter-spacing: 1px; display: inline-block; box-shadow: 0 20px 40px rgba(41, 166, 236, 0.3);">ENGAGE CONVERSATION →</a>
                     </div>
 
-                    <p style="margin-top: 60px; font-size: 10px; color: #333; text-align: center; line-height: 1.6; border-top: 1px solid #1a1a1a; padding-top: 30px;">
-                      © 2026 WishZep. This is an automated message from your website contact form.
+                    <p style="margin-top: 70px; font-size: 11px; color: #44485e; text-align: center; line-height: 1.6; letter-spacing: 0.5px;">
+                      &copy; 2026 <strong>WishZep</strong> &bull; All Rights Reserved.
+                      <br/>
+                      This is an encrypted notification from your server.
                     </p>
                   </td>
                 </tr>
@@ -125,7 +130,7 @@ export async function sendContactEmail(formData: FormData) {
     console.error('SMTP Error:', error);
     return { 
       success: false, 
-      error: 'Message could not be sent. Please check your settings.' 
+      error: 'Dispatch failed. Check SMTP credentials.' 
     };
   }
 }
