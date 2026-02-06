@@ -1,4 +1,3 @@
-
 'use server';
 
 import nodemailer from 'nodemailer';
@@ -48,18 +47,22 @@ export async function sendContactEmail(formData: FormData) {
           <tr>
             <td align="center">
               <table width="100%" style="max-width: 600px; background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
-                <!-- Header Gradient Border -->
                 <tr><td height="8" style="background: linear-gradient(90deg, #BE29EC, #29A6EC, #BE29EC);"></td></tr>
                 
                 <tr>
                   <td style="padding: 50px 40px;">
-                    <!-- Actual Brand Logo -->
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td>
-                          <img src="https://res.cloudinary.com/dmtnonxtt/image/upload/v1770382083/wzhjmwclq9chpojzabgj.png" alt="WishZep" height="40" style="display: block; border: 0; outline: none;" />
+                        <td valign="middle">
+                          <img 
+                            src="https://res.cloudinary.com/dmtnonxtt/image/upload/v1770382083/wzhjmwclq9chpojzabgj.png" 
+                            alt="WishZep" 
+                            height="64" 
+                            width="auto"
+                            style="display: block; border: 0; outline: none;" 
+                          />
                         </td>
-                        <td align="right">
+                        <td align="right" valign="middle">
                           <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Help Center</p>
                           <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 900; color: #BE29EC;">NEW MESSAGE</p>
                         </td>
@@ -69,7 +72,6 @@ export async function sendContactEmail(formData: FormData) {
                     <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; line-height: 1;">We've Got <br/><span style="color: #29A6EC;">Mail.</span></h1>
                     <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">A customer has sent a message through your website contact form. Here are the details:</p>
 
-                    <!-- Sender Information Card -->
                     <div style="background: #111; border-radius: 24px; padding: 25px; margin-bottom: 30px; border: 1px solid #1a1a1a;">
                       <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
@@ -93,7 +95,6 @@ export async function sendContactEmail(formData: FormData) {
                       </table>
                     </div>
 
-                    <!-- Message Content -->
                     <div style="background: linear-gradient(135deg, rgba(190, 41, 236, 0.08), rgba(41, 166, 236, 0.08)); border: 1px solid rgba(190, 41, 236, 0.3); border-radius: 24px; padding: 30px;">
                       <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Message Content</p>
                       <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #eee; white-space: pre-wrap;">"${message}"</p>
@@ -104,7 +105,7 @@ export async function sendContactEmail(formData: FormData) {
                     </div>
 
                     <p style="margin-top: 60px; font-size: 10px; color: #333; text-align: center; line-height: 1.6; border-top: 1px solid #1a1a1a; padding-top: 30px;">
-                      © 2024 WishZep. This is an automated message from your website contact form.
+                      © 2026 WishZep. This is an automated message from your website contact form.
                     </p>
                   </td>
                 </tr>
