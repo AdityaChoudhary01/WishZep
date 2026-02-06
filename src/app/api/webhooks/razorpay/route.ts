@@ -32,15 +32,14 @@ export async function POST(req: Request) {
 
     const event = JSON.parse(payload);
 
-    // FIX 1: STRICT EVENT FILTERING (Prevents Double Emails)
-    // Only listen to 'order.paid'. Ignore 'payment.captured'.
-    if (event.event === 'order.paid') {
-      const entity = event.payload.order.entity;
-      const rzpOrderId = entity.id;
+    // Filter for order.paid (Primary) or payment.captured (Fallback)
+    if (event.event === 'order.paid' || event.event === 'payment.captured') {
+      const entity = event.payload.payment ? event.payload.payment.entity : event.payload.order.entity;
+      const rzpOrderId = entity.order_id || entity.id; // Handle both payment and order entities
       
       console.log(`[Webhook] Processing Order: ${rzpOrderId}`);
 
-      // --- RETRY LOGIC TO FIND ORDER ---
+      // --- RETRY LOGIC ---
       let orderDoc = null;
       let orderData = null;
       let orderItems: any[] = [];
@@ -53,30 +52,30 @@ export async function POST(req: Request) {
           orderDoc = snapshot.docs[0];
           orderData = orderDoc.data();
           
-          // FIX 2: IDEMPOTENCY CHECK (Prevents Duplicate Emails if Razorpay retries)
+          // IDEMPOTENCY CHECK
           if (orderData.emailSent === true) {
             console.log(`[Webhook] Skipped: Email already sent for ${rzpOrderId}`);
             return NextResponse.json({ status: 'already_processed' }, { status: 200 });
           }
 
           const itemsSnap = await orderDoc.ref.collection('order_items').get();
-          orderItems = itemsSnap.docs.map(d => d.data());
+          // FIX: Explicitly include the ID in the mapped object
+          orderItems = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
           break;
         }
         if (i < 2) await new Promise(r => setTimeout(r, 2000));
       }
 
-      // --- EMAIL DISPATCH ---
-      const targetEmail = orderData?.shippingDetails?.email || entity.notes?.email;
+      const targetEmail = orderData?.shippingDetails?.email || entity.email || entity.notes?.email;
 
-      if (orderData && orderDoc) {
-         // Mark as processed immediately to prevent race conditions
+      if (orderData && orderDoc && targetEmail) {
+         // Mark as processed
          await orderDoc.ref.update({ emailSent: true, status: 'processing' });
 
          await sendDualAuthEmails(targetEmail, orderDoc.id, orderData, orderItems);
          console.log(`[Webhook] SUCCESS: Emails dispatched for ${orderDoc.id}`);
       } else {
-         console.warn(`[Webhook] Order ${rzpOrderId} not found. Skipping email.`);
+         console.warn(`[Webhook] Order ${rzpOrderId} not found or No Email. Skipping.`);
       }
     }
 
@@ -103,6 +102,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
   const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(orderData.totalAmount || 0);
 
   // Helper to generate Item List HTML
+  // FIX: Added safe access (?.slice) to prevent crashes if ID is missing
   const generateItemsHtml = (isAdmin = false) => items.map(item => `
     <tr>
       <td style="padding: 15px 0; border-bottom: 1px solid #1a1a1a;">
@@ -111,7 +111,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
             <td width="60"><img src="${item.image}" width="50" height="50" style="border-radius: 8px; object-fit: cover;" /></td>
             <td style="padding-left: 15px;">
               <p style="margin:0; font-size:13px; font-weight:800; color:#fff;">${item.name}</p>
-              <p style="margin:2px 0 0; font-size:10px; color:#888;">QTY: ${item.quantity} ${isAdmin ? `| ID: ${item.id.slice(0,5)}` : ''}</p>
+              <p style="margin:2px 0 0; font-size:10px; color:#888;">QTY: ${item.quantity} ${isAdmin ? `| ID: ${(item.id || 'N/A').toString().slice(0,5)}` : ''}</p>
             </td>
             <td align="right"><p style="margin:0; font-size:13px; font-weight:800; color:${isAdmin ? '#00ff88' : '#BE29EC'};">₹${(item.price * item.quantity).toLocaleString()}</p></td>
           </tr>
@@ -119,7 +119,9 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
       </td>
     </tr>`).join('');
 
-  // --- 1. CUSTOMER EMAIL (Brand Focused) ---
+  // --- 1. CUSTOMER EMAIL ---
+  const safeOrderId = (orderId || 'UNKNOWN').toString().slice(-6).toUpperCase();
+  
   const customerHtml = `
     <!DOCTYPE html><html><body style="background:#050505; font-family:sans-serif; color:#fff; padding:40px 10px;">
     <div style="max-width:600px; margin:auto; background:#0a0a0a; border:1px solid #222; border-radius:30px; overflow:hidden;">
@@ -148,7 +150,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
       </div>
     </div></body></html>`;
 
-  // --- 2. ADMIN EMAIL (Data Focused + Full Details) ---
+  // --- 2. ADMIN EMAIL ---
   const adminHtml = `
     <!DOCTYPE html><html><body style="background:#000; font-family:monospace; color:#fff; padding:40px 10px;">
     <div style="max-width:600px; margin:auto; background:#050505; border:1px solid #333; border-radius:16px;">
@@ -191,7 +193,7 @@ async function sendDualAuthEmails(customerEmail: string, orderId: string, orderD
   ];
 
   if (customerEmail) {
-    promises.push(transporter.sendMail({ from: `"WishZep" <${smtpUser}>`, to: customerEmail, subject: `Order Confirmed #${orderId.slice(-6).toUpperCase()}`, html: customerHtml }));
+    promises.push(transporter.sendMail({ from: `"WishZep" <${smtpUser}>`, to: customerEmail, subject: `Order Confirmed #${safeOrderId}`, html: customerHtml }));
   }
 
   await Promise.all(promises);
