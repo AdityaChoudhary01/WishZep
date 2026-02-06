@@ -20,7 +20,8 @@ import {
   Info,
   CheckCircle2,
   AlertCircle,
-  Search
+  Search,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -261,7 +262,7 @@ export default function ProfilePage() {
                     <div className="space-y-1">
                       <p className="font-black text-lg md:text-xl">Order #{order.id.slice(0, 8)}</p>
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center sm:justify-start gap-2">
-                        <Calendar className="w-3 h-3" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
+                        <Calendar className="w-3.5 h-3.5" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
                       </p>
                       <div className="flex justify-center sm:justify-start">
                         <Badge className={cn(
@@ -355,8 +356,17 @@ export default function ProfilePage() {
                                 <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" />
                               </div>
                               <div className="flex-1 pt-1">
-                                <h4 className="font-black text-base md:text-lg">Drop Confirmed</h4>
+                                <div className="flex justify-between items-start">
+                                  <h4 className="font-black text-base md:text-lg">Drop Confirmed</h4>
+                                  <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Step 01</span>
+                                </div>
                                 <p className="text-xs md:text-sm text-muted-foreground">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'} • System Synchronized</p>
+                                
+                                {order.status !== 'delivered' && order.status !== 'arriving-today' && order.expectedDeliveryDate && (
+                                  <div className="flex items-center gap-2 mt-2 text-primary font-bold text-[10px] md:text-xs uppercase tracking-wider">
+                                    <Clock className="w-3 h-3" /> Expected: {new Date(order.expectedDeliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -386,7 +396,11 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-base md:text-lg">Arriving Today</h4>
-                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'arriving-today' ? 'Our field agent is nearby. Keep your signal open!' : 'Awaiting local dispatch'}</p>
+                                {order.status === 'arriving-today' ? (
+                                  <Badge className="bg-purple-100 text-purple-700 border-none px-3 py-1 mt-1 animate-pulse">ACTIVE SIGNAL</Badge>
+                                ) : (
+                                  <p className="text-xs md:text-sm text-muted-foreground">Awaiting local dispatch</p>
+                                )}
                               </div>
                             </div>
 
@@ -396,7 +410,16 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-base md:text-lg">Delivered</h4>
-                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'delivered' ? 'Received at destination coordinates' : 'Pending final arrival'}</p>
+                                {order.status === 'delivered' ? (
+                                  <div className="space-y-1">
+                                    <p className="text-xs md:text-sm text-green-600 font-bold">Protocol Finalized</p>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground">
+                                      Arrived on {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs md:text-sm text-muted-foreground">Pending final arrival</p>
+                                )}
                               </div>
                             </div>
                           </div>
