@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -26,7 +27,9 @@ import {
   MapPin,
   Phone,
   MoreVertical,
-  Check
+  Check,
+  Search,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,11 +162,12 @@ export default function AdminDashboard() {
     });
   }, [rawOrders]);
 
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string, extraData: any = {}) => {
     if (!db || !isUserAdmin) return;
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
+        ...extraData,
         updatedAt: serverTimestamp()
       });
       toast({ title: "Status Updated", description: `Order is now ${newStatus}.` });
@@ -545,8 +549,14 @@ export default function AdminDashboard() {
                         {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn("px-3 py-1 rounded-full text-[9px] font-bold", order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700')}>
-                          {order.status?.toUpperCase() || 'PENDING'}
+                        <Badge className={cn(
+                          "px-3 py-1 rounded-full text-[9px] font-bold", 
+                          order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                          order.status === 'arriving-today' ? 'bg-purple-100 text-purple-700' :
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        )}>
+                          {(order.status || 'pending').replace('-', ' ').toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right px-6">
@@ -568,8 +578,14 @@ export default function AdminDashboard() {
                         <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1">#{order.id.slice(0, 8)}</p>
                         <h4 className="font-bold text-base">{order.shippingDetails?.fullName}</h4>
                       </div>
-                      <Badge className={cn("px-2.5 py-1 rounded-full text-[9px] font-bold", order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700')}>
-                        {order.status?.toUpperCase() || 'PENDING'}
+                      <Badge className={cn(
+                        "px-2.5 py-1 rounded-full text-[9px] font-bold", 
+                        order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                        order.status === 'arriving-today' ? 'bg-purple-100 text-purple-700' :
+                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      )}>
+                        {(order.status || 'pending').replace('-', ' ').toUpperCase()}
                       </Badge>
                    </div>
                    <div className="flex justify-between items-end border-t border-gray-50 pt-3">
@@ -776,6 +792,9 @@ export default function AdminDashboard() {
 
 // Extracted for cleaner return block
 function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
+  const [partner, setPartner] = useState(order.deliveryPartner || '');
+  const [trackingId, setTrackingId] = useState(order.trackingId || '');
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -791,7 +810,7 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
             <div className="grid md:grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><MapPin className="w-3 h-3" /> Shipping Address</h4>
+                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Shipping Address</h4>
                   <div className="p-4 rounded-xl bg-gray-50 space-y-1 border border-gray-100">
                     <p className="font-bold text-sm">{order.shippingDetails?.fullName}</p>
                     <div className="flex flex-col gap-0.5 pt-1">
@@ -805,7 +824,7 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><CreditCard className="w-3 h-3" /> Payment & History</h4>
+                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><CreditCard className="w-3.5 h-3.5" /> Payment & History</h4>
                   <div className="p-4 rounded-xl bg-gray-50 space-y-3 border border-gray-100">
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Method</span>
@@ -813,7 +832,7 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Placed On</span>
-                        <span className="text-xs font-black flex items-center gap-1.5"><Calendar className="w-3 h-3" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}</span>
+                        <span className="text-xs font-black flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Paid</span>
@@ -824,22 +843,58 @@ function OrderDetailsDialog({ order, handleUpdateOrderStatus, isMobile }: any) {
               </div>
 
               <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><ShoppingBag className="w-3 h-3" /> Ordered Items</h4>
+                  <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><ShoppingBag className="w-3.5 h-3.5" /> Ordered Items</h4>
                   <AdminOrderItemsList orderId={order.id} />
               </div>
             </div>
             
             <Separator className="bg-gray-100" />
             
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Order Status</h4>
-              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-12 font-bold gap-2">
-                  <Truck className="w-4 h-4" /> MARK AS SHIPPED
-                </Button>
-                <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} variant="outline" className="flex-1 rounded-xl h-12 font-bold border-primary text-primary hover:bg-primary/5">
-                  MARK AS DELIVERED
-                </Button>
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Delivery Partner</Label>
+                  <Input 
+                    placeholder="e.g. BlueDart, Delhivery" 
+                    value={partner} 
+                    onChange={(e) => setPartner(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Tracking ID</Label>
+                  <Input 
+                    placeholder="Courier Tracking #" 
+                    value={trackingId} 
+                    onChange={(e) => setTrackingId(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Order Status</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                  <Button 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'shipped', { deliveryPartner: partner, trackingId })} 
+                    className="rounded-xl h-12 font-bold gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Truck className="w-4 h-4" /> MARK SHIPPED
+                  </Button>
+                  <Button 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'arriving-today')} 
+                    className="rounded-xl h-12 font-bold gap-2 bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Search className="w-4 h-4" /> ARRIVING TODAY
+                  </Button>
+                  <Button 
+                    onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} 
+                    variant="outline" 
+                    className="rounded-xl h-12 font-bold border-green-600 text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> MARK DELIVERED
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
