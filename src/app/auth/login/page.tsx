@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, Send, Loader2, ShieldCheck, Zap, AlertCircle, Sparkles, Fingerprint, Phone, CheckCircle2 } from 'lucide-react';
+import { Mail, Send, Loader2, ShieldCheck, Zap, AlertCircle, Sparkles, Fingerprint, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { 
   signInWithPopup, 
@@ -22,16 +22,13 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
-  // Common States
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   
-  // Magic Link States
   const [email, setEmail] = useState('');
   const [isLinkSent, setIsLinkSent] = useState(false);
   const [isCompletingSignIn, setIsCompletingSignIn] = useState(false);
   
-  // Phone OTP States
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -67,7 +64,7 @@ export default function LoginPage() {
       let emailForSignIn = window.localStorage.getItem('emailForSignIn');
       
       if (!emailForSignIn) {
-        emailForSignIn = window.prompt('Please provide your email for confirmation');
+        emailForSignIn = window.prompt('Please confirm your email address:');
       }
 
       if (emailForSignIn) {
@@ -77,16 +74,16 @@ export default function LoginPage() {
             window.localStorage.removeItem('emailForSignIn');
             await syncUserProfile(result.user);
             toast({
-              title: "Welcome Back! ✨",
-              description: "Successfully signed in with your magic link.",
+              title: "Welcome back!",
+              description: "You have signed in successfully.",
             });
             router.push('/profile');
           })
-          .catch((error) => {
+          .catch(() => {
             toast({
               variant: "destructive",
               title: "Sign in failed",
-              description: "The link may have expired or was already used.",
+              description: "The link might have expired. Please try again.",
             });
           })
           .finally(() => {
@@ -100,43 +97,32 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      
       setAuthError(null);
       await syncUserProfile(result.user);
-      
       toast({
-        title: "Success! ✨",
-        description: "You've successfully signed in with Google.",
+        title: "Success",
+        description: "Signed in with Google.",
       });
       router.push('/profile');
     } catch (error: any) {
-      let errorMessage = error.message;
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Sign-in was cancelled.";
-      }
-      setAuthError(errorMessage);
+      setAuthError(error.code === 'auth/popup-closed-by-user' ? "Sign-in was cancelled." : error.message);
     }
   };
 
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    
     setIsLoading(true);
     setAuthError(null);
     const actionCodeSettings = {
       url: window.location.origin + '/auth/login',
       handleCodeInApp: true,
     };
-
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', email);
       setIsLinkSent(true);
-      toast({
-        title: "Link Sent! 📧",
-        description: "Check your inbox for the magic sign-in link.",
-      });
+      toast({ title: "Email Sent", description: "Please check your inbox for the sign-in link." });
     } catch (error: any) {
       setAuthError(error.message);
     } finally {
@@ -144,36 +130,26 @@ export default function LoginPage() {
     }
   };
 
-  // Phone Auth Handlers
   const setupRecaptcha = () => {
     if ((window as any).recaptchaVerifier) return;
     (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response: any) => {
-        // reCAPTCHA solved
-      }
+      'size': 'invisible'
     });
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneNumber) return;
-    
     setIsLoading(true);
     setAuthError(null);
-
     try {
       setupRecaptcha();
       const appVerifier = (window as any).recaptchaVerifier;
       const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-      
       const confirmation = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
       setConfirmationResult(confirmation);
       setIsOtpSent(true);
-      toast({
-        title: "OTP Sent! 📱",
-        description: "Verify the code sent to your mobile device.",
-      });
+      toast({ title: "Code Sent", description: "Check your phone for the verification code." });
     } catch (error: any) {
       setAuthError(error.message);
       if ((window as any).recaptchaVerifier) {
@@ -188,20 +164,15 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verificationCode || !confirmationResult) return;
-
     setIsLoading(true);
     setAuthError(null);
-
     try {
       const result = await confirmationResult.confirm(verificationCode);
       await syncUserProfile(result.user);
-      toast({
-        title: "Access Granted! ⚡",
-        description: "Phone authentication successful.",
-      });
+      toast({ title: "Success", description: "Phone verification successful." });
       router.push('/profile');
-    } catch (error: any) {
-      setAuthError("Invalid OTP code. Please check and try again.");
+    } catch {
+      setAuthError("Incorrect code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -209,50 +180,49 @@ export default function LoginPage() {
 
   if (isCompletingSignIn) {
     return (
-      <div className="container mx-auto flex items-center justify-center min-h-[80vh] px-6">
-        <div className="text-center space-y-6">
-          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-          <h2 className="text-2xl font-black italic">Validating Signal...</h2>
-          <p className="text-muted-foreground">Syncing your artifacts with our global registry.</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+          <h2 className="text-xl font-bold">Verifying your account...</h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-[80vh] px-6 py-12 relative">
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary/20 blur-[120px] rounded-full animate-pulse delay-700" />
+    <div className="container mx-auto flex items-center justify-center min-h-[85vh] px-4 py-10 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-3xl rounded-[3.5rem] p-10 space-y-8 shadow-[0_32px_80px_rgba(0,0,0,0.1)] border border-white/50 relative overflow-hidden animate-fade-in">
+      <div className="w-full max-w-[450px] bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100 relative z-10 animate-fade-in">
         <div id="recaptcha-container"></div>
         
-        <div className="text-center space-y-3 relative z-10">
-          <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center mx-auto mb-6 rotate-6 shadow-2xl shadow-primary/30 transition-transform hover:rotate-0 cursor-pointer">
-            <span className="text-white font-black text-4xl">W</span>
+        <div className="text-center space-y-2 mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20 rotate-3">
+            <span className="text-white font-black text-3xl">W</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter">Enter the Vault</h1>
-          <p className="text-muted-foreground font-medium text-sm">Access your curated artifacts</p>
+          <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>
+          <p className="text-gray-500 font-medium text-sm">Sign in to your account</p>
         </div>
 
         {authError && (
-          <Alert variant="destructive" className="rounded-2xl bg-destructive/5 border-destructive/20 animate-in fade-in slide-in-from-top-2">
+          <Alert variant="destructive" className="mb-6 rounded-2xl bg-red-50 border-red-100 text-red-600">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle className="text-[10px] font-black uppercase tracking-widest mb-1">Diagnostic Log</AlertTitle>
-            <AlertDescription className="text-xs leading-relaxed opacity-90">
+            <AlertDescription className="text-xs font-bold">
               {authError}
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-6 relative z-10">
+        <div className="space-y-6">
           {/* Google Login */}
           <Button 
             onClick={handleGoogleLogin}
             variant="outline"
-            className="w-full h-16 rounded-2xl gap-4 font-bold bg-white hover:bg-gray-50 border-gray-100 shadow-sm active:scale-95 transition-all group"
+            className="w-full h-14 rounded-2xl gap-3 font-bold bg-white hover:bg-gray-50 border-gray-200 transition-all active:scale-95 shadow-sm"
           >
-            <svg className="w-6 h-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05"/>
@@ -261,123 +231,126 @@ export default function LoginPage() {
             Continue with Google
           </Button>
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-black text-gray-400">
-              <span className="bg-white/70 px-4">Secure Channel</span>
-            </div>
+          <div className="relative py-2 flex items-center">
+            <div className="flex-grow border-t border-gray-100"></div>
+            <span className="flex-shrink mx-4 text-[10px] uppercase tracking-widest font-black text-gray-300">or use email</span>
+            <div className="flex-grow border-t border-gray-100"></div>
           </div>
 
-          {/* Magic Link Login */}
+          {/* Email Login */}
           {!isLinkSent ? (
-            <form onSubmit={handleMagicLinkLogin} className="space-y-4">
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+            <form onSubmit={handleMagicLinkLogin} className="space-y-3">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input 
                   type="email" 
                   placeholder="name@email.com" 
-                  className="h-16 pl-12 rounded-2xl bg-white border-gray-100 focus:border-primary/30 text-sm font-bold shadow-inner"
+                  className="h-14 pl-12 rounded-2xl bg-gray-50 border-gray-100 focus:bg-white focus:border-primary/30 font-bold transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isOtpSent}
                 />
               </div>
-              <button 
+              <Button 
                 type="submit"
                 disabled={isLoading || isOtpSent}
-                className="w-full h-16 rounded-2xl flex items-center justify-center gap-3 bg-black hover:bg-black/90 text-white text-sm font-black uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 hover:scale-[1.01] active:scale-95"
+                className="w-full h-14 rounded-2xl flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-bold transition-all shadow-lg shadow-gray-200 active:scale-95"
               >
                 {isLoading && !isOtpSent ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />} 
-                {isLoading && !isOtpSent ? "Transmitting..." : "Magic Link"}
-              </button>
+                {isLoading && !isOtpSent ? "Sending..." : "Email me a link"}
+              </Button>
             </form>
           ) : (
-            <div className="p-10 bg-primary/5 rounded-[3rem] text-center space-y-6 animate-in zoom-in border border-primary/10">
-              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-primary/20">
-                <Send className="w-10 h-10 text-white" />
+            <div className="p-6 bg-primary/5 rounded-3xl text-center space-y-4 border border-primary/10 animate-in zoom-in-95">
+              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto text-white shadow-lg">
+                <Send className="w-6 h-6" />
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-black">Link Sent</p>
-                <p className="text-sm text-muted-foreground font-medium">Check your inbox.</p>
+              <div>
+                <p className="font-bold text-lg">Check your email</p>
+                <p className="text-sm text-gray-500">We've sent you a sign-in link.</p>
               </div>
-              <Button variant="ghost" className="text-primary font-black uppercase tracking-widest text-[10px]" onClick={() => setIsLinkSent(false)}>
-                Try another frequency
+              <Button variant="ghost" className="text-primary text-xs font-bold" onClick={() => setIsLinkSent(false)}>
+                Try another way
               </Button>
             </div>
           )}
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-black text-gray-400">
-              <span className="bg-white/70 px-4">Mobile Identity</span>
-            </div>
+          <div className="relative py-2 flex items-center">
+            <div className="flex-grow border-t border-gray-100"></div>
+            <span className="flex-shrink mx-4 text-[10px] uppercase tracking-widest font-black text-gray-300">or use phone</span>
+            <div className="flex-grow border-t border-gray-100"></div>
           </div>
 
-          {/* Phone OTP Login */}
+          {/* Phone Login */}
           {!isOtpSent ? (
-            <form onSubmit={handleSendOtp} className="space-y-4">
-              <div className="relative group">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+            <form onSubmit={handleSendOtp} className="space-y-3">
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input 
                   type="tel" 
-                  placeholder="10-digit Mobile" 
+                  placeholder="10-digit mobile number" 
                   maxLength={10}
-                  className="h-16 pl-12 rounded-2xl bg-white border-gray-100 focus:border-primary/30 text-sm font-bold shadow-inner"
+                  className="h-14 pl-12 rounded-2xl bg-gray-50 border-gray-100 focus:bg-white focus:border-primary/30 font-bold transition-all"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
-              <button 
+              <Button 
                 type="submit"
                 disabled={isLoading || !phoneNumber || phoneNumber.length < 10}
-                className="w-full h-16 rounded-2xl flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white text-sm font-black uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 hover:scale-[1.01] active:scale-95"
+                className="w-full h-14 rounded-2xl flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold transition-all shadow-lg shadow-primary/20 active:scale-95"
               >
                 {isLoading && isOtpSent === false ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />} 
-                Send OTP
-              </button>
+                Send verification code
+              </Button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in slide-in-from-bottom-4">
+            <form onSubmit={handleVerifyOtp} className="space-y-4 animate-in slide-in-from-bottom-2">
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase text-center text-muted-foreground tracking-widest">Verify Mobile Code</p>
-                <div className="relative group">
+                <p className="text-xs font-bold text-center text-gray-400 uppercase tracking-widest">Verify your phone</p>
+                <div className="relative">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                   <Input 
                     type="text" 
-                    placeholder="Enter 6-digit OTP" 
+                    placeholder="Enter 6-digit code" 
                     maxLength={6}
-                    className="h-16 pl-12 rounded-2xl bg-white border-primary/20 focus:border-primary text-center tracking-[0.5em] text-lg font-black"
+                    className="h-14 pl-12 rounded-2xl bg-white border-primary/20 focus:border-primary text-center text-lg font-black tracking-[0.4em]"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                     autoFocus
                   />
                 </div>
               </div>
-              <div className="flex flex-col gap-3">
-                <button 
+              <div className="flex flex-col gap-2">
+                <Button 
                   type="submit"
                   disabled={isLoading || verificationCode.length < 6}
-                  className="w-full h-16 rounded-2xl flex items-center justify-center gap-3 bg-black text-white text-sm font-black uppercase tracking-widest shadow-xl transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50"
+                  className="w-full h-14 rounded-2xl flex items-center justify-center gap-2 bg-black text-white font-bold transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />} 
-                  Confirm Access
-                </button>
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} 
+                  Sign In
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-[10px] font-black uppercase text-muted-foreground hover:text-primary"
+                  className="text-xs text-gray-500 hover:text-primary font-bold"
                   onClick={() => setIsOtpSent(false)}
                 >
-                  Back to Signal
+                  Back to phone entry
                 </Button>
               </div>
             </form>
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-6 pt-4 text-[9px] text-gray-400 font-black uppercase tracking-widest opacity-80">
-          <span className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-primary" /> SSL Encrypted</span>
-          <span className="flex items-center gap-2"><Sparkles className="w-3.5 h-3.5 text-secondary" /> Verified Drops</span>
+        <div className="flex items-center justify-center gap-4 pt-8 opacity-60">
+          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <ShieldCheck className="w-3 h-3 text-primary" /> Secure Sign-in
+          </div>
+          <div className="w-1 h-1 bg-gray-200 rounded-full" />
+          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <Sparkles className="w-3 h-3 text-secondary" /> WishZep Verified
+          </div>
         </div>
       </div>
     </div>
