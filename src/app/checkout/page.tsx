@@ -246,8 +246,8 @@ export default function CheckoutPage() {
           <CheckCircle2 className="w-16 h-16" />
         </div>
         <div className="text-center space-y-4">
-          <h1 className="text-6xl font-black wishzep-text">ORDER SECURED</h1>
-          <p className="text-xl text-muted-foreground font-medium uppercase tracking-widest">Redirecting to Artifact History...</p>
+          <h1 className="text-6xl font-black wishzep-text">ORDER PLACED</h1>
+          <p className="text-xl text-muted-foreground font-medium uppercase tracking-widest">Redirecting to Orders History...</p>
         </div>
       </div>
     );
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-black text-gray-900">Shipping Details</h2>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Destination Protocols</p>
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Order Destination</p>
               </div>
             </div>
 
@@ -308,7 +308,7 @@ export default function CheckoutPage() {
                     className="h-14 rounded-2xl bg-gray-50 border-gray-200 text-lg font-bold focus:bg-white focus:border-primary transition-all text-gray-900" 
                     value={shipping.contactNumber} 
                     onChange={(e) => setShipping({...shipping, contactNumber: e.target.value.replace(/\D/g, '')})} 
-                    placeholder="9876543210" 
+                    placeholder="9999999999" 
                   />
                 </div>
                 <div className="space-y-3">
@@ -352,7 +352,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-3">
                   <Label className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" /> 6-digit PIN
+                    <Hash className="w-3.5 h-3.5" /> 6-digit PINCODE
                   </Label>
                   <Input 
                     type="text"
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
               ) : !isOnline ? (
                 <><WifiOff className="w-8 h-8" /> Offline Mode</>
               ) : (
-                <>Initiate Drop <ArrowRight className="w-8 h-8" /></>
+                <>Place Order <ArrowRight className="w-8 h-8" /></>
               )}
             </Button>
             
