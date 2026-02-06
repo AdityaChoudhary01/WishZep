@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description: 'WishZep is the ultimate destination for curated high-energy techwear and performance gear. Shop the future of fashion today.',
   applicationName: 'WishZep',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
