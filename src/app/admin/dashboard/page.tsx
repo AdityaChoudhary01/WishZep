@@ -19,7 +19,13 @@ import {
   Images,
   Ruler,
   Settings2,
-  AlertCircle
+  AlertCircle,
+  Truck,
+  CreditCard,
+  Calendar,
+  User,
+  MapPin,
+  Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -479,6 +485,7 @@ export default function AdminDashboard() {
                     <TableHead className="font-bold px-6">Order ID</TableHead>
                     <TableHead className="font-bold">Customer</TableHead>
                     <TableHead className="font-bold">Amount</TableHead>
+                    <TableHead className="font-bold">Date</TableHead>
                     <TableHead className="font-bold">Status</TableHead>
                     <TableHead className="text-right font-bold px-6">Details</TableHead>
                   </TableRow>
@@ -489,6 +496,9 @@ export default function AdminDashboard() {
                       <TableCell className="px-6 font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
                       <TableCell className="font-bold text-sm">{order.shippingDetails?.fullName}</TableCell>
                       <TableCell className="font-bold text-primary">Rs.{order.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs font-medium text-muted-foreground">
+                        {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <Badge className={cn("px-3 py-1 rounded-full text-[9px] font-bold", order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700')}>
                           {order.status?.toUpperCase() || 'PENDING'}
@@ -498,28 +508,61 @@ export default function AdminDashboard() {
                         <Dialog>
                           <DialogTrigger asChild><Button variant="ghost" size="icon" className="rounded-lg"><Info className="w-5 h-5" /></Button></DialogTrigger>
                           <DialogContent className="max-w-3xl rounded-3xl bg-white border-none p-0 overflow-hidden shadow-2xl">
-                             <div className="bg-primary p-6 text-white"><DialogHeader><DialogTitle className="text-2xl font-black uppercase">ORDER DETAILS</DialogTitle></DialogHeader></div>
-                             <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                             <div className="bg-primary p-6 text-white"><DialogHeader><DialogTitle className="text-2xl font-black uppercase tracking-tight">ORDER DETAILS</DialogTitle></DialogHeader></div>
+                             <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto">
                                <div className="grid md:grid-cols-2 gap-8">
                                  <div className="space-y-6">
                                    <div className="space-y-3">
-                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Shipping Address</h4>
-                                     <div className="p-4 rounded-xl bg-gray-50 space-y-1">
+                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><MapPin className="w-3 h-3" /> Shipping Address</h4>
+                                     <div className="p-4 rounded-xl bg-gray-50 space-y-1 border border-gray-100">
                                        <p className="font-bold text-sm">{order.shippingDetails?.fullName}</p>
-                                       <p className="text-xs font-medium text-primary">{order.shippingDetails?.contactNumber}</p>
-                                       <p className="text-xs text-muted-foreground">{order.shippingDetails?.address}, {order.shippingDetails?.city} - {order.shippingDetails?.zip}</p>
+                                       <div className="flex flex-col gap-0.5 pt-1">
+                                          <p className="text-xs font-bold text-primary flex items-center gap-1.5"><Phone className="w-3 h-3" /> {order.shippingDetails?.contactNumber}</p>
+                                          {order.shippingDetails?.secondaryContact && (
+                                            <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5 ml-0.5"><Phone className="w-2.5 h-2.5" /> {order.shippingDetails?.secondaryContact} (Secondary)</p>
+                                          )}
+                                       </div>
+                                       <p className="text-xs text-muted-foreground pt-2 leading-relaxed">{order.shippingDetails?.address}, {order.shippingDetails?.city} - {order.shippingDetails?.zip}</p>
+                                     </div>
+                                   </div>
+
+                                   <div className="space-y-3">
+                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><CreditCard className="w-3 h-3" /> Payment & History</h4>
+                                     <div className="p-4 rounded-xl bg-gray-50 space-y-3 border border-gray-100">
+                                       <div className="flex justify-between items-center">
+                                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Method</span>
+                                          <span className="text-xs font-black">{order.paymentMethod || 'Razorpay'}</span>
+                                       </div>
+                                       <div className="flex justify-between items-center">
+                                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Placed On</span>
+                                          <span className="text-xs font-black flex items-center gap-1.5"><Calendar className="w-3 h-3" /> {order.orderDate ? new Date(order.orderDate).toLocaleString() : 'N/A'}</span>
+                                       </div>
+                                       <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                          <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Paid</span>
+                                          <span className="text-lg font-black text-primary">Rs.{order.totalAmount?.toLocaleString()}</span>
+                                       </div>
                                      </div>
                                    </div>
                                  </div>
+
                                  <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Ordered Items</h4>
+                                    <h4 className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><ShoppingBag className="w-3 h-3" /> Ordered Items</h4>
                                     <AdminOrderItemsList orderId={order.id} />
                                  </div>
                                </div>
-                               <Separator />
-                               <div className="flex gap-4">
-                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-12 font-bold">MARK AS SHIPPED</Button>
-                                 <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} variant="outline" className="flex-1 rounded-xl h-12 font-bold">MARK AS DELIVERED</Button>
+                               
+                               <Separator className="bg-gray-100" />
+                               
+                               <div className="space-y-4">
+                                 <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Dispatch Protocol</h4>
+                                 <div className="flex gap-4">
+                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-12 font-bold gap-2">
+                                     <Truck className="w-4 h-4" /> MARK AS SHIPPED
+                                   </Button>
+                                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} variant="outline" className="flex-1 rounded-xl h-12 font-bold border-primary text-primary hover:bg-primary/5">
+                                     MARK AS DELIVERED
+                                   </Button>
+                                 </div>
                                </div>
                              </div>
                           </DialogContent>
@@ -529,7 +572,7 @@ export default function AdminDashboard() {
                   ))}
                   {sortedOrders.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">No orders placed yet.</TableCell>
+                      <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No orders detected in the registry.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
