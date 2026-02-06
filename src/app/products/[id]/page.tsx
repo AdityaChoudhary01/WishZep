@@ -80,7 +80,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = (silent = false) => {
     if (!product) return false;
     if (isApparel && availableSizes.length > 0 && !selectedSize) {
-      toast({ variant: "destructive", title: "Select Size", description: "You must choose a size for this apparel drop." });
+      toast({ variant: "destructive", title: "Select Size", description: "Please select a size before adding to cart." });
       return false;
     }
     
@@ -97,8 +97,8 @@ export default function ProductDetailPage() {
     
     if (!silent) {
       toast({
-        title: "Artifact Secured",
-        description: `${product.name} is now in your bag.`,
+        title: "Added to Cart",
+        description: `${product.name} has been added to your shopping bag.`,
       });
     }
     return true;
@@ -121,12 +121,12 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) return <div className="p-20 text-center font-black">UNRESOLVED ARTIFACT ID</div>;
+  if (!product) return <div className="p-20 text-center font-black">PRODUCT NOT FOUND</div>;
 
   return (
     <div className="container mx-auto px-6 py-12">
       <Link href="/products" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-all mb-10">
-        <ArrowLeft className="w-4 h-4" /> REVERSE TO CATALOGUE
+        <ArrowLeft className="w-4 h-4" /> BACK TO ALL PRODUCTS
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -192,14 +192,14 @@ export default function ProductDetailPage() {
           {isApparel && availableSizes.length > 0 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-left-4">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Configuration Profile</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">SELECT SIZE</label>
                 {product.sizeChartUrl && (
                   <Dialog>
                     <DialogTrigger asChild>
-                      <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:text-primary transition-all glass px-5 py-2.5 rounded-full"><TableIcon className="w-4 h-4" /> Size Registry</button>
+                      <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:text-primary transition-all glass px-5 py-2.5 rounded-full"><TableIcon className="w-4 h-4" /> Size Guide</button>
                     </DialogTrigger>
                     <DialogContent className="glass max-w-4xl border-white/20 rounded-[3rem] p-10">
-                      <DialogHeader><DialogTitle className="text-3xl font-black uppercase">Technical Size Chart</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle className="text-3xl font-black uppercase">Size Chart</DialogTitle></DialogHeader>
                       <div className="relative aspect-video w-full rounded-3xl overflow-hidden mt-8 bg-white/5 border border-white/10">
                         <Image src={product.sizeChartUrl} alt="Size Guide" fill className="object-contain" />
                       </div>
@@ -232,10 +232,10 @@ export default function ProductDetailPage() {
             </div>
             <div className="flex-1 flex gap-4">
               <Button variant="outline" onClick={() => handleAddToCart(false)} disabled={product.inventory === 0} className="flex-1 h-20 rounded-2xl glass border-primary/40 text-lg font-black gap-3 hover:bg-primary/5">
-                <ShoppingBag className="w-6 h-6" /> Add to Bag
+                <ShoppingBag className="w-6 h-6" /> ADD TO CART
               </Button>
               <Button onClick={handleBuyNow} disabled={product.inventory === 0} className="flex-1 h-20 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black gap-3 shadow-3xl shadow-primary/30 transition-all hover:scale-[1.03]">
-                <Zap className="w-7 h-7 fill-white" /> Secure Artifact
+                <Zap className="w-7 h-7 fill-white" /> BUY NOW
               </Button>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function ProductDetailPage() {
             {product.specifications && Object.keys(product.specifications).length > 0 && (
               <AccordionItem value="specs" className="border-white/10">
                 <AccordionTrigger className="text-[11px] font-black uppercase tracking-[0.3em] hover:no-underline py-10">
-                  <div className="flex items-center gap-4"><Settings2 className="w-5 h-5 text-primary" /> Technical Specifications</div>
+                  <div className="flex items-center gap-4"><Settings2 className="w-5 h-5 text-primary" /> Product Specifications</div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-0 pb-10 border-t border-white/5 mt-4">
@@ -260,10 +260,10 @@ export default function ProductDetailPage() {
             )}
             <AccordionItem value="logistics" className="border-white/10">
               <AccordionTrigger className="text-[11px] font-black uppercase tracking-[0.3em] hover:no-underline py-10">
-                 <div className="flex items-center gap-4"><Truck className="w-5 h-5 text-secondary" /> Logistics Protocol</div>
+                 <div className="flex items-center gap-4"><Truck className="w-5 h-5 text-secondary" /> Shipping & Delivery</div>
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-10 leading-relaxed font-medium px-4">
-                Rapid global deployment. Artifacts are prioritized and dispatched within 24-48 hours. Secure tracking signal provided upon departure.
+                Fast shipping guaranteed. Products are usually dispatched within 24-48 hours. Secure tracking link provided once shipped.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

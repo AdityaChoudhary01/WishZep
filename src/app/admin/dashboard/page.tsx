@@ -220,7 +220,7 @@ export default function AdminDashboard() {
     if (!db || !isUserAdmin) return;
     
     if (!productFormData.name || !productFormData.category || !productFormData.price) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all basic product details." });
+      toast({ variant: "destructive", title: "Missing Fields", description: "Please fill in all required product details." });
       return;
     }
 
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
                                <Separator className="bg-gray-100" />
                                
                                <div className="space-y-4">
-                                 <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Dispatch Protocol</h4>
+                                 <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Update Order Status</h4>
                                  <div className="flex gap-4">
                                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'shipped')} className="flex-1 rounded-xl h-12 font-bold gap-2">
                                      <Truck className="w-4 h-4" /> MARK AS SHIPPED
@@ -572,7 +572,7 @@ export default function AdminDashboard() {
                   ))}
                   {sortedOrders.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No orders detected in the registry.</TableCell>
+                      <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">No orders found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -589,7 +589,7 @@ export default function AdminDashboard() {
             <DialogHeader>
               <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
                 {editingProduct ? <Edit2 className="w-6 h-6 text-primary" /> : <Plus className="w-6 h-6 text-primary" />}
-                {editingProduct ? 'Update Product Details' : 'Add New Product'}
+                {editingProduct ? 'Update Product' : 'Add New Product'}
               </DialogTitle>
             </DialogHeader>
           </div>
@@ -628,7 +628,7 @@ export default function AdminDashboard() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase">Original Price (MRP)*</Label>
+                  <Label className="text-xs font-bold text-muted-foreground uppercase">MRP (Original Price)*</Label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
                     <Input type="number" placeholder="0.00" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} className="h-12 pl-8 rounded-xl font-bold" />
@@ -665,7 +665,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase text-gray-500 tracking-wider">More Images (Gallery)</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Product Gallery</Label>
                   <div className="grid grid-cols-3 gap-3">
                     {productFormData.images.map((img, i) => (
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
@@ -689,7 +689,7 @@ export default function AdminDashboard() {
                 <Separator />
                 <div className="space-y-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                   <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Ruler className="w-4 h-4" /> Clothing Sizes
+                    <Ruler className="w-4 h-4" /> Size Settings
                   </h3>
                   <div className="grid md:grid-cols-2 gap-8">
                     <div className="space-y-2">
@@ -714,7 +714,7 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                  <Settings2 className="w-4 h-4" /> Product Specifications
+                  <Settings2 className="w-4 h-4" /> Technical Specifications
                 </h3>
                 <Button variant="outline" size="sm" onClick={addSpecification} className="h-8 rounded-lg border-dashed text-xs font-bold">
                   + Add Detail
@@ -726,7 +726,7 @@ export default function AdminDashboard() {
                 )}
                 {productFormData.specifications.map((spec, i) => (
                   <div key={i} className="flex gap-3 items-center animate-in slide-in-from-top-1">
-                    <Input placeholder="Detail Name (e.g. Color)" value={spec.key} onChange={(e) => updateSpecification(i, 'key', e.target.value)} className="h-10 rounded-lg text-sm" />
+                    <Input placeholder="Name (e.g. Color)" value={spec.key} onChange={(e) => updateSpecification(i, 'key', e.target.value)} className="h-10 rounded-lg text-sm" />
                     <Input placeholder="Value (e.g. Midnight Black)" value={spec.value} onChange={(e) => updateSpecification(i, 'value', e.target.value)} className="h-10 rounded-lg text-sm" />
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:bg-destructive/10 shrink-0" onClick={() => removeSpecification(i)}><X className="w-4 h-4" /></Button>
                   </div>
@@ -738,7 +738,7 @@ export default function AdminDashboard() {
             <div className="pt-8 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white/80 backdrop-blur-md pb-4">
               <Button variant="ghost" onClick={() => setIsProductDialogOpen(false)} className="rounded-xl h-12 px-8 font-bold flex-1">CANCEL</Button>
               <Button onClick={handleSaveProduct} className="rounded-xl h-12 px-12 font-bold bg-primary flex-[2] text-white shadow-xl shadow-primary/20 transition-all active:scale-95">
-                {editingProduct ? 'UPDATE PRODUCT' : 'ADD PRODUCT TO SHOP'}
+                {editingProduct ? 'UPDATE PRODUCT' : 'ADD PRODUCT'}
               </Button>
             </div>
           </div>
