@@ -34,10 +34,10 @@ export async function sendContactEmail(formData: FormData) {
   });
 
   const mailOptions = {
-    from: `"WishZep Dialogue" <${smtpUser}>`,
+    from: `"WishZep Support" <${smtpUser}>`,
     to: smtpUser,
     replyTo: email,
-    subject: `[SIGNAL] ${subject.toUpperCase()} - ${name}`,
+    subject: `New Message: ${subject} - ${name}`,
     text: `New message from: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     html: `
       <!DOCTYPE html>
@@ -57,53 +57,54 @@ export async function sendContactEmail(formData: FormData) {
                       <tr>
                         <td>
                           <div style="background: linear-gradient(135deg, #BE29EC, #29A6EC); width: 50px; height: 50px; border-radius: 15px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: white;">W</div>
+                          <span style="font-size: 24px; font-weight: 900; color: #ffffff; margin-left: 10px; vertical-align: middle;">Wish<span style="color: #29A6EC;">Zep</span></span>
                         </td>
                         <td align="right">
-                          <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Inbound Signal</p>
-                          <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 900; color: #BE29EC;">DIALOGUE_ENTRY</p>
+                          <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; letter-spacing: 2px; text-transform: uppercase;">Website Contact</p>
+                          <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 900; color: #BE29EC;">NEW MESSAGE</p>
                         </td>
                       </tr>
                     </table>
 
-                    <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; text-transform: uppercase; line-height: 1;">Signal <br/><span style="color: #29A6EC;">Intercepted.</span></h1>
-                    <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">A new transmission has been decrypted from the WishZep Dialogue interface. Priority response status: Active.</p>
+                    <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -2px; margin: 40px 0 10px 0; color: #ffffff; text-transform: uppercase; line-height: 1;">Message <br/><span style="color: #29A6EC;">Received.</span></h1>
+                    <p style="font-size: 15px; color: #888; line-height: 1.6; margin: 0 0 40px 0;">You have received a new inquiry through the WishZep contact form. A customer is waiting for your response.</p>
 
-                    <!-- Sender Credentials Card -->
+                    <!-- Sender Information Card -->
                     <div style="background: #111; border-radius: 24px; padding: 25px; margin-bottom: 30px; border: 1px solid #1a1a1a;">
                       <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
                           <td style="padding-bottom: 15px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Sender Identity</p>
+                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Customer Name</p>
                             <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 900; color: #ffffff;">${name}</p>
                           </td>
                         </tr>
                         <tr>
                           <td style="padding-bottom: 15px;">
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Digital Channel</p>
+                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Email Address</p>
                             <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #29A6EC;">${email}</p>
                           </td>
                         </tr>
                         <tr>
                           <td>
-                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Subject Protocol</p>
+                            <p style="margin: 0; font-size: 10px; font-weight: 900; color: #666; text-transform: uppercase; letter-spacing: 1px;">Subject</p>
                             <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 700; color: #ffffff;">${subject}</p>
                           </td>
                         </tr>
                       </table>
                     </div>
 
-                    <!-- Message Payload Section -->
+                    <!-- Message Content Section -->
                     <div style="background: linear-gradient(135deg, rgba(190, 41, 236, 0.08), rgba(41, 166, 236, 0.08)); border: 1px solid rgba(190, 41, 236, 0.3); border-radius: 24px; padding: 30px; position: relative;">
-                      <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Decrypted Message</p>
-                      <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #eee; font-style: italic; white-space: pre-wrap;">"${message}"</p>
+                      <p style="margin: 0 0 15px 0; font-size: 10px; font-weight: 900; color: #BE29EC; text-transform: uppercase; letter-spacing: 2px;">Message Details</p>
+                      <p style="margin: 0; font-size: 16px; line-height: 1.8; color: #eee; white-space: pre-wrap;">"${message}"</p>
                     </div>
 
                     <div style="margin-top: 50px; text-align: center;">
-                      <a href="mailto:${email}" style="background: #ffffff; color: #000000; padding: 20px 40px; border-radius: 100px; text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15);">INITIALIZE REPLY PROTOCOL →</a>
+                      <a href="mailto:${email}" style="background: #ffffff; color: #000000; padding: 20px 40px; border-radius: 100px; text-decoration: none; font-weight: 900; font-size: 13px; letter-spacing: 1px; display: inline-block; box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15);">REPLY TO MESSAGE →</a>
                     </div>
 
                     <p style="margin-top: 60px; font-size: 10px; color: #333; text-align: center; line-height: 1.6; border-top: 1px solid #1a1a1a; padding-top: 30px;">
-                      © 2026 WISHZEP REGISTRY. Transmitted via Encrypted Channel v4.2. This is an automated artifact log.
+                      © 2024 WishZep. This is an automated notification from your website's contact interface.
                     </p>
                   </td>
                 </tr>
