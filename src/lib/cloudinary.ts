@@ -1,10 +1,15 @@
 /**
  * Utility for uploading images to Cloudinary using unsigned presets.
+ * Uses environment variables for security.
  */
 export async function uploadToCloudinary(file: File): Promise<string> {
-  const cloudName = 'dygtsoclj';
-  const uploadPreset = 'shivloxai';
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
   
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary configuration is missing. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.');
+  }
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', uploadPreset);

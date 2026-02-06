@@ -62,7 +62,7 @@ Visit the live site at: [https://wishzep.shop](https://wishzep.shop)
    ```
 
 3. Configure Environment Variables:
-   Create a `.env.local` file and add your credentials.
+   Create a `.env.local` file and add your credentials (see `.env.example`).
 
 4. Run the development server:
    ```bash

@@ -4,13 +4,19 @@ import Razorpay from 'razorpay';
 
 /**
  * Server Action to create a Razorpay Order.
- * Using provided test keys for the testing version.
+ * Uses environment variables for security.
  */
 export async function createRazorpayOrder(amount: number) {
-  // CRITICAL: Ensure these keys match the provided testing credentials
+  const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    return { success: false, error: 'Payment gateway configuration missing.' };
+  }
+
   const instance = new Razorpay({
-    key_id: 'rzp_test_SCOa15nvOPerXF',
-    key_secret: 'FA6S0DPc3ZbOM6PxE700puj5',
+    key_id: keyId,
+    key_secret: keySecret,
   });
 
   const options = {

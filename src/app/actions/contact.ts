@@ -4,34 +4,37 @@ import nodemailer from 'nodemailer';
 
 /**
  * Server Action to send contact emails via SMTP.
- * This uses a more robust configuration for Gmail SMTP.
+ * Uses environment variables for security.
  */
 export async function sendContactEmail(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const message = formData.get('message') as string;
 
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
   if (!name || !email || !message) {
     return { success: false, error: 'All fields are required.' };
   }
 
-  // Create transporter with explicit Gmail settings
-  // Using Port 465 with SSL is typically more reliable for Gmail App Passwords
+  if (!smtpUser || !smtpPass) {
+    return { success: false, error: 'Email service not configured.' };
+  }
+
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true, 
     auth: {
-      user: 'aadiwrld01@gmail.com',
-      pass: 'sbso efea rnrd uifn', 
+      user: smtpUser,
+      pass: smtpPass, 
     },
   });
 
   const mailOptions = {
-    // Gmail often rejects "from" addresses that don't match the authenticated user.
-    // We use the authenticated user as the sender and put the visitor in replyTo.
-    from: `"WishZep Support" <aadiwrld01@gmail.com>`,
-    to: 'aadiwrld01@gmail.com',
+    from: `"WishZep Support" <${smtpUser}>`,
+    to: smtpUser,
     replyTo: email,
     subject: `WishZep Contact Form: ${name}`,
     text: `New message from: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
@@ -64,7 +67,7 @@ export async function sendContactEmail(formData: FormData) {
   } catch (error: any) {
     return { 
       success: false, 
-      error: 'SMTP Authentication failed. Ensure 2-Step Verification is enabled and the App Password is correct.' 
+      error: 'Message delivery failed. Please check SMTP configuration.' 
     };
   }
 }

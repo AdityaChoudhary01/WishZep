@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCartStore } from '@/lib/store';
@@ -62,8 +61,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Check initial online status
     setIsOnline(navigator.onLine);
 
     const handleOnline = () => {
@@ -131,6 +128,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    const rzpKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    if (!rzpKeyId) {
+      toast({ title: "Configuration Error", description: "Razorpay Key ID is missing in environment variables.", variant: "destructive" });
+      return;
+    }
+
     if (!user || !db) {
       toast({ title: "Authentication Required", description: "Please sign in to place your order.", variant: "destructive" });
       router.push('/auth/login');
@@ -149,7 +152,7 @@ export default function CheckoutPage() {
       }
 
       const options = {
-        key: 'rzp_test_SCOa15nvOPerXF',
+        key: rzpKeyId,
         amount: orderDataResult.amount,
         currency: 'INR',
         name: 'WishZep',
