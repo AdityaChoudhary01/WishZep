@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
@@ -18,7 +19,8 @@ import {
   CreditCard,
   Info,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -236,7 +238,6 @@ export default function ProfilePage() {
               <Button variant="outline" onClick={() => window.location.reload()}>Retry Sync</Button>
             </div>
           ) : sortedOrders.length === 0 ? (
-            // FIX: Reduced padding from p-20 to p-8 md:p-20 to fit mobile screens
             <div className="bg-white border border-gray-100 rounded-[2rem] p-8 md:p-20 text-center space-y-6">
               <div className="w-20 h-20 md:w-24 md:h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
                 <ShoppingBag className="w-10 h-10 md:w-12 md:h-12 text-primary/30" />
@@ -266,9 +267,11 @@ export default function ProfilePage() {
                         <Badge className={cn(
                           "mt-2 px-4 py-1.5 rounded-full text-[10px] uppercase font-black border-none",
                           order.status === 'delivered' ? 'bg-green-100 text-green-700' : 
-                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                          order.status === 'arriving-today' ? 'bg-purple-100 text-purple-700' :
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 
+                          'bg-yellow-100 text-yellow-700'
                         )}>
-                          {order.status?.toUpperCase() || 'PENDING'}
+                          {(order.status || 'pending').replace('-', ' ').toUpperCase()}
                         </Badge>
                       </div>
                     </div>
@@ -358,12 +361,32 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex gap-4 md:gap-6 relative z-10">
-                              <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", ['shipped', 'delivered'].includes(order.status) ? "bg-primary text-white" : "bg-gray-100 text-gray-300")}>
+                              <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", ['shipped', 'arriving-today', 'delivered'].includes(order.status) ? "bg-primary text-white" : "bg-gray-100 text-gray-300")}>
                                 <Truck className="w-6 h-6 md:w-7 md:h-7" />
                               </div>
                               <div className="flex-1 pt-1">
                                 <h4 className="font-black text-base md:text-lg">In Transit</h4>
-                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'pending' || !order.status ? 'Preparing for departure...' : 'Moving via Global Express'}</p>
+                                {['shipped', 'arriving-today', 'delivered'].includes(order.status) ? (
+                                  <div className="space-y-1">
+                                    <p className="text-xs md:text-sm text-muted-foreground">Moving via Global Express</p>
+                                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 mt-2">
+                                      <p className="text-[10px] font-black text-primary uppercase tracking-widest">Partner: {order.deliveryPartner || 'Standard Logistics'}</p>
+                                      <p className="text-xs font-bold text-gray-900 mt-0.5">Tracking ID: {order.trackingId || 'Pending Registry'}</p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs md:text-sm text-muted-foreground">Preparing for departure...</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-4 md:gap-6 relative z-10">
+                              <div className={cn("w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg transition-all", ['arriving-today', 'delivered'].includes(order.status) ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-300")}>
+                                <Search className="w-6 h-6 md:w-7 md:h-7" />
+                              </div>
+                              <div className="flex-1 pt-1">
+                                <h4 className="font-black text-base md:text-lg">Arriving Today</h4>
+                                <p className="text-xs md:text-sm text-muted-foreground">{order.status === 'arriving-today' ? 'Our field agent is nearby. Keep your signal open!' : 'Awaiting local dispatch'}</p>
                               </div>
                             </div>
 
