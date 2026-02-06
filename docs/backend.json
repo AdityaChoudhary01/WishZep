@@ -159,7 +159,8 @@
         },
         "status": {
           "type": "string",
-          "description": "Status of the order."
+          "description": "Status of the order.",
+          "enum": ["pending", "shipped", "arriving-today", "delivered"]
         },
         "shippingAddress": {
           "type": "string",
@@ -168,6 +169,14 @@
         "paymentMethod": {
           "type": "string",
           "description": "Payment method used."
+        },
+        "deliveryPartner": {
+          "type": "string",
+          "description": "Name of the courier/delivery partner."
+        },
+        "trackingId": {
+          "type": "string",
+          "description": "Shipment tracking number."
         }
       },
       "required": [
