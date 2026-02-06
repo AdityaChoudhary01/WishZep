@@ -108,9 +108,9 @@ async function sendRichEmails(customerEmail: string, orderId: string, orderData:
   const orderDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   // ------------------------------------------
-  // 1. CUSTOMER TEMPLATE (Modern, Clean, Simple Words)
+  // SHARED: ITEM ROW GENERATOR
   // ------------------------------------------
-  const customerItemsHtml = items.map(item => `
+  const generateItemRow = (item: any, isAdmin: boolean) => `
     <tr>
       <td style="padding: 15px 0; border-bottom: 1px solid #1a1a1a;">
         <table width="100%" cellspacing="0" cellpadding="0">
@@ -120,16 +120,26 @@ async function sendRichEmails(customerEmail: string, orderId: string, orderData:
             </td>
             <td style="padding-left:15px; vertical-align:middle;">
               <p style="margin:0; font-size:14px; font-weight:700; color:#fff; line-height:1.4;">${item.name}</p>
-              <p style="margin:4px 0 0; font-size:12px; color:#888;">Qty: ${item.quantity}</p>
+              <p style="margin:4px 0 0; font-size:12px; color:#888;">
+                Qty: ${item.quantity} ${isAdmin ? `<span style="color:#444; font-size:10px; margin-left:8px;">ID: ${item.id?.slice(0,5)}</span>` : ''}
+              </p>
             </td>
             <td align="right" style="vertical-align:middle;">
-              <p style="margin:0; font-size:14px; font-weight:700; color:#fff;">₹${(item.price * item.quantity).toLocaleString()}</p>
+              <p style="margin:0; font-size:14px; font-weight:700; color:${isAdmin ? '#00ff88' : '#fff'};">
+                ₹${(item.price * item.quantity).toLocaleString()}
+              </p>
             </td>
           </tr>
         </table>
       </td>
-    </tr>`).join('');
+    </tr>`;
 
+  const customerItemsHtml = items.map(i => generateItemRow(i, false)).join('');
+  const adminItemsHtml = items.map(i => generateItemRow(i, true)).join('');
+
+  // ------------------------------------------
+  // 1. CUSTOMER TEMPLATE
+  // ------------------------------------------
   const customerHtml = `
     <!DOCTYPE html>
     <html>
@@ -145,12 +155,9 @@ async function sendRichEmails(customerEmail: string, orderId: string, orderData:
         </div>
 
         <div style="padding:0 20px;">
-          
           <div style="background:#111; border-radius:20px; padding:25px; margin-bottom:15px; border:1px solid #222;">
             <p style="margin:0 0 15px; font-size:11px; font-weight:bold; color:#BE29EC; text-transform:uppercase; letter-spacing:1px;">Your Items</p>
-            <table width="100%" cellspacing="0" cellpadding="0">
-              ${customerItemsHtml}
-            </table>
+            <table width="100%" cellspacing="0" cellpadding="0">${customerItemsHtml}</table>
             <div style="margin-top:20px; padding-top:20px; border-top:1px solid #222; display:flex; justify-content:space-between;">
               <span style="color:#aaa; font-size:14px;">Total</span>
               <span style="font-size:18px; font-weight:800; color:#fff;">${formattedAmount}</span>
@@ -160,9 +167,7 @@ async function sendRichEmails(customerEmail: string, orderId: string, orderData:
           <div style="background:#111; border-radius:20px; padding:25px; margin-bottom:15px; border:1px solid #222;">
             <p style="margin:0 0 15px; font-size:11px; font-weight:bold; color:#BE29EC; text-transform:uppercase; letter-spacing:1px;">Delivering To</p>
             <p style="margin:0; font-size:15px; font-weight:bold; color:#fff;">${orderData.shippingDetails?.fullName}</p>
-            <p style="margin:5px 0 15px; font-size:14px; color:#ccc; line-height:1.5;">
-              ${orderData.shippingAddress}
-            </p>
+            <p style="margin:5px 0 15px; font-size:14px; color:#ccc; line-height:1.5;">${orderData.shippingAddress}</p>
             <p style="margin:0; font-size:13px; color:#888;">📞 ${orderData.shippingDetails?.contactNumber}</p>
           </div>
 
@@ -186,67 +191,68 @@ async function sendRichEmails(customerEmail: string, orderId: string, orderData:
     </html>`;
 
   // ------------------------------------------
-  // 2. ADMIN TEMPLATE (The "Dispatch Console")
+  // 2. ADMIN TEMPLATE (Redesigned: Ultra Modern)
   // ------------------------------------------
-  const adminItemsHtml = items.map(item => `
-    <tr style="border-bottom: 1px solid #333;">
-      <td style="padding: 12px 0; color: #fff; font-size: 13px;">
-        <div style="font-weight:bold;">${item.name}</div>
-        <div style="color:#666; font-size:11px; margin-top:2px;">ID: ${item.id?.slice(0,5) || 'N/A'}</div>
-      </td>
-      <td style="padding: 12px 0; color: #fff; font-size: 13px; text-align: center;">x${item.quantity}</td>
-      <td style="padding: 12px 0; color: #00ff88; font-size: 13px; text-align: right;">₹${item.price}</td>
-    </tr>`).join('');
-
   const adminHtml = `
     <!DOCTYPE html>
     <html>
     <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-    <body style="background:#000; font-family:'Courier New', monospace; color:#fff; padding:20px;">
-      <div style="max-width:600px; margin:0 auto; background:#111; border:1px solid #333; border-radius:12px; overflow:hidden;">
+    <body style="background:#000000; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#ffffff; padding:0; margin:0;">
+      <div style="max-width:600px; margin:0 auto; background:#0a0a0a; min-height:100vh; border-left:1px solid #1a1a1a; border-right:1px solid #1a1a1a;">
         
-        <div style="background:#BE29EC; color:#fff; padding:15px 20px; font-weight:bold; font-size:16px;">
-          ⚠ NEW ORDER: ${formattedAmount}
+        <div style="background:#111; padding:20px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:12px; font-weight:bold; color:#00ff88; letter-spacing:1px;">● NEW ORDER RECEIVED</div>
+          <div style="font-size:12px; color:#666;">${orderDate}</div>
         </div>
 
-        <div style="padding:25px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:20px;">
+        <div style="padding:30px 20px;">
+          <div style="text-align:center; margin-bottom:40px;">
+            <p style="margin:0 0 5px; font-size:11px; font-weight:bold; color:#666; text-transform:uppercase; letter-spacing:2px;">Revenue Generated</p>
+            <h1 style="margin:0; font-size:42px; font-weight:900; color:#fff; letter-spacing:-1px;">${formattedAmount}</h1>
+            <p style="margin:10px 0 0; font-size:12px; color:#00ff88; background:rgba(0,255,136,0.1); display:inline-block; padding:4px 10px; border-radius:20px;">Paid via ${orderData.paymentMethod}</p>
+          </div>
+
+          <div style="background:#111; border-radius:20px; padding:25px; margin-bottom:20px; border:1px solid #222;">
+            <p style="margin:0 0 20px; font-size:11px; font-weight:bold; color:#BE29EC; text-transform:uppercase; letter-spacing:1px;">Customer Dossier</p>
+            
+            <div style="margin-bottom:15px;">
+              <p style="margin:0 0 4px; font-size:10px; color:#666; text-transform:uppercase;">Name</p>
+              <p style="margin:0; font-size:14px; font-weight:bold; color:#fff;">${orderData.shippingDetails?.fullName}</p>
+            </div>
+            
+            <div style="display:flex; gap:20px; margin-bottom:15px;">
+              <div style="flex:1;">
+                <p style="margin:0 0 4px; font-size:10px; color:#666; text-transform:uppercase;">Email</p>
+                <p style="margin:0; font-size:13px; color:#ccc; word-break:break-all;">${customerEmail}</p>
+              </div>
+              <div style="flex:1;">
+                <p style="margin:0 0 4px; font-size:10px; color:#666; text-transform:uppercase;">Phone</p>
+                <p style="margin:0; font-size:13px; color:#ccc;">${orderData.shippingDetails?.contactNumber}</p>
+              </div>
+            </div>
+
             <div>
-              <div style="color:#666; font-size:10px;">ORDER ID</div>
-              <div style="font-size:14px;">${orderId}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="color:#666; font-size:10px;">PAYMENT</div>
-              <div style="font-size:14px; color:#00ff88;">PAID</div>
+              <p style="margin:0 0 4px; font-size:10px; color:#666; text-transform:uppercase;">Shipping Address</p>
+              <p style="margin:0; font-size:13px; color:#ccc; line-height:1.5;">${orderData.shippingAddress}</p>
             </div>
           </div>
 
-          <div style="background:#000; padding:20px; border-radius:8px; border:1px solid #222; margin-bottom:20px;">
-            <div style="color:#BE29EC; font-size:11px; font-weight:bold; margin-bottom:10px;">CUSTOMER DETAILS</div>
-            <table width="100%" style="font-size:13px; color:#ccc;">
-              <tr><td style="padding:3px 0; width:70px; color:#666;">Name:</td><td>${orderData.shippingDetails?.fullName}</td></tr>
-              <tr><td style="padding:3px 0; color:#666;">Email:</td><td>${customerEmail}</td></tr>
-              <tr><td style="padding:3px 0; color:#666;">Phone:</td><td>${orderData.shippingDetails?.contactNumber}</td></tr>
-              <tr><td style="padding:3px 0; color:#666;">Addr:</td><td>${orderData.shippingAddress}</td></tr>
-            </table>
-          </div>
-
-          <div style="margin-bottom:25px;">
-            <div style="color:#BE29EC; font-size:11px; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">ITEMS TO FULFILL</div>
+          <div style="background:#111; border-radius:20px; padding:25px; margin-bottom:30px; border:1px solid #222;">
+            <p style="margin:0 0 15px; font-size:11px; font-weight:bold; color:#BE29EC; text-transform:uppercase; letter-spacing:1px;">Items to Pack</p>
             <table width="100%" cellspacing="0" cellpadding="0">
               ${adminItemsHtml}
             </table>
-            <div style="text-align:right; margin-top:15px; font-size:16px; font-weight:bold;">
-              Total: ${formattedAmount}
-            </div>
           </div>
 
-          <a href="https://wishzep.shop/admin/dashboard" style="display:block; background:#222; color:#fff; border:1px solid #444; text-align:center; padding:15px; text-decoration:none; font-weight:bold; border-radius:6px; font-size:14px;">
-            OPEN ADMIN DASHBOARD →
+          <a href="https://wishzep.shop/admin/dashboard" style="display:block; background:#fff; color:#000; text-align:center; padding:18px 0; text-decoration:none; font-weight:900; border-radius:12px; font-size:14px; letter-spacing:0.5px;">
+            OPEN ADMIN DASHBOARD
           </a>
           
-          <div style="margin-top:20px; text-align:center; font-size:10px; color:#444;">
-            Razorpay Ref: ${orderData.razorpayOrderId}
+          <div style="margin-top:30px; text-align:center;">
+            <p style="margin:0; color:#444; font-size:10px; font-family:monospace;">
+              ORDER_ID: ${orderId}<br>
+              RZP_REF: ${orderData.razorpayOrderId}
+            </p>
           </div>
         </div>
       </div>
