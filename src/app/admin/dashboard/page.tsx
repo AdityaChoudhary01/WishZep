@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -393,7 +392,7 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen bg-white flex-col md:flex-row">
       <aside className="w-64 bg-white border-r border-gray-100 p-6 hidden md:block h-screen sticky top-0 z-30">
         <div className="flex items-center mb-10 px-2">
-          <div className="relative w-44 h-12">
+          <div className="relative w-56 h-20">
             <Image src="/logo.png" alt="Admin Logo" fill className="object-contain" />
           </div>
         </div>

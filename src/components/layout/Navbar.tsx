@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -73,12 +72,12 @@ export default function Navbar() {
     <nav
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4',
-        isScrolled ? 'glass py-3' : 'bg-transparent'
+        isScrolled ? 'glass py-2' : 'bg-transparent'
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center group">
-          <div className="relative w-44 h-14 transition-transform group-hover:scale-105">
+          <div className="relative w-56 h-20 transition-transform group-hover:scale-105">
             <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" priority />
           </div>
         </Link>

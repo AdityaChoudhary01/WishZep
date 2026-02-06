@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -41,7 +40,6 @@ export default function LoginPage() {
   const router = useRouter();
 
   const syncUserProfile = async (user: any) => {
-    if (!db) return;
     const userRef = doc(db, 'users', user.uid);
     
     const profileData: any = {
@@ -191,7 +189,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-[85vh] px-4 py-10 relative overflow-hidden">
+    <div className="container mx-auto px-4 py-10 flex items-center justify-center min-h-[85vh] relative overflow-hidden">
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -199,7 +197,7 @@ export default function LoginPage() {
         <div id="recaptcha-container"></div>
         
         <div className="text-center space-y-2 mb-10">
-          <div className="relative w-64 h-24 mx-auto mb-6 transition-transform rotate-1">
+          <div className="relative w-80 h-32 mx-auto mb-8 transition-transform rotate-1">
              <Image src="/logo.png" alt="WishZep Logo" fill className="object-contain" />
           </div>
           <h1 className="text-3xl font-black tracking-tight text-gray-900">Welcome Back</h1>
