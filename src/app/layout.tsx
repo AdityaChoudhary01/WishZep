@@ -11,6 +11,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export const metadata: Metadata = {
@@ -20,6 +21,16 @@ export const metadata: Metadata = {
     template: '%s | WishZep'
   },
   description: 'WishZep is the ultimate destination for curated high-energy techwear and performance gear. Shop the future of fashion today.',
+  applicationName: 'WishZep',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'WishZep',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: '/manifest.webmanifest',
   keywords: ['techwear', 'fashion', 'performance gear', 'WishZep', 'modern aura', 'luxury street wear'],
   authors: [{ name: 'Aditya Choudhary' }],
   creator: 'Aditya Choudhary',
@@ -74,6 +85,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
