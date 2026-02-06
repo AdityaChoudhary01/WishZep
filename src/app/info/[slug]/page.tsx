@@ -28,7 +28,10 @@ import {
   Eye,
   Scale,
   Code2,
-  AlertCircle
+  AlertCircle,
+  Github,
+  Linkedin,
+  ExternalLink
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -154,34 +157,73 @@ export default function DynamicInfoPage() {
               </div>
             </section>
 
-            {/* Developer Section */}
-            <section className="text-center space-y-16">
-              <div className="space-y-4">
-                <h2 className="text-5xl font-black uppercase tracking-tighter">THE <span className="wishzep-text">ARCHITECT.</span></h2>
+            {/* Team Section */}
+            <section className="space-y-16">
+              <div className="text-center space-y-4">
+                <h2 className="text-5xl font-black uppercase tracking-tighter">THE <span className="wishzep-text">ARCHITECTS.</span></h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-light leading-relaxed">
-                  The visionary behind the WishZep experience, dedicated to pushing the boundaries of digital craft and high-performance design.
+                  The visionaries behind the WishZep experience, dedicated to pushing the boundaries of digital craft and high-performance design.
                 </p>
               </div>
-              <div className="max-w-md mx-auto aspect-[3/4] glass rounded-[4rem] overflow-hidden relative group border-2 border-primary/20 shadow-2xl shadow-primary/10">
-                <img 
-                  src="https://picsum.photos/seed/aditya-dev/800/1000" 
-                  alt="Aditya Choudhary" 
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-1000" 
-                  data-ai-hint="portrait man"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                <div className="absolute bottom-10 left-10 right-10 text-left space-y-3">
-                  <Badge className="bg-primary text-white border-none px-4 py-1 text-[10px] uppercase font-black tracking-[0.2em]">Lead Developer</Badge>
-                  <div className="space-y-1">
-                    <h3 className="text-4xl font-black text-white leading-none tracking-tight">Aditya Choudhary</h3>
-                    <p className="text-primary font-bold uppercase tracking-widest text-xs">Founder & Digital Architect</p>
+
+              <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
+                {/* Aditya Choudhary */}
+                <div className="glass rounded-[4rem] overflow-hidden relative group border-2 border-primary/20 shadow-2xl shadow-primary/10">
+                  <div className="aspect-[3/4] relative">
+                    <img 
+                      src="https://picsum.photos/seed/aditya-dev/800/1000" 
+                      alt="Aditya Choudhary" 
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-1000" 
+                      data-ai-hint="portrait man"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                   </div>
-                  <div className="flex gap-4 pt-2">
-                    <div className="w-8 h-8 rounded-lg glass-dark flex items-center justify-center text-white/80 hover:text-white transition-colors">
-                      <Code2 className="w-4 h-4" />
+                  <div className="absolute bottom-10 left-10 right-10 text-left space-y-4">
+                    <Badge className="bg-primary text-white border-none px-4 py-1 text-[10px] uppercase font-black tracking-[0.2em]">Lead Developer</Badge>
+                    <div className="space-y-1">
+                      <h3 className="text-4xl font-black text-white leading-none tracking-tight">Aditya Choudhary</h3>
+                      <p className="text-primary font-bold uppercase tracking-widest text-xs">Founder & Digital Architect</p>
                     </div>
-                    <div className="w-8 h-8 rounded-lg glass-dark flex items-center justify-center text-white/80 hover:text-white transition-colors">
-                      <Zap className="w-4 h-4" />
+                    <div className="flex gap-3 pt-2">
+                      <a href="https://github.com/adityachoudhary" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl glass-dark flex items-center justify-center text-white/80 hover:text-white hover:bg-primary transition-all">
+                        <Github className="w-5 h-5" />
+                      </a>
+                      <a href="https://linkedin.com/in/adityachoudhary" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl glass-dark flex items-center justify-center text-white/80 hover:text-white hover:bg-primary transition-all">
+                        <Linkedin className="w-5 h-5" />
+                      </a>
+                      <a href="https://adityachoudhary.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl glass-dark flex items-center justify-center text-white/80 hover:text-white hover:bg-primary transition-all">
+                        <ExternalLink className="w-5 h-5" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sahdev Rathi */}
+                <div className="glass rounded-[4rem] overflow-hidden relative group border-2 border-secondary/20 shadow-2xl shadow-secondary/10">
+                  <div className="aspect-[3/4] relative">
+                    <img 
+                      src="https://picsum.photos/seed/sahdev-admin/800/1000" 
+                      alt="Sahdev Rathi" 
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-1000" 
+                      data-ai-hint="portrait man professional"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-10 left-10 right-10 text-left space-y-4">
+                    <Badge className="bg-secondary text-white border-none px-4 py-1 text-[10px] uppercase font-black tracking-[0.2em]">Manage Admin</Badge>
+                    <div className="space-y-1">
+                      <h3 className="text-4xl font-black text-white leading-none tracking-tight">Sahdev Rathi</h3>
+                      <p className="text-secondary font-bold uppercase tracking-widest text-xs">Operational Specialist</p>
+                    </div>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <div className="flex items-center gap-3 text-white/80 glass-dark px-4 py-2 rounded-xl w-fit">
+                        <Phone className="w-4 h-4 text-secondary" />
+                        <span className="text-sm font-bold">+91 99999 99999</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-white/80 glass-dark px-4 py-2 rounded-xl w-fit">
+                        <Mail className="w-4 h-4 text-secondary" />
+                        <span className="text-sm font-bold">sahdev@wishzep.shop</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -206,7 +248,7 @@ export default function DynamicInfoPage() {
 
               <div className="grid sm:grid-cols-2 gap-10">
                 {[
-                  { icon: Mail, label: "Official Support", value: "support@wishzep.com", desc: "Best for order inquiries." },
+                  { icon: Mail, label: "Official Support", value: "support@wishzep.shop", desc: "Best for order inquiries." },
                   { icon: Phone, label: "Direct Line", value: "+1 (888) WISH-ZEP", desc: "Mon-Fri, 9AM-6PM PT." },
                   { icon: Globe, label: "Global HQ", value: "Innovation Dist, SF", desc: "Where the magic happens." },
                   { icon: Clock, label: "Response Time", value: "< 2 Hours", desc: "Our average reply time." }
