@@ -224,17 +224,17 @@ export default function ProfilePage() {
       <Tabs defaultValue="orders" className="w-full">
         <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl h-auto min-h-[3.5rem] mb-6 md:mb-8 flex flex-wrap justify-start">
           <TabsTrigger value="orders" className="rounded-xl px-6 md:px-8 py-2 md:py-0 font-bold data-[state=active]:bg-primary data-[state=active]:text-white flex-1 md:flex-none">
-            <History className="w-4 h-4 mr-2" /> Artifact History
+            <History className="w-4 h-4 mr-2" /> Order History
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="space-y-6">
           {ordersLoading ? (
-            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing Registry...</div>
+            <div className="py-20 text-center animate-pulse text-muted-foreground uppercase font-black tracking-widest">Accessing orders...</div>
           ) : ordersError ? (
             <div className="bg-white border border-gray-100 rounded-[2rem] p-8 md:p-12 text-center space-y-4">
               <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-              <h3 className="text-xl font-bold">Registry Sync Error</h3>
+              <h3 className="text-xl font-bold">Orders Sync Error</h3>
               <p className="text-muted-foreground max-w-md mx-auto">We encountered an issue while fetching your history. Please ensure your signal is strong and try again.</p>
               <Button variant="outline" onClick={() => window.location.reload()}>Retry Sync</Button>
             </div>
@@ -243,8 +243,8 @@ export default function ProfilePage() {
               <div className="w-20 h-20 md:w-24 md:h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
                 <ShoppingBag className="w-10 h-10 md:w-12 md:h-12 text-primary/30" />
               </div>
-              <h3 className="text-2xl md:text-3xl font-black">Your vault is empty.</h3>
-              <p className="text-muted-foreground text-base md:text-lg max-w-sm mx-auto">It's time to secure your first artifact. Explore the latest drops now.</p>
+              <h3 className="text-2xl md:text-3xl font-black">Your Order History is empty.</h3>
+              <p className="text-muted-foreground text-base md:text-lg max-w-sm mx-auto">It's time to secure your first item. Explore the latest products now.</p>
               <Link href="/products" className="inline-block pt-4 w-full sm:w-auto">
                 <Button className="rounded-full bg-primary h-14 md:h-16 w-full sm:w-auto px-8 md:px-12 text-lg md:text-xl font-bold shadow-2xl shadow-primary/30 hover:scale-105 transition-transform">Explore Catalogue</Button>
               </Link>
@@ -296,14 +296,14 @@ export default function ProfilePage() {
                           <div className="bg-primary p-6 md:p-8 text-white relative">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
                             <DialogHeader>
-                              <DialogTitle className="text-2xl md:text-3xl font-black">DROP LOGISTICS</DialogTitle>
+                              <DialogTitle className="text-2xl md:text-3xl font-black">Order Details</DialogTitle>
                             </DialogHeader>
-                            <p className="text-xs md:text-sm font-bold opacity-80 uppercase tracking-widest mt-2 truncate">Protocol ID: {order.id}</p>
+                            <p className="text-xs md:text-sm font-bold opacity-80 uppercase tracking-widest mt-2 truncate">Order ID: {order.id}</p>
                           </div>
                           
                           <div className="p-6 md:p-8 space-y-6 md:space-y-8 max-h-[60vh] md:max-h-[70vh] overflow-y-auto">
                             <div className="space-y-4">
-                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Included Artifacts</h4>
+                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Included Items</h4>
                               <OrderItemsList orderId={order.id} />
                             </div>
 
