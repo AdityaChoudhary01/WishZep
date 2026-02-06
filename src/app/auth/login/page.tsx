@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -19,7 +20,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import Image from 'next/image';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -196,14 +197,9 @@ export default function LoginPage() {
       <div className="w-full max-w-[480px] bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-gray-100 relative z-10 animate-fade-in">
         <div id="recaptcha-container"></div>
         
-        <div className="text-center space-y-4 mb-10">
-          <div className="flex items-center justify-center gap-4 transition-transform hover:scale-105">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
-              <Zap className="w-10 h-10 fill-white" />
-            </div>
-            <span className="text-5xl font-black tracking-tighter wishzep-text">WISHZEP</span>
-          </div>
-          <p className="text-gray-500 font-medium text-sm mt-4">Sign in to your account</p>
+        <div className="text-center space-y-4 mb-10 flex flex-col items-center">
+          <BrandLogo size="lg" className="hover:scale-105 transition-transform" />
+          <p className="text-gray-500 font-medium text-sm mt-4">Welcome back to the experience</p>
         </div>
 
         {authError && (

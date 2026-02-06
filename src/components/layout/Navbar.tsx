@@ -1,8 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { ShoppingBag, User, Search, Menu, X, ChevronDown, ShieldCheck, Zap } from 'lucide-react';
+import { ShoppingBag, User, Search, Menu, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
+import BrandLogo from '@/components/BrandLogo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,11 +77,8 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-transform group-hover:rotate-12">
-            <Zap className="w-6 h-6 md:w-7 md:h-7 fill-white" />
-          </div>
-          <span className="text-2xl md:text-3xl font-black tracking-tighter wishzep-text">WISHZEP</span>
+        <Link href="/" className="group flex items-center">
+          <BrandLogo size="md" className="transition-transform group-hover:scale-105" />
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

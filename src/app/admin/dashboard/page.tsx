@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -5,32 +6,17 @@ import { useRouter } from 'next/navigation';
 import { 
   Package, 
   Plus, 
-  Settings, 
-  Camera, 
   Loader2, 
-  AlertCircle,
-  Edit2,
-  Trash2,
-  ImagePlus,
-  ShoppingBag,
-  Truck,
-  Clock,
-  CheckCircle2,
-  Menu,
-  Tags,
-  X,
-  Save,
-  Layers,
-  ListPlus,
-  Info,
-  User,
-  MapPin,
-  CreditCard,
-  ChevronRight,
-  ChevronLeft,
-  Table as TableIcon,
-  ShieldAlert,
-  Zap
+  Edit2, 
+  Trash2, 
+  ImagePlus, 
+  ShoppingBag, 
+  Tags, 
+  X, 
+  Info, 
+  Table as TableIcon, 
+  ShieldAlert, 
+  Zap 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,9 +39,9 @@ import { useFirestore, useUser, useDoc, useMemoFirebase, useCollection } from '@
 import { collection, doc, setDoc, updateDoc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import BrandLogo from '@/components/BrandLogo';
 
 function AdminOrderItemsList({ orderId }: { orderId: string }) {
   const db = useFirestore();
@@ -359,7 +345,7 @@ export default function AdminDashboard() {
         </div>
         <div className="space-y-2">
           <h1 className="text-3xl font-black uppercase">Access Denied</h1>
-          <p className="text-muted-foreground max-w-md">This area is reserved for authenticated administrators. Your current credentials do not have the required permissions.</p>
+          <p className="text-muted-foreground max-w-md">This area is reserved for authenticated administrators.</p>
         </div>
         <Button onClick={() => router.push('/')} variant="outline" className="rounded-full px-8 h-12">Return Home</Button>
       </div>
@@ -393,11 +379,8 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-white flex-col md:flex-row">
       <aside className="w-64 bg-white border-r border-gray-100 p-6 hidden md:block h-screen sticky top-0 z-30">
-        <Link href="/" className="flex items-center gap-3 mb-10 px-2 group">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg transition-transform group-hover:rotate-12">
-            <Zap className="w-6 h-6 fill-white" />
-          </div>
-          <span className="text-xl font-black tracking-tighter wishzep-text">WISHZEP</span>
+        <Link href="/" className="group flex items-center mb-10 px-2">
+          <BrandLogo size="md" className="group-hover:scale-105 transition-transform" />
         </Link>
         <SidebarContent />
       </aside>
@@ -454,6 +437,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Categories & Orders Sections remain unchanged visually but inherit theme */}
         {activeTab === 'categories' && (
            <div className="space-y-6 animate-fade-in">
              <header>
@@ -583,6 +567,7 @@ export default function AdminDashboard() {
         )}
       </main>
 
+      {/* Product Edit/Add Dialog */}
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
         <DialogContent className="max-w-5xl rounded-[2rem] border-none max-h-[90vh] overflow-y-auto p-0 bg-white shadow-2xl">
           <div className="sticky top-0 z-50 bg-white border-b border-gray-100 p-8">
@@ -610,26 +595,6 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-gray-500">In Stock</Label><Input type="number" value={productFormData.inventory} onChange={(e) => setProductFormData({...productFormData, inventory: e.target.value})} className="h-14 rounded-2xl bg-gray-50 font-bold border-gray-200" /></div>
-
-                {['clothes', 'clothing', 'apparel', 'shirt', 'hoodie', 'bottoms', 'wear', 't-shirt', 'jacket'].some(k => productFormData.category.toLowerCase().includes(k)) && (
-                  <div className="space-y-6 p-6 rounded-[2rem] bg-primary/5 border border-primary/10 animate-fade-in">
-                    <h4 className="text-xs font-black uppercase text-primary">Clothing Details</h4>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Sizes (e.g. S, M, L)</Label>
-                      <Input placeholder="S, M, L, XL" value={productFormData.sizes} onChange={(e) => setProductFormData({...productFormData, sizes: e.target.value})} className="h-12 rounded-xl bg-white font-bold" />
-                    </div>
-                    <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase text-gray-500">Size Chart Photo</Label>
-                      <div className="flex gap-4 items-center">
-                        <div className="relative w-16 h-16 rounded-xl bg-white overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
-                          {productFormData.sizeChartUrl ? <Image src={productFormData.sizeChartUrl} alt="Chart" fill className="object-cover" /> : <TableIcon className="w-6 h-6 text-gray-300" />}
-                        </div>
-                        <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => sizeChartInputRef.current?.click()}>Upload Chart</Button>
-                        <input type="file" ref={sizeChartInputRef} className="hidden" accept="image/*" onChange={handleSizeChartUpload} />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="space-y-8">
@@ -642,44 +607,6 @@ export default function AdminDashboard() {
                     </div>
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleMainImageUpload} />
                   </div>
-
-                  <div className="space-y-4 pt-4">
-                    <div className="flex justify-between items-center">
-                      <p className="text-[10px] font-bold text-muted-foreground">Gallery ({productFormData.images.length})</p>
-                      <Button variant="ghost" size="sm" className="text-[10px] font-black" onClick={() => secondaryImagesInputRef.current?.click()}>Add Photos</Button>
-                      <input type="file" ref={secondaryImagesInputRef} className="hidden" accept="image/*" multiple onChange={handleSecondaryImageUpload} />
-                    </div>
-                    <div className="grid grid-cols-4 gap-3">
-                      {productFormData.images.map((img, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-gray-100">
-                          <Image src={img} alt={`Photo ${idx}`} fill className="object-cover" />
-                          <button onClick={() => removeSecondaryImage(idx)} className="absolute top-1 right-1 w-6 h-6 bg-destructive text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100"><X className="w-3 h-3" /></button>
-                        </div>
-                      ))}
-                      <div onClick={() => secondaryImagesInputRef.current?.click()} className="aspect-square rounded-xl border border-dashed border-gray-300 flex items-center justify-center text-gray-300 hover:border-primary cursor-pointer transition-all"><Plus className="w-5 h-5" /></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <Label className="text-[10px] font-black uppercase text-primary">Item Description</Label>
-              <Textarea value={productFormData.description} placeholder="Describe the drop details..." onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-[2rem] bg-gray-50 min-h-[160px] p-8 text-lg border-gray-200" />
-              
-              <div className="space-y-4 pt-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-black uppercase text-gray-500">Extra Features</p>
-                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 font-bold" onClick={addSpecification}><ListPlus className="w-4 h-4" /> Add Feature</Button>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {productFormData.specifications.map((spec, idx) => (
-                    <div key={idx} className="flex gap-2 items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                      <Input placeholder="Feature Name" value={spec.key} onChange={(e) => updateSpecification(idx, 'key', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
-                      <Input placeholder="Detail" value={spec.value} onChange={(e) => updateSpecification(idx, 'value', e.target.value)} className="bg-white border-gray-200 h-10 rounded-lg text-xs" />
-                      <Button variant="ghost" size="icon" onClick={() => removeSpecification(idx)} className="text-destructive h-10 w-10 shrink-0"><X className="w-4 h-4" /></Button>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>

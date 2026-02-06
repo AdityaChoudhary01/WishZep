@@ -1,20 +1,17 @@
+
 import Link from 'next/link';
-import Image from 'next/image';
-import { Zap } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Footer() {
   return (
     <footer className="bg-white/50 border-t border-white/20 pt-20 pb-10 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div className="space-y-6">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg transition-transform group-hover:rotate-12">
-              <Zap className="w-7 h-7 fill-white" />
-            </div>
-            <span className="text-3xl font-black tracking-tighter wishzep-text">WISHZEP</span>
+          <Link href="/" className="group inline-block">
+            <BrandLogo size="md" className="group-hover:scale-105 transition-transform" />
           </Link>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Charging your lifestyle with WishZep. Premium curated gear for the modern visionary. Experience the future of e-commerce.
+          <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+            Charging your lifestyle with high-energy artifacts. Premium curated gear for the modern visionary.
           </p>
         </div>
 
